@@ -61,5 +61,12 @@ class Devices(BaseModel):
     @validator("devices", pre=True)
     @classmethod
     def convert_to_dict(cls, data: list[dict]) -> dict[Any, dict]:
-        """Convert list into dict, keyed by device id."""
+        """Convert list into dict, keyed by device id.
+
+        Args:
+            data: List of dicts to convert.
+
+        Returns:
+            dict: Converted list of dicts.
+        """
         return {device["id"]: device for device in data}
