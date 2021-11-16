@@ -21,7 +21,7 @@ class ClientSupports(BaseModel):
 class ClientConnectivity(BaseModel):
     """Object holding Tailscale device information."""
 
-    endpoints: List[str]
+    endpoints: List[str] = Field(default_factory=list)
     derp: str
     mapping_varies_by_dest_ip: bool = Field(..., alias="mappingVariesByDestIP")
     latency: Any
