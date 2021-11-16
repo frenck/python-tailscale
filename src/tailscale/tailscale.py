@@ -105,11 +105,11 @@ class Tailscale:
 
         return await response.json(content_type=None)
 
-    async def devices(self) -> list[Device]:
+    async def devices(self) -> dict[str, Device]:
         """Get devices information from the Tailscale API.
 
         Returns:
-            Returns a list of Tailscale devices.
+            Returns a dictionary of Tailscale devices.
         """
         data = await self._request(f"tailnet/{self.tailnet}/devices")
         return Devices.parse_obj(data).devices

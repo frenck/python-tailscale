@@ -1,8 +1,10 @@
 """Asynchronous client for the Tailscale API."""
-from datetime import datetime
-from typing import Any, List, Optional
+from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, validator
 
 
 class ClientSupports(BaseModel):
@@ -56,4 +58,17 @@ class Device(BaseModel):
 class Devices(BaseModel):
     """Object holding Tailscale device information."""
 
-    devices: List[Device]
+    devices: Dict[str, Device]
+
+    @validator("devices", pre=True)
+    @classmethod
+    def convert_to_dict(cls, data: list[dict]) -> dict[Any, dict]:  # noqa: F841
+        """Convert list into dict, keyed by device id.
+
+        Args:
+            data: List of dicts to convert.
+
+        Returns:
+            dict: Converted list of dicts.
+        """
+        return {device["id"]: device for device in data}
