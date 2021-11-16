@@ -1,6 +1,6 @@
 """Asynchronous client for the Tailscale API."""
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -56,7 +56,7 @@ class Device(BaseModel):
 class Devices(BaseModel):
     """Object holding Tailscale device information."""
 
-    devices: dict[str, Device]
+    devices: Dict[str, Device]
 
     @validator("devices", pre=True)
     @classmethod
