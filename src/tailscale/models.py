@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 class ClientSupports(BaseModel):
@@ -56,4 +56,10 @@ class Device(BaseModel):
 class Devices(BaseModel):
     """Object holding Tailscale device information."""
 
-    devices: List[Device]
+    devices: dict[str, Device]
+
+    @validator("devices", pre=True)
+    @classmethod
+    def convert_to_dict(cls, data: list[dict]) -> dict[Any, dict]:
+        """Convert list into dict, keyed by device id."""
+        return {device["id"]: device for device in data}
