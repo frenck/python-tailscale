@@ -50,9 +50,7 @@ class Device(BaseModel):
     blocks_incoming_connections: bool = Field(..., alias="blocksIncomingConnections")
     enabled_routes: List[str] = Field(alias="enabledRoutes", default_factory=list)
     advertised_routes: List[str] = Field(alias="advertisedRoutes", default_factory=list)
-    client_connectivity: ClientConnectivity = Field(
-        alias="clientConnectivity", default_factory=list
-    )
+    client_connectivity: ClientConnectivity = Field(alias="clientConnectivity")
 
 
 class Devices(BaseModel):
