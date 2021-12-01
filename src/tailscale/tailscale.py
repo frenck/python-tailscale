@@ -62,7 +62,7 @@ class Tailscale:
                 API.
         """
         version = metadata.version(__package__)
-        url = URL("https://api.tailscale.com/api/v2/?fields=all").join(URL(uri))
+        url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
 
         headers = {
             "User-Agent": f"PythonTailscale/{version}",
@@ -111,7 +111,7 @@ class Tailscale:
         Returns:
             Returns a dictionary of Tailscale devices.
         """
-        data = await self._request(f"tailnet/{self.tailnet}/devices")
+        data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
         return Devices.parse_obj(data).devices
 
     async def close(self) -> None:
