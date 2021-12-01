@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, validator
 class ClientSupports(BaseModel):
     """Object holding Tailscale device information."""
 
-    hair_pinning: bool = Field(..., alias="hairPinning")
+    hair_pinning: Optional[bool] = Field(..., alias="hairPinning")
     ipv6: bool
     pcp: bool
     pmp: bool
