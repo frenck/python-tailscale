@@ -41,7 +41,7 @@ class Device(BaseModel):
     client_version: str = Field(..., alias="clientVersion")
     update_available: bool = Field(..., alias="updateAvailable")
     os: str
-    created: datetime
+    created: Optional[datetime]
     last_seen: Optional[datetime] = Field(..., alias="lastSeen")
     key_expiry_disabled: bool = Field(..., alias="keyExpiryDisabled")
     expires: Optional[datetime]
