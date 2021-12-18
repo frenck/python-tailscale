@@ -54,6 +54,21 @@ class Device(BaseModel):
     advertised_routes: List[str] = Field(alias="advertisedRoutes", default_factory=list)
     client_connectivity: ClientConnectivity = Field(alias="clientConnectivity")
 
+    @validator("created", pre=True)
+    @classmethod
+    def empty_as_none(cls, data: str | None) -> str | None:  # noqa: F841
+        """Convert an emtpty string to None.
+
+        Args:
+            data: String to convert.
+
+        Returns:
+            String or none if string is empty.
+        """
+        if not data:
+            return None
+        return data
+
 
 class Devices(BaseModel):
     """Object holding Tailscale device information."""
