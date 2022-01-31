@@ -11,11 +11,11 @@ class ClientSupports(BaseModel):
     """Object holding Tailscale device information."""
 
     hair_pinning: Optional[bool] = Field(..., alias="hairPinning")
-    ipv6: bool
-    pcp: bool
-    pmp: bool
-    udp: bool
-    upnp: bool
+    ipv6: Optional[bool]
+    pcp: Optional[bool]
+    pmp: Optional[bool]
+    udp: Optional[bool]
+    upnp: Optional[bool]
 
 
 class ClientConnectivity(BaseModel):
