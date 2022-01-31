@@ -1,11 +1,11 @@
 """Asynchronous client for the Tailscale API."""
-from .models import ClientConnectivity, ClientSupports, Device, Devices
-from .tailscale import (
-    Tailscale,
+from .exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
     TailscaleError,
 )
+from .models import ClientConnectivity, ClientSupports, Device, Devices
+from .tailscale import Tailscale
 
 __all__ = [
     "ClientConnectivity",

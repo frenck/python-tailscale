@@ -77,7 +77,9 @@ class Devices(BaseModel):
 
     @validator("devices", pre=True)
     @classmethod
-    def convert_to_dict(cls, data: list[dict]) -> dict[Any, dict]:  # noqa: F841
+    def convert_to_dict(
+        cls, data: list[dict[str, Any]]  # noqa: F841
+    ) -> dict[Any, dict[str, Any]]:
         """Convert list into dict, keyed by device id.
 
         Args:

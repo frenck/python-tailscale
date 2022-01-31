@@ -4,6 +4,7 @@ import asyncio
 
 import aiohttp
 import pytest
+from aresponses import Response, ResponsesMockServer
 
 from tailscale import Tailscale
 from tailscale.exceptions import (
@@ -14,7 +15,7 @@ from tailscale.exceptions import (
 
 
 @pytest.mark.asyncio
-async def test_json_request(aresponses):
+async def test_json_request(aresponses: ResponsesMockServer) -> None:
     """Test JSON response is handled correctly."""
     aresponses.add(
         "api.tailscale.com",
@@ -34,7 +35,7 @@ async def test_json_request(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_internal_session(aresponses):
+async def test_internal_session(aresponses: ResponsesMockServer) -> None:
     """Test JSON response is handled correctly."""
     aresponses.add(
         "api.tailscale.com",
@@ -52,7 +53,7 @@ async def test_internal_session(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_put_request(aresponses):
+async def test_put_request(aresponses: ResponsesMockServer) -> None:
     """Test PUT requests are handled correctly."""
     aresponses.add(
         "api.tailscale.com",
@@ -73,10 +74,10 @@ async def test_put_request(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_timeout(aresponses):
+async def test_timeout(aresponses: ResponsesMockServer) -> None:
     """Test request timeout from the Tailscale API."""
     # Faking a timeout by sleeping
-    async def response_handler(_):
+    async def response_handler(_: aiohttp.ClientResponse) -> Response:
         """Response handler for this test."""
         await asyncio.sleep(2)
         return aresponses.Response(body="Goodmorning!")
@@ -92,7 +93,7 @@ async def test_timeout(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_http_error400(aresponses):
+async def test_http_error400(aresponses: ResponsesMockServer) -> None:
     """Test HTTP 404 response handling."""
     aresponses.add(
         "api.tailscale.com",
@@ -108,7 +109,7 @@ async def test_http_error400(aresponses):
 
 
 @pytest.mark.asyncio
-async def test_http_error401(aresponses):
+async def test_http_error401(aresponses: ResponsesMockServer) -> None:
     """Test HTTP 401 response handling."""
     aresponses.add(
         "api.tailscale.com",
