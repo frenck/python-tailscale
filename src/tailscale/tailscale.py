@@ -38,7 +38,7 @@ class Tailscale:
         uri: str,
         *,
         method: str = METH_GET,
-        data: dict | None = None,
+        data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Handle a request to the Tailscale API.
 
@@ -103,7 +103,8 @@ class Tailscale:
                 "Error occurred while communicating with the Tailscale API"
             ) from exception
 
-        return await response.json(content_type=None)
+        response_data: dict[str, Any] = await response.json(content_type=None)
+        return response_data
 
     async def devices(self) -> dict[str, Device]:
         """Get devices information from the Tailscale API.
@@ -127,7 +128,7 @@ class Tailscale:
         """
         return self
 
-    async def __aexit__(self, *_exc_info) -> None:
+    async def __aexit__(self, *_exc_info: Any) -> None:
         """Async exit.
 
         Args:

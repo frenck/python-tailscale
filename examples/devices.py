@@ -6,7 +6,7 @@ import asyncio
 from tailscale import Tailscale
 
 
-async def main():
+async def main() -> None:
     """Show example on using the Tailscale API client."""
     async with Tailscale(
         tailnet="frenck",
