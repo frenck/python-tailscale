@@ -31,7 +31,7 @@ frozenlist = ">=1.1.0"
 
 [[package]]
 name = "aresponses"
-version = "2.1.5"
+version = "2.1.6"
 description = "Asyncio response mocking. Similar to the responses library used for 'requests'"
 category = "dev"
 optional = false
@@ -977,7 +977,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "eedc3b911870a02e11be56472832abcbc6b028a1621332b348d8810346856a7f"
+content-hash = "dcfb602798d2d96b733fe70d28339d542235cd777d53e1cc9895b991eb3e0efe"
 
 [metadata.files]
 aiohttp = [
@@ -1059,8 +1059,8 @@ aiosignal = [
     {file = "aiosignal-1.2.0.tar.gz", hash = "sha256:78ed67db6c7b7ced4f98e495e572106d5c432a93e1ddd1bf475e1dc05f5b7df2"},
 ]
 aresponses = [
-    {file = "aresponses-2.1.5-py3-none-any.whl", hash = "sha256:06161209a39880aaf8ec3c67ab76d677aaea41944672e6a3e23a4464544879b1"},
-    {file = "aresponses-2.1.5.tar.gz", hash = "sha256:16535e5d24302eab194e15edd18b9e126e1fb70cd84049e63eb6b15c89e16936"},
+    {file = "aresponses-2.1.6-py3-none-any.whl", hash = "sha256:06525f6911063f0f8d370cbc96bd273e6cddc89c7b5163ddf91e0c8abf148a32"},
+    {file = "aresponses-2.1.6.tar.gz", hash = "sha256:231dfa0756e39ca9f1e82212038f98e773d1ed9c0993caf2667e25ba535697ca"},
 ]
 astor = [
     {file = "astor-0.8.1-py2.py3-none-any.whl", hash = "sha256:070a54e890cefb5b3739d19f30f5a5ec840ffc9c50ffa7d23cc9fc1a38ebbfc5"},
