@@ -43,7 +43,7 @@ class Device(BaseModel):
     os: str
     created: Optional[datetime]
     last_seen: Optional[datetime] = Field(..., alias="lastSeen")
-    tags: List[str]
+    tags: List[str] = Field(default_factory=list)
     key_expiry_disabled: bool = Field(..., alias="keyExpiryDisabled")
     expires: Optional[datetime]
     authorized: bool
