@@ -603,14 +603,14 @@ test = ["pytest"]
 
 [[package]]
 name = "flake8-comprehensions"
-version = "3.11.0"
+version = "3.11.1"
 description = "A flake8 plugin to help you write better list/set/dict comprehensions."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "flake8_comprehensions-3.11.0-py3-none-any.whl", hash = "sha256:820b6463d4964249b7380432f3aac2f26d4a86c7d52cbe9d53dfd9e1caf01b33"},
-    {file = "flake8_comprehensions-3.11.0.tar.gz", hash = "sha256:d06a95fdf2dabf6a7632550fed4a10d0449d00473875b1e4b167ca84d4daee59"},
+    {file = "flake8_comprehensions-3.11.1-py3-none-any.whl", hash = "sha256:d1e27f4099900c61fb156cbb7461e0e49702385fd388326e1a892d04b069c48e"},
+    {file = "flake8_comprehensions-3.11.1.tar.gz", hash = "sha256:31d6386c125e325d7c84290d71f5354295dbbf5a8d47259708fa349aa0969523"},
 ]
 
 [package.dependencies]
@@ -1982,4 +1982,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "960b34fa8c614fb315441c0de52a0f05ac621c96f23d56566b58e90bc7bda877"
+content-hash = "04216bba084cafeedaf090043a7ab7ec7a46aa50864b577c5298aec285a4d1ac"
