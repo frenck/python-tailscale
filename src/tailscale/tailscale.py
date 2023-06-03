@@ -5,12 +5,12 @@ import asyncio
 import socket
 from dataclasses import dataclass
 from importlib import metadata
-from typing import Any, List
+from typing import Any, List, Optional
 
 import async_timeout
 from aiohttp import BasicAuth
 from aiohttp.client import ClientError, ClientResponseError, ClientSession
-from aiohttp.hdrs import METH_GET, METH_POST, METH_DELETE
+from aiohttp.hdrs import METH_DELETE, METH_GET, METH_POST
 from yarl import URL
 
 from .exceptions import (
@@ -19,14 +19,14 @@ from .exceptions import (
     TailscaleError,
 )
 from .models import (
-    Device, 
-    Devices, 
-    Policy, 
     AuthKey,
+    AuthKeyRequest,
     AuthKeys,
-    AuthKeyRequest, 
-    KeyAttributes, 
-    KeyCapabilities, 
+    Device,
+    Devices,
+    KeyAttributes,
+    KeyCapabilities,
+    Policy,
 )
 
 
@@ -35,7 +35,7 @@ class Tailscale:
     """Main class for handling connections with the Tailscale API."""
 
     api_key: str
-    tailnet: str = "-" # default tailnet of api key
+    tailnet: str = "-"  # default tailnet of api key
 
     request_timeout: int = 8
     session: ClientSession | None = None
@@ -48,25 +48,53 @@ class Tailscale:
         *,
         data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Wrapper for POST requests to the Tailscale API."""
+        """Make a POST request to the Tailscale API.
+
+        Args:
+            uri: Request URI, without '/api/v2/'.
+            data: Dictionary of data to send to the Tailscale API.
+
+        Returns:
+            A Python dictionary (JSON decoded) with the response from
+            the Tailscale API.
+
+        """
         return await self._request(uri, method=METH_POST, data=data)
-    
+
     async def _delete(
         self,
         uri: str,
         *,
         data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Wrapper for DELETE requests to the Tailscale API."""
+        """Make a DELETE request to the Tailscale API.
+
+        Args:
+            uri: Request URI, without '/api/v2/'.
+            data: Dictionary of data to send to the Tailscale API.
+
+        Returns:
+            A Python dictionary (JSON decoded) with the response from
+            the Tailscale API.
+        """
         return await self._request(uri, method=METH_DELETE, data=data)
-    
+
     async def _get(
         self,
         uri: str,
         *,
         data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Wrapper for GET requests to the Tailscale API."""
+        """Make a GET request to the Tailscale API.
+
+        Args:
+            uri: Request URI, without '/api/v2/'.
+            data: Dictionary of data to send to the Tailscale API.
+
+        Returns:
+            A Python dictionary (JSON decoded) with the response from
+            the Tailscale API.
+        """
         return await self._request(uri, method=METH_GET, data=data)
 
     async def _request(
@@ -129,7 +157,8 @@ class Tailscale:
                     "Authentication to the Tailscale API failed"
                 ) from exception
             raise TailscaleError(
-                f"Error occurred while connecting to the Tailscale API: {exception.message}"
+                "Error occurred while connecting to the Tailscale API: ",
+                f"{exception.message}",
             ) from exception
         except (
             ClientError,
@@ -142,17 +171,32 @@ class Tailscale:
         response_data: dict[str, Any] = await response.json(content_type=None)
         return response_data
 
-    async def policy(self, details=False) -> Policy:
+    async def policy(self, details: bool = False) -> Policy:
         """Get policy/acl information from the Tailscale API.
+
+        Args:
+            details: Whether to include extra details in the response.
+                will include the following:
+                - tailnet policy file:
+                    a base64-encoded string representation of the huJSON format
+                - warnings:
+                    array of strings for syntactically valid but nonsensical entries
+                - errors:
+                    an array of strings for parsing failures
 
         Returns:
             Returns a model of the Tailscale policy.
         """
-        data = await self._get(f"tailnet/{self.tailnet}/acl{'?details=1' if details else ''}")
+        data = await self._get(
+            f"tailnet/{self.tailnet}/acl{'?details=1' if details else ''}"
+        )
         return Policy.parse_obj(data)
 
     async def update_policy(self, policy: Policy) -> Policy:
         """Get policy/acl information from the Tailscale API.
+
+        Args:
+            policy: The new policy to put in place.
 
         Returns:
             Returns the updated policy.
@@ -160,99 +204,148 @@ class Tailscale:
         data = await self._post(f"tailnet/{self.tailnet}/acl", data=policy.dict())
         return Policy.parse_obj(data)
 
-    async def devices(self, allFields=True) -> dict[str, Device]:
+    async def devices(self, all_fields: bool = True) -> dict[str, Device]:
         """Get devices information from the Tailscale API.
+
+        Args:
+            all_fields: Whether to include all fields in the response.
 
         Returns:
             Returns a dictionary of Tailscale devices.
         """
-        data = await self._get(f"tailnet/{self.tailnet}/devices{'?fields=all' if allFields else ''}")
+        data = await self._get(
+            f"tailnet/{self.tailnet}/devices{'?fields=all' if all_fields else ''}"
+        )
         return Devices.parse_obj(data).devices
-    
-    async def device(self, device_id: str, allFields=True) -> Device:
+
+    async def device(self, device_id: str, all_fields: bool = True) -> Device:
         """Get devices information from the Tailscale API.
+
+        Args:
+            device_id: The id of the device to get.
+            all_fields: Whether to include all fields in the response.
 
         Returns:
             Returns a model of the Tailscale device.
         """
-        data = await self._get(f"device/{device_id}{'?fields=all' if allFields else ''}")
+        data = await self._get(
+            f"device/{device_id}{'?fields=all' if all_fields else ''}"
+        )
         return Device.parse_obj(data)
-    
+
     async def delete_device(self, device_id: str) -> None:
-        """Delete device from the Tailscale API."""
+        """Delete device from the Tailscale API.
+
+        Args:
+            device_id: The id of the device to delete.
+        """
         await self._delete(f"device/{device_id}")
-    
-    async def authorize_device(self, device_id: str, authorized=True) -> bool:
+
+    async def authorize_device(self, device_id: str, authorized: bool = True) -> None:
         """Get devices information from the Tailscale API.
 
-        Returns:
-            Returns a model of the Tailscale device.
+        Args:
+            device_id: The id of the device to authorize.
+            authorized: Whether to authorize or deauthorize the device.
         """
-        await self._post(f"device/{device_id}/authorized", data={"authorized": authorized})
-        return True
+        await self._post(
+            f"device/{device_id}/authorized", data={"authorized": authorized}
+        )
 
-    async def tag_device(self, device_id: str, tags: List[str]=[]) -> None:
+    async def tag_device(self, device_id: str, tags: List[str]) -> None:
         """Tag device with the Tailscale API.
-        Params:
+
+        Args:
             device_id: The id of the device to tag.
             tags: The tags to add to the device. Each entry must start with 'tag:'.
-
-        Returns:
-            Returns a model of the deleted Tailscale device.
         """
         await self._post(f"device/{device_id}/tags", data={"tags": tags})
-    
+
     async def keys(self) -> List[str]:
-        """Alias for list_keys."""
-        return self.list_keys()
-    
+        """Alias for list_keys.
+
+        Returns:
+            Returns a list of Tailscale auth key ids.
+        """
+        return await self.list_keys()
+
     async def list_keys(self) -> List[str]:
         """Get keys information from the Tailscale API.
-        
+
         Returns:
-            Returns a list of Tailscale auth key ids."""
+            Returns a list of Tailscale auth key ids.
+        """
 
         data = await self._get(f"tailnet/{self.tailnet}/keys")
-        # there is only the id attribute in the response, so we just return a list of ids
-        return [ key['id'] for key in AuthKeys.parse_obj(data).keys ]
-    
+        # there is only the id attribute in the response,
+        # so we just return a list of ids
+        return [key["id"] for key in AuthKeys.parse_obj(data).keys]
+
     async def get_key(self, key_id: str) -> AuthKey:
-        """Get key information from the Tailscale API."""
+        """Get key information from the Tailscale API.
+
+        Args:
+            key_id: The id of the key to get.
+
+        Returns:
+            Returns a model of the Tailscale auth key.
+        """
         data = await self._get(f"tailnet/{self.tailnet}/keys/{key_id}")
         return AuthKey.parse_obj(data)
-    
-    async def delete_key(self, key_id: str) -> AuthKey:
-        """Deletes key from the Tailscale API."""
+
+    async def delete_key(self, key_id: str) -> None:
+        """Delete key from the Tailscale API.
+
+        Args:
+            key_id: The id of the key to delete.
+        """
         await self._delete(f"tailnet/{self.tailnet}/keys/{key_id}")
-    
-    async def create_auth_key(self, 
+
+    async def create_auth_key(
+        self,
         request: Optional[AuthKeyRequest] = None,
         expiry_seconds: int = 86400,
-        tags: List[str] = [],
-        preauthorized: bool = True, 
-        ephemeral: bool = False, 
-        reusable: bool = False
+        tags: Optional[List[str]] = None,
+        preauthorized: bool = True,
+        ephemeral: bool = False,
+        reusable: bool = False,
     ) -> AuthKey:
-        """Creates a new tailscale auth key.
-        
-        Params:
+        """Create a new tailscale auth key.
+
+        Args:
             request: The request object to use for creating the auth key.
-            tags: The tags to add to the auth key. Each entry must start with 'tag:'.
+            tags: The tags to add to the auth key.
+                Each entry must start with 'tag:'.
             preauthorized: Whether the auth key is preauthorized.
-            ephemeral: Whether the auth key is ephemeral. Any nodes connected with this key will be removed when the node disconnects.
+            ephemeral: Whether the auth key is ephemeral.
+                Any nodes connected with this key will be removed when
+                the node disconnects for too long.
             reusable: Whether the auth key is reusable.
             expiry_seconds: The number of seconds until the auth key expires.
-            
+
         Returns:
-            Returns a model of the created Tailscale auth key."""
+            Returns a model of the created Tailscale auth key.
+        """
+
+        if tags is None:
+            tags = []
 
         if request is None:
-            key_attributes = KeyAttributes(tags=tags, preauthorized=preauthorized, ephemeral=ephemeral, reusable=reusable)
+            key_attributes = KeyAttributes(
+                tags=tags,
+                preauthorized=preauthorized,
+                ephemeral=ephemeral,
+                reusable=reusable,
+            )
             key_capabilities = KeyCapabilities(devices={"create": key_attributes})
-            request = AuthKeyRequest(capabilities=key_capabilities, expiry_seconds=expiry_seconds)
+            request = AuthKeyRequest(
+                capabilities=key_capabilities, expirySeconds=expiry_seconds
+            )
 
         print(request.json(indent=2))
-        data = await self._post(f"tailnet/{self.tailnet}/keys", data=request.dict())
+        data = await self._post(
+            f"tailnet/{self.tailnet}/keys", data=request.dict(by_alias=True)
+        )
         return AuthKey.parse_obj(data)
 
     async def close(self) -> None:

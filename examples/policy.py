@@ -16,8 +16,10 @@ async def main() -> None:
         policy = await tailscale.policy()
         print(policy)
 
-        policy.tagOwners.append({"tag:environment-dev": ["group:pe"]})
+        if policy.tag_owners:
+            policy.tag_owners.update({"tag:environment-dev": ["group:dev"]})
         new_policy = await tailscale.update_policy(policy)
+        print(new_policy)
 
 
 if __name__ == "__main__":
