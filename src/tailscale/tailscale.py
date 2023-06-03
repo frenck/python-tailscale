@@ -342,7 +342,6 @@ class Tailscale:
                 capabilities=key_capabilities, expirySeconds=expiry_seconds
             )
 
-        print(request.json(indent=2))
         data = await self._post(
             f"tailnet/{self.tailnet}/keys", data=request.dict(by_alias=True)
         )
