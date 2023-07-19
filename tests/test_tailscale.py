@@ -1,4 +1,5 @@
-"""Asynchronous client for the Tailscale API."""
+"""Asynchronous client for the Tailscale API.
+This file tests the basics of the Tailscale class"""
 # pylint: disable=protected-access
 import asyncio
 
@@ -67,9 +68,7 @@ async def test_put_request(aresponses: ResponsesMockServer) -> None:
     )
     async with aiohttp.ClientSession() as session:
         tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
-        response = await tailscale._request(
-            "test", method=aiohttp.hdrs.METH_POST, data={}
-        )
+        response = await tailscale._post("test", data={})
         assert response["status"] == "ok"
 
 
@@ -121,4 +120,19 @@ async def test_http_error401(aresponses: ResponsesMockServer) -> None:
     async with aiohttp.ClientSession() as session:
         tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
         with pytest.raises(TailscaleAuthenticationError):
-            assert await tailscale._request("test")
+            assert await tailscale._get("test")
+
+
+@pytest.mark.asyncio
+async def test_http_delete(aresponses: ResponsesMockServer) -> None:
+    """Test HTTP Delete response handling."""
+    aresponses.add(
+        "api.tailscale.com",
+        "/api/v2/test",
+        "DELETE",
+        aresponses.Response(status=200),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
+        assert await tailscale._delete("test") is None

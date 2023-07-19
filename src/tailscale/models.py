@@ -35,6 +35,7 @@ class Device(BaseModel):
 
     addresses: List[str]
     device_id: str = Field(..., alias="id")
+    node_id: str = Field(..., alias="nodeId")
     user: str
     name: str
     hostname: str
@@ -51,9 +52,12 @@ class Device(BaseModel):
     machine_key: str = Field(..., alias="machineKey")
     node_key: str = Field(..., alias="nodeKey")
     blocks_incoming_connections: bool = Field(..., alias="blocksIncomingConnections")
+    # not included in default response
     enabled_routes: List[str] = Field(alias="enabledRoutes", default_factory=list)
     advertised_routes: List[str] = Field(alias="advertisedRoutes", default_factory=list)
-    client_connectivity: ClientConnectivity = Field(alias="clientConnectivity")
+    client_connectivity: Optional[ClientConnectivity] = Field(
+        alias="clientConnectivity"
+    )
 
     @validator("created", pre=True)
     @classmethod
@@ -89,7 +93,7 @@ class Devices(BaseModel):
         Returns:
             dict: Converted list of dicts.
         """
-        return {device["id"]: device for device in data}
+        return {device.get("nodeId", device["id"]): device for device in data}
 
 
 class AclBase(BaseModel):
@@ -196,6 +200,7 @@ class AuthKey(BaseModel):
 
     key_id: str = Field(..., alias="id")
     key: Optional[str]
+    description: Optional[str] = Field(default="", max_length=100)
     created: datetime
     expires: datetime
     revoked: Optional[datetime]
