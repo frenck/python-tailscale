@@ -71,7 +71,7 @@ test_device_2 = {
     "clientVersion": "",
     "updateAvailable": False,
     "os": "linux",
-    "created": "2022-12-01T05:23:30Z",
+    "created": "",
     "lastSeen": "2022-12-01T05:23:30Z",
     "tags": ["tag:golink"],
     "keyExpiryDisabled": True,

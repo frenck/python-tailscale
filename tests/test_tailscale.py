@@ -14,6 +14,70 @@ from tailscale.exceptions import (
     TailscaleError,
 )
 
+@pytest.mark.asyncio
+async def test_no_access() -> None:
+    """Test api key or oauth key is checked correctly."""
+    async with Tailscale(tailnet="frenck") as tailscale:
+        with pytest.raises(TailscaleAuthenticationError):
+            assert await tailscale._request("test")
+
+@pytest.mark.asyncio
+async def test_key_from_oauth(aresponses: ResponsesMockServer) -> None:
+    """Test oauth key response is handled correctly."""
+    aresponses.add(
+        "api.tailscale.com",
+        "/api/v2/oauth/token",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text='{"access_token": "short-lived-token"}',
+        ),
+    )
+    aresponses.add(
+        "api.tailscale.com",
+        "/api/v2/test",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text='{"status": "ok"}',
+        ),
+    )
+    async with aiohttp.ClientSession() as session:
+        tailscale = Tailscale(tailnet="frenck",
+                                oauth_client_id="client", 
+                                oauth_client_secret="notsosecret",
+                                session=session)
+        await tailscale._request("test")
+        second_request = aresponses.history[1].request
+        assert "Basic" in second_request.headers['Authorization']
+        await tailscale.close()
+
+@pytest.mark.asyncio
+async def test_bad_oauth(aresponses: ResponsesMockServer) -> None:
+    """Test bad oauth error is handled correctly."""
+    aresponses.add(
+        "api.tailscale.com",
+        "/api/v2/oauth/token",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text='{"no_access_token": "unauthorized"}',
+        ),
+    )
+
+    async with aiohttp.ClientSession() as session:
+        tailscale = Tailscale(tailnet="frenck",
+                                oauth_client_id="client", 
+                                oauth_client_secret="notsosecret",
+                                session=session)
+        with pytest.raises(TailscaleAuthenticationError) as excinfo:
+            assert await tailscale._request("test")
+            assert excinfo.value.args[0] == "Failed to get OAuth token"
+
+        await tailscale.close()
 
 @pytest.mark.asyncio
 async def test_json_request(aresponses: ResponsesMockServer) -> None:

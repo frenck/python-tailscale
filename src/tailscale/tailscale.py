@@ -49,7 +49,7 @@ class Tailscale:
         """Initialize the Tailscale client.
 
         Raises:
-            ValueError: when neither api_key nor oauth_client_id and
+            TailscaleAuthenticationError: when neither api_key nor oauth_client_id and
                 oauth_client_secret are provided.
         """
         if (
@@ -57,7 +57,7 @@ class Tailscale:
             and not self.oauth_client_id  # noqa: W503
             and not self.oauth_client_secret  # noqa: W503
         ):
-            raise ValueError(
+            raise TailscaleAuthenticationError(
                 "Either api_key or (oauth_client_id and ",
                 "oauth_client_secret) is required",
             )
@@ -72,6 +72,8 @@ class Tailscale:
 
         Returns:
             A string with the OAuth token.
+        Raises:
+            TailscaleAuthenticationError: when access key not found in response.
         """
         data = {
             "client_id": self.oauth_client_id,
@@ -79,7 +81,10 @@ class Tailscale:
         }
         response = await self._get("oauth/token", data=data, use_auth_key=False)
 
-        return response.get("access_token", "")
+        token = response.get("access_token", "")
+        if not token:
+            raise TailscaleAuthenticationError("Failed to get OAuth token")
+        return token
 
     async def _post(
         self,
@@ -204,7 +209,7 @@ class Tailscale:
             ) from exception
         except ClientResponseError as exception:
             if exception.status in [401, 403]:
-                raise TailscaleAuthenticationError(
+                raise TailscaleAuthenticationError( #TODO: test this
                     "Authentication to the Tailscale API failed"
                 ) from exception
             raise TailscaleError(
@@ -238,7 +243,7 @@ class Tailscale:
         Returns:
             Returns a model of the Tailscale policy.
         """
-        data = await self._get(
+        data = await self._get( #TODO: test this
             f"tailnet/{self.tailnet}/acl{'?details=1' if details else ''}"
         )
         return Policy.parse_obj(data)
@@ -252,7 +257,7 @@ class Tailscale:
         Returns:
             Returns the updated policy.
         """
-        data = await self._post(f"tailnet/{self.tailnet}/acl", data=policy.dict())
+        data = await self._post(f"tailnet/{self.tailnet}/acl", data=policy.dict()) #TODO: test this
         return Policy.parse_obj(data)
 
     async def devices(self, all_fields: bool = True) -> Dict[str, Device]:
@@ -314,7 +319,7 @@ class Tailscale:
             tags: The tags to add to the device. Each entry must start with 'tag:'.
         """
         if any([not tag.startswith("tag:") for tag in tags]):
-            raise TailscaleError("Tags must start with 'tag:'")
+            raise TailscaleError("Tags must start with 'tag:'") #TODO: test this
         await self._post(f"device/{device_id}/tags", data={"tags": tags})
 
     async def keys(self) -> Dict[str, str]:
@@ -357,7 +362,7 @@ class Tailscale:
         Args:
             key_id: The id of the key to delete.
         """
-        await self._delete(f"tailnet/{self.tailnet}/keys/{key_id}")
+        await self._delete(f"tailnet/{self.tailnet}/keys/{key_id}") #TODO: test this
 
     async def create_auth_key(
         self,
@@ -385,7 +390,7 @@ class Tailscale:
             Returns a model of the created Tailscale auth key.
         """
 
-        if tags is None:
+        if tags is None: #TODO: test this
             tags = []
 
         if request is None:
