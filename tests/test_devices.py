@@ -11,6 +11,8 @@ from aresponses import ResponsesMockServer
 from tailscale import Tailscale
 from tailscale.models import Device
 
+import logging
+
 test_device_1 = {
     "addresses": ["100.71.74.78", "fd7a:115c:a1e0:ac82:4843:ca90:697d:c36e"],
     "id": "test",
@@ -174,6 +176,7 @@ async def test_device_tag_update(aresponses: ResponsesMockServer):
             headers={"Content-Type": "application/json"},
             text="{}",
         ),
+        body_pattern="{\"tags\": [\"tag:testing\"]}",
     )
 
     async with aiohttp.ClientSession() as session:
@@ -182,4 +185,5 @@ async def test_device_tag_update(aresponses: ResponsesMockServer):
         assert (
             aresponses.history[0].request.headers["Content-Type"] == "application/json"
         )
-        assert aresponses.history[0].request.has_body
+        posted = await aresponses.history[0].request.read()
+        assert posted == b'{"tags": ["tag:testing"]}'

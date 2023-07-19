@@ -317,7 +317,7 @@ class Tailscale:
             raise TailscaleError("Tags must start with 'tag:'")
         await self._post(f"device/{device_id}/tags", data={"tags": tags})
 
-    async def keys(self) -> List[str]:
+    async def keys(self) -> Dict[str, str]:
         """Alias for list_keys.
 
         Returns:
@@ -325,17 +325,19 @@ class Tailscale:
         """
         return await self.list_keys()
 
-    async def list_keys(self) -> List[str]:
-        """Get keys information from the Tailscale API.
+    async def list_keys(self) -> Dict[str, str]:
+        """Get keys ids from the Tailscale API.
 
         Returns:
             Returns a list of Tailscale auth key ids.
         """
 
         data = await self._get(f"tailnet/{self.tailnet}/keys")
-        # there is only the id attribute in the response,
-        # so we just return a list of ids
-        return [key["id"] for key in AuthKeys.parse_obj(data).keys]
+        # only id, and description if available, are returned, 
+        # return a dict of ids mapped to description 
+        keys = AuthKeys.parse_obj(data).keys
+        # return [(key["id"], key.get("description", "")) for key in keys]
+        return { key["id"]: key.get("description", "") for key in keys }
 
     async def get_key(self, key_id: str) -> AuthKey:
         """Get key information from the Tailscale API.
