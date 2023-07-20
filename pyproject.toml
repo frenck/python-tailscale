@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tailscale"
-version = "0.0.0"
+version = "0.4.0"
 description = "Asynchronous client for the Tailscale API."
 authors = ["Franck Nijhof <opensource@frenck.dev>"]
 maintainers = ["Franck Nijhof <opensource@frenck.dev>"]
@@ -154,6 +154,7 @@ ignore-imports = true
 
 [tool.pylint.FORMAT]
 max-line-length=88
+
 
 [tool.pytest.ini_options]
 addopts = "--cov"
