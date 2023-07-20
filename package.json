@@ -1,6 +1,6 @@
 {
   "name": "tailscale",
-  "version": "0.4.0",
+  "version": "0.0.0",
   "private": true,
   "description": "Asynchronous client for the Tailscale API",
   "scripts": {

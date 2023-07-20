@@ -39,23 +39,19 @@ class Tailscale:
         uri: str,
         *,
         data: dict[str, Any] | None = None,
-        use_auth_key: bool = True,
     ) -> dict[str, Any]:
         """Make a POST request to the Tailscale API.
 
         Args:
             uri: Request URI, without '/api/v2/'.
             data: Dictionary of data to send to the Tailscale API.
-            use_auth_key: Whether to use the API key or not.
 
         Returns:
             A Python dictionary (JSON decoded) with the response from
             the Tailscale API.
 
         """
-        return await self._request(
-            uri, method=METH_POST, data=data, use_auth_key=use_auth_key
-        )
+        return await self._request(uri, method=METH_POST, data=data)
 
     async def _delete(
         self,
@@ -80,22 +76,18 @@ class Tailscale:
         uri: str,
         *,
         data: dict[str, Any] | None = None,
-        use_auth_key: bool = True,
     ) -> dict[str, Any]:
         """Make a GET request to the Tailscale API.
 
         Args:
             uri: Request URI, without '/api/v2/'.
             data: Dictionary of data to send to the Tailscale API.
-            use_auth_key: Whether to use the API key or not.
 
         Returns:
             A Python dictionary (JSON decoded) with the response from
             the Tailscale API.
         """
-        return await self._request(
-            uri, method=METH_GET, data=data, use_auth_key=use_auth_key
-        )
+        return await self._request(uri, method=METH_GET, data=data)
 
     async def _request(
         self,
@@ -103,7 +95,6 @@ class Tailscale:
         *,
         method: str = METH_GET,
         data: dict[str, Any] | None = None,
-        use_auth_key: bool = True,
     ) -> dict[str, Any]:
         """Handle a request to the Tailscale API.
 
@@ -114,7 +105,6 @@ class Tailscale:
             uri: Request URI, without '/api/v2/'.
             method: HTTP Method to use.
             data: Dictionary of data to send to the Tailscale API.
-            use_auth_key: Whether to use the API key or not.
 
         Returns:
             A Python dictionary (JSON decoded) with the response from
@@ -141,12 +131,11 @@ class Tailscale:
 
         try:
             async with async_timeout.timeout(self.request_timeout):
-                auth = BasicAuth(self.api_key) if use_auth_key else None
                 response = await self.session.request(
                     method,
                     url,
                     json=data,
-                    auth=auth,
+                    auth=BasicAuth(self.api_key),
                     headers=headers,
                 )
                 response.raise_for_status()
