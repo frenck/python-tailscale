@@ -71,7 +71,7 @@ This is an active open-source project. We are always open to people who want to
 use the code or contribute to it.
 
 We've set up a separate document for our
-[contribution guidelines](CONTRIBUTING.md).
+[contribution guidelines](.github/CONTRIBUTING.md).
 
 Thank you for being involved! :heart_eyes:
 
@@ -149,7 +149,7 @@ SOFTWARE.
 [frenck]: https://github.com/frenck
 [github-sponsors-shield]: https://frenck.dev/wp-content/uploads/2019/12/github_sponsor.png
 [github-sponsors]: https://github.com/sponsors/frenck
-[keepchangelog]: http://keepachangelog.com/en/1.0.0/
+[keepchangelog]: https://keepachangelog.com/en/1.0.0/
 [license-shield]: https://img.shields.io/github/license/frenck/python-tailscale.svg
 [maintenance-shield]: https://img.shields.io/maintenance/yes/2021.svg
 [patreon-shield]: https://frenck.dev/wp-content/uploads/2019/12/patreon.png
@@ -162,4 +162,4 @@ SOFTWARE.
 [python-versions-shield]: https://img.shields.io/pypi/pyversions/tailscale
 [releases-shield]: https://img.shields.io/github/release/frenck/python-tailscale.svg
 [releases]: https://github.com/frenck/python-tailscale/releases
-[semver]: http://semver.org/spec/v2.0.0.html
+[semver]: https://semver.org/spec/v2.0.0.html
