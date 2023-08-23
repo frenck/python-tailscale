@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ClientSupports(BaseModel):
@@ -55,7 +55,7 @@ class Device(BaseModel):
     advertised_routes: List[str] = Field(alias="advertisedRoutes", default_factory=list)
     client_connectivity: ClientConnectivity = Field(alias="clientConnectivity")
 
-    @validator("created", pre=True)
+    @field_validator("created", mode="before")
     @classmethod
     def empty_as_none(cls, data: str | None) -> str | None:  # noqa: F841
         """Convert an emtpty string to None.
@@ -76,7 +76,7 @@ class Devices(BaseModel):
 
     devices: Dict[str, Device]
 
-    @validator("devices", pre=True)
+    @field_validator("devices", mode="before")
     @classmethod
     def convert_to_dict(
         cls, data: list[dict[str, Any]]  # noqa: F841
