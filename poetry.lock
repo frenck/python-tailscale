@@ -660,13 +660,13 @@ flake8 = "*"
 
 [[package]]
 name = "flake8-simplify"
-version = "0.20.0"
+version = "0.21.0"
 description = "flake8 plugin which checks for code that can be simplified"
 optional = false
 python-versions = ">=3.6.1"
 files = [
-    {file = "flake8_simplify-0.20.0-py3-none-any.whl", hash = "sha256:599a47824726c93fadcf0274e569daed45052e38cd906360d9080eaa3bd76d61"},
-    {file = "flake8_simplify-0.20.0.tar.gz", hash = "sha256:7b8796bbea8aed45f56621c389d0556cc86f0afa5d992581139451240a8fbeca"},
+    {file = "flake8_simplify-0.21.0-py3-none-any.whl", hash = "sha256:439391e762a9370b371208add0b5c5c40c3d25a98e1f5421d263215d08194183"},
+    {file = "flake8_simplify-0.21.0.tar.gz", hash = "sha256:c95ff1dcc1de5949af47e0087cbf1164445881131b15bcd7a71252670f492f4d"},
 ]
 
 [package.dependencies]
@@ -1987,4 +1987,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "0787032472ec24bbc32436a54aa2d8e588c62ae40add6c7ddb8d540cf0d18268"
+content-hash = "2f20172d3d3dfaaddd826e873d7f1341941e75005a33b327dd4818a70b3ccb81"
