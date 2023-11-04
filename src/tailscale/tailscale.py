@@ -5,7 +5,7 @@ import asyncio
 import socket
 from dataclasses import dataclass
 from importlib import metadata
-from typing import Any
+from typing import Any, Self
 
 import async_timeout
 from aiohttp import BasicAuth
@@ -46,15 +46,18 @@ class Tailscale:
         the Tailscale API.
 
         Args:
+        ----
             uri: Request URI, without '/api/v2/'.
             method: HTTP Method to use.
             data: Dictionary of data to send to the Tailscale API.
 
         Returns:
+        -------
             A Python dictionary (JSON decoded) with the response from
             the Tailscale API.
 
         Raises:
+        ------
             TailscaleAuthenticationError: If the API key is invalid.
             TailscaleConnectionError: An error occurred while communicating with
                 the Tailscale API.
@@ -84,24 +87,20 @@ class Tailscale:
                 )
                 response.raise_for_status()
         except asyncio.TimeoutError as exception:
-            raise TailscaleConnectionError(
-                "Timeout occurred while connecting to the Tailscale API"
-            ) from exception
+            msg = "Timeout occurred while connecting to the Tailscale API"
+            raise TailscaleConnectionError(msg) from exception
         except ClientResponseError as exception:
             if exception.status in [401, 403]:
-                raise TailscaleAuthenticationError(
-                    "Authentication to the Tailscale API failed"
-                ) from exception
-            raise TailscaleError(
-                "Error occurred while connecting to the Tailscale API"
-            ) from exception
+                msg = "Authentication to the Tailscale API failed"
+                raise TailscaleAuthenticationError(msg) from exception
+            msg = "Error occurred while connecting to the Tailscale API"
+            raise TailscaleError(msg) from exception
         except (
             ClientError,
             socket.gaierror,
         ) as exception:
-            raise TailscaleConnectionError(
-                "Error occurred while communicating with the Tailscale API"
-            ) from exception
+            msg = "Error occurred while communicating with the Tailscale API"
+            raise TailscaleConnectionError(msg) from exception
 
         response_data: dict[str, Any] = await response.json(content_type=None)
         return response_data
@@ -109,7 +108,8 @@ class Tailscale:
     async def devices(self) -> dict[str, Device]:
         """Get devices information from the Tailscale API.
 
-        Returns:
+        Returns
+        -------
             Returns a dictionary of Tailscale devices.
         """
         data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
@@ -120,18 +120,20 @@ class Tailscale:
         if self.session and self._close_session:
             await self.session.close()
 
-    async def __aenter__(self) -> Tailscale:
+    async def __aenter__(self) -> Self:
         """Async enter.
 
-        Returns:
+        Returns
+        -------
             The Tailscale object.
         """
         return self
 
-    async def __aexit__(self, *_exc_info: Any) -> None:
+    async def __aexit__(self, *_exc_info: object) -> None:
         """Async exit.
 
         Args:
+        ----
             _exc_info: Exec type.
         """
         await self.close()

@@ -1,9 +1,9 @@
 """Asynchronous client for the Tailscale API."""
-import os
+
+from pathlib import Path
 
 
 def load_fixture(filename: str) -> str:
     """Load a fixture."""
-    path = os.path.join(os.path.dirname(__file__), "fixtures", filename)
-    with open(path, encoding="utf-8") as fptr:
-        return fptr.read()
+    path = Path(__file__).parent / "fixtures" / filename
+    return path.read_text()

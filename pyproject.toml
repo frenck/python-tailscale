@@ -15,8 +15,8 @@ classifiers = [
   "Framework :: AsyncIO",
   "Intended Audience :: Developers",
   "Natural Language :: English",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -25,71 +25,45 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 aiohttp = ">=3.0.0"
 yarl = ">=1.6.0"
-pydantic = ">=1.8,<3.0"
-
-[tool.poetry.dev-dependencies]
-aresponses = "^2.1.6"
-black = "^22.12"
-blacken-docs = "^1.16.0"
-coverage = {version = "^7.3", extras = ["toml"]}
-flake8 = "^4.0.1"
-flake8-docstrings = "^1.7.0"
-isort = "^5.12.0"
-mypy = "^1.6"
-pre-commit = "^3.5.0"
-pre-commit-hooks = "^4.5.0"
-pylint = "^3.0.2"
-pytest = "^7.4.3"
-pytest-asyncio = "^0.21.1"
-pytest-cov = "^4.1.0"
-yamllint = "^1.32.0"
-pyupgrade = "^3.15.0"
-flake8-simplify = "^0.21.0"
-vulture = "^2.10"
-flake8-bandit = "^3.0.0"
-flake8-bugbear = "^23.3.12"
-flake8-builtins = "^2.1.0"
-flake8-comprehensions = "^3.14.0"
-flake8-eradicate = "^1.4.0"
-flake8-markdown = "^0.3.0"
-darglint = "^1.8.1"
-safety = "^2.3.5"
-codespell = "^2.2.6"
-bandit = "^1.7.5"
+pydantic = ">=1.8"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/frenck/python-tailscale/issues"
 Changelog = "https://github.com/frenck/python-tailscale/releases"
 
-[tool.black]
-target-version = ['py39']
+[tool.poetry.group.dev.dependencies]
+aresponses = "2.1.6"
+codespell = "2.2.6"
+covdefaults = "2.3.0"
+coverage = {version = "7.3.2", extras = ["toml"]}
+mypy = "1.6.1"
+pre-commit = "3.5.0"
+pre-commit-hooks = "4.5.0"
+pylint = "3.0.2"
+pytest = "7.4.2"
+pytest-asyncio = "0.21.1"
+pytest-cov = "4.1.0"
+ruff = "0.1.4"
+safety = "2.4.0b1"
+yamllint = "1.32.0"
 
-[tool.coverage.paths]
-source = ["src"]
+[tool.coverage.run]
+plugins = ["covdefaults"]
+source = ["tailscale"]
 
 [tool.coverage.report]
 show_missing = true
-
-[tool.coverage.run]
-branch = true
-source = ["tailscale"]
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
+fail_under = 75
 
 [tool.mypy]
 # Specify the target platform details in config, so your developers are
 # free to run mypy on Windows, Linux, or macOS and get consistent
 # results.
 platform = "linux"
-python_version = 3.9
-
-# flake8-mypy expects the two following for sensible formatting
-show_column_numbers = true
+python_version = "3.11"
 
 # show error messages from unrelated files
 follow_imports = "normal"
@@ -103,8 +77,8 @@ disallow_any_generics = true
 disallow_incomplete_defs = true
 disallow_subclassing_any = true
 disallow_untyped_calls = true
+disallow_untyped_decorators = true
 disallow_untyped_defs = true
-disallow_untyped_decorators = false # thanks backoff :(
 no_implicit_optional = true
 no_implicit_reexport = true
 strict_optional = true
@@ -157,12 +131,34 @@ max-line-length=88
 
 [tool.pytest.ini_options]
 addopts = "--cov"
+asyncio_mode = "auto"
 
-[tool.vulture]
-min_confidence = 80
-paths = ["src", "tests"]
-verbose = true
+[tool.ruff]
+ignore = [
+  "ANN101", # Self... explanatory
+  "ANN102", # cls... just as annoying as ANN101
+  "ANN401", # Opinioated warning on disallowing dynamically typed expressions
+  "D203", # Conflicts with other rules
+  "D213", # Conflicts with other rules
+  "D417", # False positives in some occasions
+  "PLR2004", # Just annoying, not really useful
+
+  # Conflicts with the Ruff formatter
+  "COM812",
+  "ISC001",
+]
+select = ["ALL"]
+
+[tool.ruff.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.isort]
+known-first-party = ["tailscale"]
+
+[tool.ruff.mccabe]
+max-complexity = 25
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
