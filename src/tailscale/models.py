@@ -44,7 +44,7 @@ class Device(BaseModel):
     os: str
     created: datetime | None
     last_seen: datetime | None = Field(..., alias="lastSeen")
-    tags: List[str] | None = Field(default=[])
+    tags: list[str] | None = Field(default=[])
     key_expiry_disabled: bool = Field(..., alias="keyExpiryDisabled")
     expires: datetime | None
     authorized: bool
