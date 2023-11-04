@@ -3,7 +3,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field, validator
+try:
+    from pydantic.v1 import BaseModel, Field, validator
+except ImportError:  # pragma: no cover
+    from pydantic import (  # type: ignore[assignment] # pragma: no cover
+        BaseModel,
+        Field,
+        validator,
+    )
 
 if TYPE_CHECKING:
     from datetime import datetime
