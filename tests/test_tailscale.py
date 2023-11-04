@@ -29,7 +29,7 @@ async def test_json_request(aresponses: ResponsesMockServer) -> None:
     async with aiohttp.ClientSession() as session:
         tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
         response = await tailscale._request("test")
-        assert response["status"] == "ok"
+        assert response == '{"status": "ok"}'
         await tailscale.close()
 
 
@@ -47,7 +47,7 @@ async def test_internal_session(aresponses: ResponsesMockServer) -> None:
     )
     async with Tailscale(tailnet="frenck", api_key="abc") as tailscale:
         response = await tailscale._request("test")
-        assert response["status"] == "ok"
+        assert response == '{"status": "ok"}'
 
 
 async def test_put_request(aresponses: ResponsesMockServer) -> None:
@@ -69,7 +69,7 @@ async def test_put_request(aresponses: ResponsesMockServer) -> None:
             method=aiohttp.hdrs.METH_POST,
             data={},
         )
-        assert response["status"] == "ok"
+        assert response == '{"status": "ok"}'
 
 
 async def test_timeout(aresponses: ResponsesMockServer) -> None:
