@@ -154,6 +154,9 @@ mark-parentheses = false
 [tool.ruff.isort]
 known-first-party = ["tailscale"]
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["mashumaro.mixins.orjson.DataClassORJSONMixin"]
+
 [tool.ruff.mccabe]
 max-complexity = 25
 

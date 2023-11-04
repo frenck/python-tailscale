@@ -2,13 +2,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from datetime import datetime
+from typing import Any
 
 from mashumaro import field_options
 from mashumaro.mixins.orjson import DataClassORJSONMixin
-
-if TYPE_CHECKING:
-    from datetime import datetime
 
 
 @dataclass
