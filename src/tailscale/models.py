@@ -24,7 +24,6 @@ class ClientConnectivity(BaseModel):
     """Object holding Tailscale device information."""
 
     endpoints: list[str] = Field(default_factory=list)
-    derp: str
     mapping_varies_by_dest_ip: bool | None = Field(
         None,
         alias="mappingVariesByDestIP",
@@ -46,7 +45,7 @@ class Device(BaseModel):
     os: str
     created: datetime | None
     last_seen: datetime | None = Field(..., alias="lastSeen")
-    tags: list[str] | None
+    tags: list[str] | None = Field(default=[])
     key_expiry_disabled: bool = Field(..., alias="keyExpiryDisabled")
     expires: datetime | None
     authorized: bool
