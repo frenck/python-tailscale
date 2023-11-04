@@ -12,7 +12,6 @@ async def main() -> None:
         tailnet="frenck",
         api_key="tskey-somethingsomething",
     ) as tailscale:
-
         devices = await tailscale.devices()
         print(devices)
 
