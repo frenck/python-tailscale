@@ -28,7 +28,8 @@ packages = [
 python = "^3.11"
 aiohttp = ">=3.0.0"
 yarl = ">=1.6.0"
-pydantic = ">=1.8,<2.0"
+mashumaro = ">=3.10"
+orjson = ">=3.9.8"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/frenck/python-tailscale/issues"
@@ -93,9 +94,6 @@ warn_unused_ignores = true
 cache_dir = "/dev/null"
 
 [tool.pylint.MASTER]
-extension-pkg-whitelist = [
-  "pydantic"
-]
 ignore= [
   "tests"
 ]

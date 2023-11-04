@@ -1,18 +1,21 @@
 """Asynchronous client for the Tailscale API."""
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field, validator
+from mashumaro import field_options
+from mashumaro.mixins.orjson import DataClassORJSONMixin
 
 if TYPE_CHECKING:
     from datetime import datetime
 
 
-class ClientSupports(BaseModel):
+@dataclass
+class ClientSupports(DataClassORJSONMixin):
     """Object holding Tailscale device information."""
 
-    hair_pinning: bool | None = Field(..., alias="hairPinning")
+    hair_pinning: bool | None = field(metadata=field_options(alias="hairPinning"))
     ipv6: bool | None
     pcp: bool | None
     pmp: bool | None
@@ -20,80 +23,91 @@ class ClientSupports(BaseModel):
     upnp: bool | None
 
 
-class ClientConnectivity(BaseModel):
+@dataclass
+class ClientConnectivity(DataClassORJSONMixin):
     """Object holding Tailscale device information."""
 
-    endpoints: list[str] = Field(default_factory=list)
-    mapping_varies_by_dest_ip: bool | None = Field(
-        None,
-        alias="mappingVariesByDestIP",
+    client_supports: ClientSupports = field(
+        metadata=field_options(alias="clientSupports")
     )
-    latency: Any
-    client_supports: ClientSupports = Field(..., alias="clientSupports")
+    endpoints: list[str] = field(default_factory=list)
+    mapping_varies_by_dest_ip: bool | None = field(
+        default=None,
+        metadata=field_options(alias="mappingVariesByDestIP"),
+    )
 
 
-class Device(BaseModel):
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class Device(DataClassORJSONMixin):
     """Object holding Tailscale device information."""
 
     addresses: list[str]
-    device_id: str = Field(..., alias="id")
-    user: str
-    name: str
-    hostname: str
-    client_version: str = Field(..., alias="clientVersion")
-    update_available: bool = Field(..., alias="updateAvailable")
-    os: str
-    created: datetime | None
-    last_seen: datetime | None = Field(..., alias="lastSeen")
-    tags: list[str] | None = Field(default=[])
-    key_expiry_disabled: bool = Field(..., alias="keyExpiryDisabled")
-    expires: datetime | None
     authorized: bool
-    is_external: bool = Field(..., alias="isExternal")
-    machine_key: str = Field(..., alias="machineKey")
-    node_key: str = Field(..., alias="nodeKey")
-    blocks_incoming_connections: bool = Field(..., alias="blocksIncomingConnections")
-    enabled_routes: list[str] = Field(alias="enabledRoutes", default_factory=list)
-    advertised_routes: list[str] = Field(alias="advertisedRoutes", default_factory=list)
-    client_connectivity: ClientConnectivity = Field(alias="clientConnectivity")
+    blocks_incoming_connections: bool = field(
+        metadata=field_options(alias="blocksIncomingConnections")
+    )
+    client_connectivity: ClientConnectivity = field(
+        metadata=field_options(alias="clientConnectivity")
+    )
+    client_version: str = field(metadata=field_options(alias="clientVersion"))
+    created: datetime | None
+    device_id: str = field(metadata=field_options(alias="id"))
+    expires: datetime | None
+    hostname: str
+    is_external: bool = field(metadata=field_options(alias="isExternal"))
+    key_expiry_disabled: bool = field(metadata=field_options(alias="keyExpiryDisabled"))
+    last_seen: datetime | None = field(metadata=field_options(alias="lastSeen"))
+    machine_key: str = field(metadata=field_options(alias="machineKey"))
+    name: str
+    node_key: str = field(metadata=field_options(alias="nodeKey"))
+    os: str
+    update_available: bool = field(metadata=field_options(alias="updateAvailable"))
+    user: str
+    advertised_routes: list[str] = field(
+        default_factory=list, metadata=field_options(alias="advertisedRoutes")
+    )
+    enabled_routes: list[str] = field(
+        default_factory=list, metadata=field_options(alias="enabledRoutes")
+    )
+    tags: list[str] = field(default_factory=list)
 
-    @validator("created", pre=True)
     @classmethod
-    def empty_as_none(cls, data: str | None) -> str | None:
-        """Convert an emtpty string to None.
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Handle some fields that are inconsistently named in the API.
 
         Args:
         ----
-            data: String to convert.
+            data: The values of the model.
 
         Returns:
         -------
-            String or none if string is empty.
+            The adjusted values of the model.
         """
-        if not data:
-            return None
-        return data
+        # Convert an empty string to None.
+        if not d.get("created"):
+            d["created"] = None
+        return d
 
 
-class Devices(BaseModel):
+@dataclass
+class Devices(DataClassORJSONMixin):
     """Object holding Tailscale device information."""
 
     devices: dict[str, Device]
 
-    @validator("devices", pre=True)
     @classmethod
-    def convert_to_dict(
-        cls,
-        data: list[dict[str, Any]],
-    ) -> dict[Any, dict[str, Any]]:
-        """Convert list into dict, keyed by device id.
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Handle some fields that are inconsistently named in the API.
 
         Args:
         ----
-            data: List of dicts to convert.
+            data: The values of the model.
 
         Returns:
         -------
-            dict: Converted list of dicts.
+            The adjusted values of the model.
         """
-        return {device["id"]: device for device in data}
+        # Convert list into dict, keyed by device id.
+        d["devices"] = {device["id"]: device for device in d["devices"]}
+        return d
