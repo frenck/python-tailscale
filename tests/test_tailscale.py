@@ -14,7 +14,6 @@ from tailscale.exceptions import (
 )
 
 
-@pytest.mark.asyncio
 async def test_json_request(aresponses: ResponsesMockServer) -> None:
     """Test JSON response is handled correctly."""
     aresponses.add(
@@ -34,7 +33,6 @@ async def test_json_request(aresponses: ResponsesMockServer) -> None:
         await tailscale.close()
 
 
-@pytest.mark.asyncio
 async def test_internal_session(aresponses: ResponsesMockServer) -> None:
     """Test JSON response is handled correctly."""
     aresponses.add(
@@ -52,7 +50,6 @@ async def test_internal_session(aresponses: ResponsesMockServer) -> None:
         assert response["status"] == "ok"
 
 
-@pytest.mark.asyncio
 async def test_put_request(aresponses: ResponsesMockServer) -> None:
     """Test PUT requests are handled correctly."""
     aresponses.add(
@@ -68,14 +65,16 @@ async def test_put_request(aresponses: ResponsesMockServer) -> None:
     async with aiohttp.ClientSession() as session:
         tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
         response = await tailscale._request(
-            "test", method=aiohttp.hdrs.METH_POST, data={}
+            "test",
+            method=aiohttp.hdrs.METH_POST,
+            data={},
         )
         assert response["status"] == "ok"
 
 
-@pytest.mark.asyncio
 async def test_timeout(aresponses: ResponsesMockServer) -> None:
     """Test request timeout from the Tailscale API."""
+
     # Faking a timeout by sleeping
     async def response_handler(_: aiohttp.ClientResponse) -> Response:
         """Response handler for this test."""
@@ -86,13 +85,15 @@ async def test_timeout(aresponses: ResponsesMockServer) -> None:
 
     async with aiohttp.ClientSession() as session:
         tailscale = Tailscale(
-            tailnet="frenck", api_key="abc", session=session, request_timeout=1
+            tailnet="frenck",
+            api_key="abc",
+            session=session,
+            request_timeout=1,
         )
         with pytest.raises(TailscaleConnectionError):
             assert await tailscale._request("test")
 
 
-@pytest.mark.asyncio
 async def test_http_error400(aresponses: ResponsesMockServer) -> None:
     """Test HTTP 404 response handling."""
     aresponses.add(
@@ -108,7 +109,6 @@ async def test_http_error400(aresponses: ResponsesMockServer) -> None:
             assert await tailscale._request("test")
 
 
-@pytest.mark.asyncio
 async def test_http_error401(aresponses: ResponsesMockServer) -> None:
     """Test HTTP 401 response handling."""
     aresponses.add(

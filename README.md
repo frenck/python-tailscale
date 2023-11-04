@@ -8,7 +8,8 @@
 
 [![Build Status][build-shield]][build]
 [![Code Coverage][codecov-shield]][codecov]
-[![Code Quality][code-quality-shield]][code-quality]
+[![Quality Gate Status][sonarcloud-shield]][sonarcloud]
+[![Open in Dev Containers][devcontainer-shield]][devcontainer]
 
 [![Sponsor Frenck via GitHub Sponsors][github-sponsors-shield]][github-sponsors]
 
@@ -83,9 +84,9 @@ development.
 
 You need at least:
 
-- Python 3.9+
+- Python 3.11+
 - [Poetry][poetry-install]
-- NodeJS 14+ (including NPM)
+- NodeJS 20+ (including NPM)
 
 To install all packages, including all development requirements:
 
@@ -119,7 +120,7 @@ check [the contributor's page][contributors].
 
 MIT License
 
-Copyright (c) 2021 Franck Nijhof
+Copyright (c) 2023 Franck Nijhof
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -141,17 +142,17 @@ SOFTWARE.
 
 [build-shield]: https://github.com/frenck/python-tailscale/actions/workflows/tests.yaml/badge.svg
 [build]: https://github.com/frenck/python-tailscale/actions/workflows/tests.yaml
-[code-quality-shield]: https://img.shields.io/lgtm/grade/python/g/frenck/python-tailscale.svg?logo=lgtm&logoWidth=18
-[code-quality]: https://lgtm.com/projects/g/frenck/python-tailscale/context:python
 [codecov-shield]: https://codecov.io/gh/frenck/python-tailscale/branch/master/graph/badge.svg
 [codecov]: https://codecov.io/gh/frenck/python-tailscale
 [contributors]: https://github.com/frenck/python-tailscale/graphs/contributors
+[devcontainer-shield]: https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode
+[devcontainer]: https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/frenck/python-tailscale
 [frenck]: https://github.com/frenck
 [github-sponsors-shield]: https://frenck.dev/wp-content/uploads/2019/12/github_sponsor.png
 [github-sponsors]: https://github.com/sponsors/frenck
 [keepchangelog]: https://keepachangelog.com/en/1.0.0/
 [license-shield]: https://img.shields.io/github/license/frenck/python-tailscale.svg
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2021.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2023.svg
 [patreon-shield]: https://frenck.dev/wp-content/uploads/2019/12/patreon.png
 [patreon]: https://www.patreon.com/frenck
 [poetry-install]: https://python-poetry.org/docs/#installation
@@ -162,4 +163,6 @@ SOFTWARE.
 [python-versions-shield]: https://img.shields.io/pypi/pyversions/tailscale
 [releases-shield]: https://img.shields.io/github/release/frenck/python-tailscale.svg
 [releases]: https://github.com/frenck/python-tailscale/releases
-[semver]: https://semver.org/spec/v2.0.0.html
+[semver]: http://semver.org/spec/v2.0.0.html
+[sonarcloud-shield]: https://sonarcloud.io/api/project_badges/measure?project=frenck_python-tailscale&metric=alert_status
+[sonarcloud]: https://sonarcloud.io/summary/new_code?id=frenck_python-tailscale

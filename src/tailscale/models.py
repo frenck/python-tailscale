@@ -1,21 +1,23 @@
 """Asynchronous client for the Tailscale API."""
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, validator
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class ClientSupports(BaseModel):
     """Object holding Tailscale device information."""
 
-    hair_pinning: Optional[bool] = Field(..., alias="hairPinning")
-    ipv6: Optional[bool]
-    pcp: Optional[bool]
-    pmp: Optional[bool]
-    udp: Optional[bool]
-    upnp: Optional[bool]
+    hair_pinning: bool | None = Field(..., alias="hairPinning")
+    ipv6: bool | None
+    pcp: bool | None
+    pmp: bool | None
+    udp: bool | None
+    upnp: bool | None
 
 
 class ClientConnectivity(BaseModel):
@@ -32,7 +34,7 @@ class ClientConnectivity(BaseModel):
 class Device(BaseModel):
     """Object holding Tailscale device information."""
 
-    addresses: List[str]
+    addresses: list[str]
     device_id: str = Field(..., alias="id")
     user: str
     name: str
@@ -42,27 +44,29 @@ class Device(BaseModel):
     os: str
     created: Optional[datetime]
     last_seen: Optional[datetime] = Field(..., alias="lastSeen")
-    tags: Optional[List[str]] = Field(default=[])
+    tags: List[str] | None = Field(default=[])
     key_expiry_disabled: bool = Field(..., alias="keyExpiryDisabled")
-    expires: Optional[datetime]
+    expires: datetime | None
     authorized: bool
     is_external: bool = Field(..., alias="isExternal")
     machine_key: str = Field(..., alias="machineKey")
     node_key: str = Field(..., alias="nodeKey")
     blocks_incoming_connections: bool = Field(..., alias="blocksIncomingConnections")
-    enabled_routes: List[str] = Field(alias="enabledRoutes", default_factory=list)
-    advertised_routes: List[str] = Field(alias="advertisedRoutes", default_factory=list)
+    enabled_routes: list[str] = Field(alias="enabledRoutes", default_factory=list)
+    advertised_routes: list[str] = Field(alias="advertisedRoutes", default_factory=list)
     client_connectivity: ClientConnectivity = Field(alias="clientConnectivity")
 
     @validator("created", pre=True)
     @classmethod
-    def empty_as_none(cls, data: str | None) -> str | None:  # noqa: F841
+    def empty_as_none(cls, data: str | None) -> str | None:
         """Convert an emtpty string to None.
 
         Args:
+        ----
             data: String to convert.
 
         Returns:
+        -------
             String or none if string is empty.
         """
         if not data:
@@ -73,19 +77,22 @@ class Device(BaseModel):
 class Devices(BaseModel):
     """Object holding Tailscale device information."""
 
-    devices: Dict[str, Device]
+    devices: dict[str, Device]
 
     @validator("devices", pre=True)
     @classmethod
     def convert_to_dict(
-        cls, data: list[dict[str, Any]]  # noqa: F841
+        cls,
+        data: list[dict[str, Any]],
     ) -> dict[Any, dict[str, Any]]:
         """Convert list into dict, keyed by device id.
 
         Args:
+        ----
             data: List of dicts to convert.
 
         Returns:
+        -------
             dict: Converted list of dicts.
         """
         return {device["id"]: device for device in data}
