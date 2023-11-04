@@ -28,7 +28,7 @@ packages = [
 python = "^3.11"
 aiohttp = ">=3.0.0"
 yarl = ">=1.6.0"
-pydantic = ">=1.8"
+pydantic = ">=1.8,<2.0"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/frenck/python-tailscale/issues"
