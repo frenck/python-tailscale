@@ -23,8 +23,8 @@ class ClientSupports(BaseModel):
 class ClientConnectivity(BaseModel):
     """Object holding Tailscale device information."""
 
-    endpoints: List[str] = Field(default_factory=list)
-    mapping_varies_by_dest_ip: Optional[bool] = Field(
+    endpoints: list[str] = Field(default_factory=list)
+    mapping_varies_by_dest_ip: bool | None = Field(
         None, alias="mappingVariesByDestIP"
     )
     latency: Any
@@ -42,8 +42,8 @@ class Device(BaseModel):
     client_version: str = Field(..., alias="clientVersion")
     update_available: bool = Field(..., alias="updateAvailable")
     os: str
-    created: Optional[datetime]
-    last_seen: Optional[datetime] = Field(..., alias="lastSeen")
+    created: datetime | None
+    last_seen: datetime | None = Field(..., alias="lastSeen")
     tags: List[str] | None = Field(default=[])
     key_expiry_disabled: bool = Field(..., alias="keyExpiryDisabled")
     expires: datetime | None
