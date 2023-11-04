@@ -25,7 +25,8 @@ class ClientConnectivity(BaseModel):
 
     endpoints: list[str] = Field(default_factory=list)
     mapping_varies_by_dest_ip: bool | None = Field(
-        None, alias="mappingVariesByDestIP"
+        None,
+        alias="mappingVariesByDestIP",
     )
     latency: Any
     client_supports: ClientSupports = Field(..., alias="clientSupports")
