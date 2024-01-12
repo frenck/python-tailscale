@@ -36,7 +36,7 @@ orjson = ">=3.9.8"
 Changelog = "https://github.com/frenck/python-tailscale/releases"
 
 [tool.poetry.group.dev.dependencies]
-aresponses = "2.1.6"
+aresponses = "3.0.0"
 codespell = "2.2.6"
 covdefaults = "2.3.0"
 coverage = {version = "7.4.0", extras = ["toml"]}
