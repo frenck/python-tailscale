@@ -81,6 +81,7 @@ class Device(DataClassORJSONMixin):
         Returns:
         -------
             The adjusted values of the model.
+
         """
         # Convert an empty string to None.
         if not d.get("created"):
@@ -105,6 +106,7 @@ class Devices(DataClassORJSONMixin):
         Returns:
         -------
             The adjusted values of the model.
+
         """
         # Convert list into dict, keyed by device id.
         d["devices"] = {device["id"]: device for device in d["devices"]}

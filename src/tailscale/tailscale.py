@@ -62,6 +62,7 @@ class Tailscale:
                 the Tailscale API.
             TailscaleError: Received an unexpected response from the Tailscale
                 API.
+
         """
         version = metadata.version(__package__)
         url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
@@ -109,6 +110,7 @@ class Tailscale:
         Returns
         -------
             Returns a dictionary of Tailscale devices.
+
         """
         data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
         return Devices.from_json(data).devices
@@ -124,6 +126,7 @@ class Tailscale:
         Returns
         -------
             The Tailscale object.
+
         """
         return self
 
@@ -133,5 +136,6 @@ class Tailscale:
         Args:
         ----
             _exc_info: Exec type.
+
         """
         await self.close()
