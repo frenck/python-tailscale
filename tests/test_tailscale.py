@@ -1,4 +1,5 @@
 """Asynchronous client for the Tailscale API."""
+
 # pylint: disable=protected-access
 import asyncio
 
