@@ -1,4 +1,5 @@
 """Asynchronous client for the Tailscale API."""
+
 from .exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
