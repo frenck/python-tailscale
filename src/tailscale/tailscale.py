@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import socket
 from dataclasses import dataclass
-from importlib import metadata
 from typing import Any, Self
 
 from aiohttp import BasicAuth
@@ -19,8 +18,6 @@ from .exceptions import (
     TailscaleError,
 )
 from .models import Device, Devices
-
-VERSION = metadata.version(__package__)
 
 
 @dataclass
@@ -70,7 +67,6 @@ class Tailscale:
         url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
 
         headers = {
-            "User-Agent": f"PythonTailscale/{VERSION}",
             "Accept": "application/json",
         }
 
