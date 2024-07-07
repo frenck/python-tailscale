@@ -20,6 +20,8 @@ from .exceptions import (
 )
 from .models import Device, Devices
 
+VERSION = metadata.version(__package__)
+
 
 @dataclass
 class Tailscale:
@@ -65,11 +67,10 @@ class Tailscale:
                 API.
 
         """
-        version = metadata.version(__package__)
         url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
 
         headers = {
-            "User-Agent": f"PythonTailscale/{version}",
+            "User-Agent": f"PythonTailscale/{VERSION}",
             "Accept": "application/json",
         }
 
