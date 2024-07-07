@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import socket
 from dataclasses import dataclass
-from importlib import metadata
 from typing import Any, Self
 
 from aiohttp import BasicAuth
@@ -65,11 +64,9 @@ class Tailscale:
                 API.
 
         """
-        version = metadata.version(__package__)
         url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
 
         headers = {
-            "User-Agent": f"PythonTailscale/{version}",
             "Accept": "application/json",
         }
 
