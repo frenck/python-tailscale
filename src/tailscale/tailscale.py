@@ -29,6 +29,7 @@ class Tailscale:
 
     request_timeout: int = 8
     session: ClientSession | None = None
+    api_url: str = "https://api.tailscale.com"
 
     _close_session: bool = False
 
@@ -64,7 +65,7 @@ class Tailscale:
                 API.
 
         """
-        url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
+        url = URL(self.api_url).join(URL("/api/v2/")).join(URL(uri))
 
         headers = {
             "Accept": "application/json",

@@ -123,3 +123,20 @@ async def test_http_error401(aresponses: ResponsesMockServer) -> None:
         tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
         with pytest.raises(TailscaleAuthenticationError):
             assert await tailscale._request("test")
+
+
+async def test_alternative_url(aresponses: ResponsesMockServer) -> None:
+    """Test alternative URL is handled correctly."""
+    aresponses.add(
+        "tailscale.example.com",
+        "/api/v2/test",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text='{"status": "ok"}',
+        ),
+    )
+    async with Tailscale(tailnet="frenck", api_key="abc", api_url="https://tailscale.example.com") as tailscale:
+        response = await tailscale._request("test")
+        assert response == '{"status": "ok"}'
