@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from mashumaro import field_options
 from mashumaro.mixins.orjson import DataClassORJSONMixin
@@ -46,7 +46,7 @@ class Device(DataClassORJSONMixin):
     blocks_incoming_connections: bool = field(
         metadata=field_options(alias="blocksIncomingConnections")
     )
-    client_connectivity: Optional[ClientConnectivity] = field(
+    client_connectivity: ClientConnectivity | None = field(
         metadata=field_options(alias="clientConnectivity")
     )
     client_version: str = field(metadata=field_options(alias="clientVersion"))
