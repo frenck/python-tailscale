@@ -46,7 +46,7 @@ class Device(DataClassORJSONMixin):
     blocks_incoming_connections: bool = field(
         metadata=field_options(alias="blocksIncomingConnections")
     )
-    client_connectivity: ClientConnectivity = field(
+    client_connectivity: ClientConnectivity | None = field(
         metadata=field_options(alias="clientConnectivity")
     )
     client_version: str = field(metadata=field_options(alias="clientVersion"))
