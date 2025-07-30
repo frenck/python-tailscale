@@ -47,7 +47,7 @@ pylint = "3.3.7"
 pytest = "8.4.1"
 pytest-asyncio = "1.1.0"
 pytest-cov = "6.2.1"
-ruff = "0.12.5"
+ruff = "0.12.7"
 safety = "3.6.0"
 yamllint = "1.37.1"
 
