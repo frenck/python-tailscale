@@ -59,6 +59,7 @@ class Device(DataClassORJSONMixin):
     last_seen: datetime | None = field(metadata=field_options(alias="lastSeen"))
     machine_key: str = field(metadata=field_options(alias="machineKey"))
     name: str
+    node_id: str | None = field(default=None, metadata=field_options(alias="nodeId"))
     node_key: str = field(metadata=field_options(alias="nodeKey"))
     os: str
     update_available: bool = field(metadata=field_options(alias="updateAvailable"))
