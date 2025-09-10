@@ -70,6 +70,7 @@ class Device(DataClassORJSONMixin):
         default_factory=list, metadata=field_options(alias="enabledRoutes")
     )
     tags: list[str] = field(default_factory=list)
+    node_id: str | None = field(default=None, metadata=field_options(alias="nodeId"))
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
