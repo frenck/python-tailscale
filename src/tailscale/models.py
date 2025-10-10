@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from mashumaro import field_options
@@ -87,6 +87,11 @@ class Device(DataClassORJSONMixin):
         # Convert an empty string to None.
         if not d.get("created"):
             d["created"] = None
+
+        # Set lastSeen to now if not present in API response.
+        if not d.get("lastSeen"):
+            d["lastSeen"] = datetime.now(tz=timezone.utc).isoformat()
+
         return d
 
 
