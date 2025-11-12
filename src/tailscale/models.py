@@ -50,6 +50,7 @@ class Device(DataClassORJSONMixin):
         metadata=field_options(alias="clientConnectivity")
     )
     client_version: str = field(metadata=field_options(alias="clientVersion"))
+    connected_to_control: bool = field(metadata=field_options(alias="connectedToControl"))
     created: datetime | None
     device_id: str = field(metadata=field_options(alias="id"))
     expires: datetime | None
@@ -62,6 +63,7 @@ class Device(DataClassORJSONMixin):
     node_key: str = field(metadata=field_options(alias="nodeKey"))
     node_id: str = field(metadata=field_options(alias="nodeId"))
     os: str
+    tailnet_lock_key: str = field(metadata=field_options(alias="tailnetLockKey"))
     update_available: bool = field(metadata=field_options(alias="updateAvailable"))
     user: str
     advertised_routes: list[str] = field(
@@ -70,7 +72,23 @@ class Device(DataClassORJSONMixin):
     enabled_routes: list[str] = field(
         default_factory=list, metadata=field_options(alias="enabledRoutes")
     )
+    isEphemeral: bool | None = field(
+        default=None,
+        metadata=field_options(alias="isEphemeral"),
+    )
+    multiple_connections: bool | None = field(
+        default=None,
+        metadata=field_options(alias="multipleConnections"),
+    )
+    ssh_enabled: bool | None = field(
+        default=None,
+        metadata=field_options(alias="sshEnabled"),
+    )
     tags: list[str] = field(default_factory=list)
+    tailnet_lock_error: str | None = field(
+        default=None,
+        metadata=field_options(alias="tailnetLockError"),
+    )
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
@@ -88,6 +106,8 @@ class Device(DataClassORJSONMixin):
         # Convert an empty string to None.
         if not d.get("created"):
             d["created"] = None
+        if not d.get("tailnetLockError"):
+            d["tailnetLockError"] = None
         return d
 
 
