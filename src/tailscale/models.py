@@ -63,21 +63,20 @@ class Device(DataClassORJSONMixin):
     advertised_routes: list[str] = field(
         default_factory=list, metadata=field_options(alias="advertisedRoutes")
     )
-    enabled_routes: list[str] = field(
-        default_factory=list, metadata=field_options(alias="enabledRoutes")
-    )
-    tags: list[str] = field(default_factory=list)
-
     client_connectivity: ClientConnectivity | None = field(
         default=None,
         metadata=field_options(alias="clientConnectivity"),
     )
     created: datetime | None = None
+    enabled_routes: list[str] = field(
+        default_factory=list, metadata=field_options(alias="enabledRoutes")
+    )
     expires: datetime | None = None
     last_seen: datetime | None = field(
         default=None,
         metadata=field_options(alias="lastSeen"),
     )
+    tags: list[str] = field(default_factory=list)
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
