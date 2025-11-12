@@ -81,7 +81,7 @@ class Device(DataClassORJSONMixin):
     enabled_routes: list[str] = field(
         default_factory=list, metadata=field_options(alias="enabledRoutes")
     )
-    isEphemeral: bool | None = field(
+    is_ephemeral: bool | None = field(
         default=None,
         metadata=field_options(alias="isEphemeral"),
     )
