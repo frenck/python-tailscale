@@ -59,7 +59,9 @@ class Device(DataClassORJSONMixin):
         metadata=field_options(alias="clientConnectivity")
     )
     client_version: str = field(metadata=field_options(alias="clientVersion"))
-    connected_to_control: bool = field(metadata=field_options(alias="connectedToControl"))
+    connected_to_control: bool = field(
+        metadata=field_options(alias="connectedToControl")
+    )
     created: datetime | None
     device_id: str = field(metadata=field_options(alias="id"))
     expires: datetime | None
