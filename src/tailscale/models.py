@@ -14,7 +14,6 @@ from mashumaro.mixins.orjson import DataClassORJSONMixin
 class ClientSupports(DataClassORJSONMixin):
     """Object holding Tailscale device information."""
 
-    hair_pinning: bool | None = field(metadata=field_options(alias="hairPinning"))
     ipv6: bool | None
     pcp: bool | None
     pmp: bool | None
