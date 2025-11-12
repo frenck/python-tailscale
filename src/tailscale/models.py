@@ -23,6 +23,14 @@ class ClientSupports(DataClassORJSONMixin):
 
 
 @dataclass
+class Latency(DataClassORJSONMixin):
+    """Object holding Tailscale device information."""
+
+    latency_ms: float = field(metadata=field_options(alias="latencyMs"))
+    preferred: bool | None = None
+
+
+@dataclass
 class ClientConnectivity(DataClassORJSONMixin):
     """Object holding Tailscale device information."""
 
@@ -30,6 +38,7 @@ class ClientConnectivity(DataClassORJSONMixin):
         metadata=field_options(alias="clientSupports")
     )
     endpoints: list[str] = field(default_factory=list)
+    latency: dict[str, Latency] = field(default_factory=dict)
     mapping_varies_by_dest_ip: bool | None = field(
         default=None,
         metadata=field_options(alias="mappingVariesByDestIP"),
