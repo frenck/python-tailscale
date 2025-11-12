@@ -60,6 +60,7 @@ class Device(DataClassORJSONMixin):
     machine_key: str = field(metadata=field_options(alias="machineKey"))
     name: str
     node_key: str = field(metadata=field_options(alias="nodeKey"))
+    node_id: str = field(metadata=field_options(alias="nodeId"))
     os: str
     update_available: bool = field(metadata=field_options(alias="updateAvailable"))
     user: str
@@ -70,7 +71,6 @@ class Device(DataClassORJSONMixin):
         default_factory=list, metadata=field_options(alias="enabledRoutes")
     )
     tags: list[str] = field(default_factory=list)
-    node_id: str | None = field(default=None, metadata=field_options(alias="nodeId"))
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
