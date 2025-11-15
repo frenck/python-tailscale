@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import socket
 from dataclasses import dataclass
 from typing import Any, Self
@@ -111,7 +112,27 @@ class Tailscale:
 
         """
         data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
-        return Devices.from_json(data).devices
+        try:
+            obj = json.loads(data)
+            devs = obj.get("devices")
+            if isinstance(devs, dict):
+                devs = list(devs.values())
+            if not isinstance(devs, list):
+                msg = "Unexpected devices payload from Tailscale API"
+                raise TailscaleError(msg)
+
+            for d in devs:
+                cc = d.get("clientConnectivity")
+                if isinstance(cc, dict):
+                    cs = cc.get("clientSupports")
+                    if isinstance(cs, dict) and "hairPinning" not in cs:
+                        cs["hairPinning"] = None
+
+            obj["devices"] = devs
+            return Devices.from_json(json.dumps(obj)).devices
+        except Exception as exception:
+            msg = "Error occurred while communicating with the Tailscale API"
+            raise TailscaleConnectionError(msg) from exception
 
     async def close(self) -> None:
         """Close open client session."""
