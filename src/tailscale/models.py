@@ -14,12 +14,15 @@ from mashumaro.mixins.orjson import DataClassORJSONMixin
 class ClientSupports(DataClassORJSONMixin):
     """Object holding Tailscale device information."""
 
-    hair_pinning: bool | None = field(metadata=field_options(alias="hairPinning"))
-    ipv6: bool | None
-    pcp: bool | None
-    pmp: bool | None
-    udp: bool | None
-    upnp: bool | None
+    hair_pinning: bool | None = field(
+        default=None,
+        metadata=field_options(alias="hairPinning"),
+    )
+    ipv6: bool | None = None
+    pcp: bool | None = None
+    pmp: bool | None = None
+    udp: bool | None = None
+    upnp: bool | None = None
 
 
 @dataclass
@@ -46,17 +49,11 @@ class Device(DataClassORJSONMixin):
     blocks_incoming_connections: bool = field(
         metadata=field_options(alias="blocksIncomingConnections")
     )
-    client_connectivity: ClientConnectivity | None = field(
-        metadata=field_options(alias="clientConnectivity")
-    )
     client_version: str = field(metadata=field_options(alias="clientVersion"))
-    created: datetime | None
     device_id: str = field(metadata=field_options(alias="id"))
-    expires: datetime | None
     hostname: str
     is_external: bool = field(metadata=field_options(alias="isExternal"))
     key_expiry_disabled: bool = field(metadata=field_options(alias="keyExpiryDisabled"))
-    last_seen: datetime | None = field(metadata=field_options(alias="lastSeen"))
     machine_key: str = field(metadata=field_options(alias="machineKey"))
     name: str
     node_key: str = field(metadata=field_options(alias="nodeKey"))
@@ -66,8 +63,18 @@ class Device(DataClassORJSONMixin):
     advertised_routes: list[str] = field(
         default_factory=list, metadata=field_options(alias="advertisedRoutes")
     )
+    client_connectivity: ClientConnectivity | None = field(
+        default=None,
+        metadata=field_options(alias="clientConnectivity"),
+    )
+    created: datetime | None = None
     enabled_routes: list[str] = field(
         default_factory=list, metadata=field_options(alias="enabledRoutes")
+    )
+    expires: datetime | None = None
+    last_seen: datetime | None = field(
+        default=None,
+        metadata=field_options(alias="lastSeen"),
     )
     tags: list[str] = field(default_factory=list)
 
