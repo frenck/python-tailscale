@@ -71,6 +71,7 @@ async def test_put_request(aresponses: ResponsesMockServer) -> None:
             data={},
         )
         assert response == '{"status": "ok"}'
+        await tailscale.close()
 
 
 async def test_timeout(aresponses: ResponsesMockServer) -> None:
@@ -91,8 +92,13 @@ async def test_timeout(aresponses: ResponsesMockServer) -> None:
             session=session,
             request_timeout=1,
         )
-        with pytest.raises(TailscaleConnectionError):
+        with pytest.raises(TailscaleConnectionError) as excinfo:
             assert await tailscale._request("test")
+        assert (
+            excinfo.value.args[0]
+            == "Timeout occurred while connecting to the Tailscale API"
+        )
+        await tailscale.close()
 
 
 async def test_http_error400(aresponses: ResponsesMockServer) -> None:
@@ -106,8 +112,13 @@ async def test_http_error400(aresponses: ResponsesMockServer) -> None:
 
     async with aiohttp.ClientSession() as session:
         tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
-        with pytest.raises(TailscaleError):
+        with pytest.raises(TailscaleError) as excinfo:
             assert await tailscale._request("test")
+        assert (
+            excinfo.value.args[0]
+            == "Error occurred while connecting to the Tailscale API"
+        )
+        await tailscale.close()
 
 
 async def test_http_error401(aresponses: ResponsesMockServer) -> None:
@@ -121,5 +132,7 @@ async def test_http_error401(aresponses: ResponsesMockServer) -> None:
 
     async with aiohttp.ClientSession() as session:
         tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
-        with pytest.raises(TailscaleAuthenticationError):
+        with pytest.raises(TailscaleAuthenticationError) as excinfo:
             assert await tailscale._request("test")
+        assert excinfo.value.args[0] == "Authentication to the Tailscale API failed"
+        await tailscale.close()
