@@ -19,26 +19,26 @@ from .exceptions import (
 )
 from .models import Device, Devices
 
-# Placeholder value for the access token when it is not yet set.
-ACCESS_TOKEN_PENDING = "<pending>"  # noqa: S105
-
 
 @dataclass
+# pylint: disable-next=too-many-instance-attributes
 class Tailscale:
     """Main class for handling connections with the Tailscale API."""
 
     # tailnet of '-' is the default tailnet of the API key
     tailnet: str = "-"
-    api_key: str = ""  # nosec
-    oauth_client_id: str = ""  # nosec
-    oauth_client_secret: str = ""  # nosec
+    api_key: str | None = None
+    oauth_client_id: str | None = None
+    oauth_client_secret: str | None = None
 
     request_timeout: int = 8
     session: ClientSession | None = None
 
+    _get_oauth_token_task: asyncio.Task[None] | None = None
+    _expire_oauth_token_task: asyncio.Task[None] | None = None
     _close_session: bool = False
 
-    async def _check_access(self) -> None:
+    async def _check_api_key(self) -> None:
         """Initialize the Tailscale client.
 
         Raises:
@@ -46,25 +46,44 @@ class Tailscale:
                 oauth_client_secret are provided.
 
         """
-        if (
-            not self.api_key
-            and not self.oauth_client_id
-            and not self.oauth_client_secret
+        if not (
+            (self.api_key and not self.oauth_client_id and not self.oauth_client_secret)
+            or (not self.api_key and self.oauth_client_id and self.oauth_client_secret)
+            or (
+                self.api_key
+                and self.oauth_client_id
+                and self.oauth_client_secret
+                and self._get_oauth_token_task
+            )
         ):
-            msg = "Either api_key or oauth client is required"
+            msg = (
+                "Either api_key or oauth_client_id and oauth_client_secret "
+                "are required when Tailscale client is initialized"
+            )
             raise TailscaleAuthenticationError(msg)
         if not self.api_key:
-            self.api_key = ACCESS_TOKEN_PENDING
-            self.api_key = await self._get_oauth_token()
+            # Handle some inconsistent state
+            # possibly caused by user manually deleting api_key
+            if self._expire_oauth_token_task:
+                self._expire_oauth_token_task.cancel()
+                self._expire_oauth_token_task = None
+                if self._get_oauth_token_task:
+                    self._get_oauth_token_task.cancel()
+                    self._get_oauth_token_task = None
+            # Get a new OAuth token if not already in the process of getting one
+            if not self._get_oauth_token_task:
+                self._get_oauth_token_task = asyncio.create_task(
+                    self._get_oauth_token()
+                )
+            # Wait for the OAuth token to be retrieved
+            await self._get_oauth_token_task
 
-    async def _get_oauth_token(self) -> str:
+    async def _get_oauth_token(self) -> None:
         """Get an OAuth token from the Tailscale API.
 
         Raises:
-            TailscaleAuthenticationError: when access key not found in response.
-
-        Returns:
-            A string with the OAuth token, or nothing on error
+            TailscaleAuthenticationError: when access token not found in response or
+                access token expires in less than 5 minutes.
 
         """
         # Tailscale's OAuth endpoint requires form-encoded body
@@ -77,14 +96,31 @@ class Tailscale:
             "oauth/token",
             data=data,
             method=METH_POST,
-            use_form_encoding=True,
+            _use_authentication=False,
+            _use_form_encoding=True,
         )
 
-        token = json.loads(response).get("access_token", "")
-        if not token:
+        json_response = json.loads(response)
+        access_token = str(json_response.get("access_token", ""))
+        expires_in = float(json_response.get("expires_in", 0))
+        if not access_token or not expires_in:
             msg = "Failed to get OAuth token"
             raise TailscaleAuthenticationError(msg)
-        return str(token)
+        if expires_in <= 60:
+            msg = "OAuth token expires in less than 1 minute"
+            raise TailscaleAuthenticationError(msg)
+
+        self._expire_oauth_token_task = asyncio.create_task(
+            self._expire_oauth_token(expires_in)
+        )
+        self.api_key = access_token
+
+    async def _expire_oauth_token(self, expires_in: float) -> None:
+        """Expires the OAuth token 1 minute before expiration."""
+        await asyncio.sleep(expires_in - 60)
+        self.api_key = None
+        self._get_oauth_token_task = None
+        self._expire_oauth_token_task = None
 
     async def _request(
         self,
@@ -92,7 +128,8 @@ class Tailscale:
         *,
         method: str = METH_GET,
         data: dict[str, Any] | None = None,
-        use_form_encoding: bool = False,
+        _use_authentication: bool = True,
+        _use_form_encoding: bool = False,
     ) -> str:
         """Handle a request to the Tailscale API.
 
@@ -107,8 +144,7 @@ class Tailscale:
 
         Returns:
         -------
-            A Python dictionary (JSON decoded) with the response from
-            the Tailscale API.
+            The response from the Tailscale API.
 
         Raises:
         ------
@@ -121,13 +157,12 @@ class Tailscale:
         """
         url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
 
-        await self._check_access()
-
         headers: dict[str, str] = {
             "Accept": "application/json",
         }
 
-        if self.api_key and self.api_key != ACCESS_TOKEN_PENDING:
+        if _use_authentication:
+            await self._check_api_key()
             # API keys and oauth tokens can use Bearer authentication
             headers["Authorization"] = f"Bearer {self.api_key}"
 
@@ -142,8 +177,8 @@ class Tailscale:
                     method,
                     url,
                     headers=headers if headers else None,
-                    data=data if use_form_encoding else None,
-                    json=data if not use_form_encoding else None,
+                    data=data if _use_form_encoding else None,
+                    json=data if not _use_form_encoding else None,
                 )
                 response.raise_for_status()
         except asyncio.TimeoutError as exception:
@@ -151,6 +186,13 @@ class Tailscale:
             raise TailscaleConnectionError(msg) from exception
         except ClientResponseError as exception:
             if exception.status in [401, 403]:
+                if _use_authentication and self.api_key and self.oauth_client_id:
+                    # Invalidate the current OAuth token
+                    self.api_key = None
+                    self._get_oauth_token_task = None
+                    if self._expire_oauth_token_task:
+                        self._expire_oauth_token_task.cancel()
+                    self._expire_oauth_token_task = None
                 msg = "Authentication to the Tailscale API failed"
                 raise TailscaleAuthenticationError(msg) from exception
             msg = "Error occurred while connecting to the Tailscale API"
@@ -176,9 +218,13 @@ class Tailscale:
         return Devices.from_json(data).devices
 
     async def close(self) -> None:
-        """Close open client session."""
+        """Close open client session and cancel tasks."""
         if self.session and self._close_session:
             await self.session.close()
+        if self._get_oauth_token_task:
+            self._get_oauth_token_task.cancel()
+        if self._expire_oauth_token_task:
+            self._expire_oauth_token_task.cancel()
 
     async def __aenter__(self) -> Self:
         """Async enter.
