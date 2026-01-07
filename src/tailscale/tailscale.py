@@ -6,7 +6,8 @@ import asyncio
 import json
 import socket
 from dataclasses import dataclass
-from typing import Any, Self
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any, Self
 
 from aiohttp.client import ClientError, ClientResponseError, ClientSession
 from aiohttp.hdrs import METH_GET, METH_POST
@@ -18,6 +19,9 @@ from .exceptions import (
     TailscaleError,
 )
 from .models import Device, Devices
+
+if TYPE_CHECKING:
+    from .storage import TokenStorage
 
 
 @dataclass
@@ -33,6 +37,7 @@ class Tailscale:
 
     request_timeout: int = 8
     session: ClientSession | None = None
+    token_storage: TokenStorage | None = None
 
     _get_oauth_token_task: asyncio.Task[None] | None = None
     _expire_oauth_token_task: asyncio.Task[None] | None = None
@@ -79,13 +84,25 @@ class Tailscale:
             await self._get_oauth_token_task
 
     async def _get_oauth_token(self) -> None:
-        """Get an OAuth token from the Tailscale API.
+        """Get an OAuth token from the Tailscale API or token storage.
 
         Raises:
             TailscaleAuthenticationError: when access token not found in response or
                 access token expires in less than 5 minutes.
 
         """
+        if self.token_storage:
+            token_data = await self.token_storage.get_token()
+            if token_data:
+                access_token, expires_at = token_data
+                expires_in = (expires_at - datetime.now(timezone.utc)).total_seconds()
+                if expires_in > 60:
+                    self._expire_oauth_token_task = asyncio.create_task(
+                        self._expire_oauth_token(expires_in)
+                    )
+                    self.api_key = access_token
+                    return
+
         # Tailscale's OAuth endpoint requires form-encoded body
         # with client_id and client_secret
         data = {
@@ -113,6 +130,9 @@ class Tailscale:
         self._expire_oauth_token_task = asyncio.create_task(
             self._expire_oauth_token(expires_in)
         )
+        if self.token_storage:
+            expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+            await self.token_storage.set_token(access_token, expires_at)
         self.api_key = access_token
 
     async def _expire_oauth_token(self, expires_in: float) -> None:

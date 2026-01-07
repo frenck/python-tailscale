@@ -2,6 +2,7 @@
 
 # pylint: disable=protected-access
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 import aiohttp
 import pytest
@@ -13,6 +14,7 @@ from tailscale.exceptions import (
     TailscaleConnectionError,
     TailscaleError,
 )
+from tests.storage import InMemoryTokenStorage
 
 
 async def test_wrong_arguments_no_auth() -> None:
@@ -246,6 +248,78 @@ async def test_oauth_key_expiration(aresponses: ResponsesMockServer) -> None:
         assert tailscale.api_key is None
         assert tailscale._get_oauth_token_task is None
         assert tailscale._expire_oauth_token_task is None
+        await tailscale.close()
+
+    aresponses.assert_plan_strictly_followed()
+
+
+async def test_key_from_storage(aresponses: ResponsesMockServer) -> None:
+    """Test oauth key is loaded from storage."""
+    aresponses.add(
+        "api.tailscale.com",
+        "/api/v2/test",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text='{"status": "ok"}',
+        ),
+    )
+    async with aiohttp.ClientSession() as session:
+        tailscale = Tailscale(
+            tailnet="frenck",
+            oauth_client_id="client",
+            oauth_client_secret="notsosecret",  # noqa: S106
+            session=session,
+            token_storage=InMemoryTokenStorage(
+                "stored-token", datetime.now(timezone.utc) + timedelta(hours=1)
+            ),
+        )
+        await tailscale._request("test")
+        first_request = aresponses.history[0].request
+        assert "Bearer" in first_request.headers["Authorization"]
+        assert "stored-token" in first_request.headers["Authorization"]
+        await tailscale.close()
+
+
+async def test_drop_key_from_storage(aresponses: ResponsesMockServer) -> None:
+    """Test oauth key response is handled correctly."""
+    aresponses.add(
+        "api.tailscale.com",
+        "/api/v2/oauth/token",
+        "POST",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text='{"access_token": "short-lived-token", "expires_in": 3600}',
+        ),
+    )
+    aresponses.add(
+        "api.tailscale.com",
+        "/api/v2/test",
+        "GET",
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text='{"status": "ok"}',
+        ),
+    )
+    async with aiohttp.ClientSession() as session:
+        token_storage = InMemoryTokenStorage(
+            "stored-token", datetime.now(timezone.utc) + timedelta(seconds=30)
+        )
+        tailscale = Tailscale(
+            tailnet="frenck",
+            oauth_client_id="client",
+            oauth_client_secret="notsosecret",  # noqa: S106
+            session=session,
+            token_storage=token_storage,
+        )
+        await tailscale._request("test")
+        second_request = aresponses.history[1].request
+        assert "Bearer" in second_request.headers["Authorization"]
+        assert "short-lived-token" in second_request.headers["Authorization"]
+        assert token_storage._access_token == "short-lived-token"  # noqa: S105
         await tailscale.close()
 
     aresponses.assert_plan_strictly_followed()
