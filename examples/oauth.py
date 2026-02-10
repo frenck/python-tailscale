@@ -9,18 +9,22 @@ from tailscale import Tailscale
 
 # "-" is the default tailnet of the API key
 TAILNET = os.environ.get("TS_TAILNET", "-")
-API_KEY = os.environ.get("TS_API_KEY", "")
+
+# OAuth client ID and secret are required for OAuth authentication
+OAUTH_CLIENT_ID = os.environ.get("TS_API_CLIENT_ID", "")
+OAUTH_CLIENT_SECRET = os.environ.get("TS_API_CLIENT_SECRET", "")
 
 
-async def main() -> None:
-    """Show example on using the Tailscale API client."""
+async def main_oauth() -> None:
+    """Show example on using the Tailscale API client with OAuth."""
     async with Tailscale(
         tailnet=TAILNET,
-        api_key=API_KEY,
+        oauth_client_id=OAUTH_CLIENT_ID,
+        oauth_client_secret=OAUTH_CLIENT_SECRET,
     ) as tailscale:
         devices = await tailscale.devices()
         print(devices)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main_oauth())
