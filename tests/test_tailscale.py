@@ -468,8 +468,9 @@ async def test_too_short_oauth_expiration() -> None:
             await tailscale.close()
 
 
-async def test_http_error401_and_oauth_token_invalidation() -> None:
-    """Test HTTP 401 invalidates the OAuth token."""
+@pytest.mark.parametrize("status_code", [401, 403])
+async def test_http_auth_error_invalidates_oauth_token(status_code: int) -> None:
+    """Test HTTP 401/403 invalidates the OAuth token."""
     with aioresponses() as mocked:
         mocked.post(
             OAUTH_URL,
@@ -479,7 +480,7 @@ async def test_http_error401_and_oauth_token_invalidation() -> None:
         )
         mocked.get(
             f"{URL}/test",
-            status=401,
+            status=status_code,
             body="Access denied!",
             content_type="text/plain",
         )
