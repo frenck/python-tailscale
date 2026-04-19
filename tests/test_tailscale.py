@@ -642,6 +642,83 @@ async def test_update_split_dns(
     }
 
 
+# --- User tests ---
+
+
+async def test_users(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test fetching users from the Tailscale API."""
+    responses.get(
+        f"{URL}/tailnet/frenck/users",
+        status=200,
+        body=load_fixture("users.json"),
+        content_type="application/json",
+    )
+    users = await tailscale_client.users()
+    assert len(users) == 2
+    assert users[0].user_id == "u12345"
+    assert users[0].display_name == "Alice Engineer"
+    assert users[0].login_name == "alice@example.com"
+    assert users[0].role == "admin"
+    assert users[0].status == "active"
+    assert users[0].device_count == 3
+    assert users[0].currently_connected is True
+    assert users[1].user_id == "u67890"
+    assert users[1].display_name == "Bob Ops"
+    assert users[1].currently_connected is False
+
+
+async def test_users_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test users parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/users",
+        status=200,
+        body=load_fixture("users.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.users() == snapshot
+
+
+async def test_user(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test fetching a single user from the Tailscale API."""
+    responses.get(
+        f"{URL}/users/u12345",
+        status=200,
+        body=load_fixture("user.json"),
+        content_type="application/json",
+    )
+    user = await tailscale_client.user("u12345")
+    assert user.user_id == "u12345"
+    assert user.display_name == "Alice Engineer"
+    assert user.login_name == "alice@example.com"
+    assert user.role == "admin"
+    assert user.device_count == 3
+
+
+async def test_user_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test single user parsing matches snapshot."""
+    responses.get(
+        f"{URL}/users/u12345",
+        status=200,
+        body=load_fixture("user.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.user("u12345") == snapshot
+
+
 # --- OAuth tests ---
 
 

@@ -25,6 +25,7 @@ from tailscale.models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    TailscaleUser,
 )
 from tests.conftest import FIXTURES_DIR
 
@@ -343,6 +344,44 @@ def test_dns_set_search_paths_command(
     mock_client.set_dns_search_paths.assert_called_once_with(
         search_paths=["corp.example.com", "internal.example.com"]
     )
+
+
+# --- user commands ---
+
+
+def test_users_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Users command renders a table of all users."""
+    raw = json.loads(_load_fixture("users.json"))
+    users = [TailscaleUser.from_dict(u) for u in raw["users"]]
+    mock_client = _mock_tailscale()
+    mock_client.users.return_value = users
+    exit_code, output = _invoke(
+        runner,
+        ["users", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_user_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """User command renders detailed user information."""
+    user = TailscaleUser.from_json(_load_fixture("user.json"))
+    mock_client = _mock_tailscale()
+    mock_client.user.return_value = user
+    exit_code, output = _invoke(
+        runner,
+        ["user", "u12345", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
 
 
 # --- action commands ---

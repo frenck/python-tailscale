@@ -144,6 +144,19 @@
         'oauth_client_secret',
         'tailnet',
       ]),
+      'user': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+        'user_id',
+      ]),
+      'users': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
     }),
     'expire-key': list([
       'api_key',
@@ -197,6 +210,19 @@
       'oauth_client_id',
       'oauth_client_secret',
       'tags',
+      'tailnet',
+    ]),
+    'user': list([
+      'api_key',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+      'user_id',
+    ]),
+    'users': list([
+      'api_key',
+      'oauth_client_id',
+      'oauth_client_secret',
       'tailnet',
     ]),
   })
@@ -424,6 +450,35 @@
 # name: test_set_tags_command
   '''
   Tags set for device 12345: tag:server, tag:prod
+  
+  '''
+# ---
+# name: test_user_command
+  '''
+  ╭───────────────────────────────────────── Alice Engineer ─────────────────────────────────────────╮
+  │   User ID      u12345                                                                            │
+  │   Name         Alice Engineer                                                                    │
+  │   Login        alice@example.com                                                                 │
+  │   Role         admin                                                                             │
+  │   Status       active                                                                            │
+  │   Type         member                                                                            │
+  │   Devices      3                                                                                 │
+  │   Connected    Yes                                                                               │
+  │   Last Seen    2026-04-19 12:30:00+00:00                                                         │
+  │   Created      2024-03-15 10:00:00+00:00                                                         │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  
+  '''
+# ---
+# name: test_users_command
+  '''
+                                           Users                                          
+  ┏━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
+  ┃ User ID ┃ Name           ┃ Login             ┃ Role   ┃ Status ┃ Devices ┃ Connected ┃
+  ┡━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
+  │ u12345  │ Alice Engineer │ alice@example.com │ admin  │ active │       3 │ Yes       │
+  │ u67890  │ Bob Ops        │ bob@example.com   │ member │ active │       1 │ No        │
+  └─────────┴────────────────┴───────────────────┴────────┴────────┴─────────┴───────────┘
   
   '''
 # ---

@@ -153,6 +153,36 @@ class DNSSearchPaths(DataClassORJSONMixin):
 
 
 @dataclass
+# pylint: disable-next=too-many-instance-attributes
+class TailscaleUser(DataClassORJSONMixin):
+    """Object holding Tailscale user information."""
+
+    user_id: str = field(metadata=field_options(alias="id"))
+    display_name: str = field(metadata=field_options(alias="displayName"))
+    login_name: str = field(metadata=field_options(alias="loginName"))
+    profile_pic_url: str = field(
+        default="", metadata=field_options(alias="profilePicURL")
+    )
+    role: str = ""
+    status: str = ""
+    user_type: str = field(default="", metadata=field_options(alias="type"))
+    created: datetime | None = None
+    currently_connected: bool | None = field(
+        default=None, metadata=field_options(alias="currentlyConnected")
+    )
+    device_count: int | None = field(
+        default=None, metadata=field_options(alias="deviceCount")
+    )
+    last_seen: datetime | None = field(
+        default=None,
+        metadata=field_options(alias="lastSeen"),
+    )
+    tailnet_lock_key: str | None = field(
+        default=None, metadata=field_options(alias="tailnetLockKey")
+    )
+
+
+@dataclass
 class DeviceRoutes(DataClassORJSONMixin):
     """Object holding Tailscale device route information."""
 

@@ -25,6 +25,7 @@ from .models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    TailscaleUser,
 )
 
 if TYPE_CHECKING:
@@ -538,6 +539,33 @@ class Tailscale:
             data=split_dns,
         )
         return json.loads(data)
+
+    async def users(self) -> list[TailscaleUser]:
+        """Get all users in the tailnet.
+
+        Returns
+        -------
+            A list of Tailscale users.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/users")
+        raw: list[dict[str, Any]] = json.loads(data).get("users", [])
+        return [TailscaleUser.from_dict(user) for user in raw]
+
+    async def user(self, user_id: str) -> TailscaleUser:
+        """Get a single user by ID.
+
+        Args:
+        ----
+            user_id: The ID of the user to retrieve.
+
+        Returns:
+        -------
+            The user information.
+
+        """
+        data = await self._request(f"users/{user_id}")
+        return TailscaleUser.from_json(data)
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""

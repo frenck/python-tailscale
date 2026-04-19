@@ -643,6 +643,89 @@ async def dns_split_command(
     console.print(table)
 
 
+@cli.command("users")
+async def users_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """List all users in the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        users = await client.users()
+
+    table = Table(title="Users", show_header=True, border_style="dim")
+    table.add_column("User ID", style="cyan")
+    table.add_column("Name", style="bold")
+    table.add_column("Login")
+    table.add_column("Role")
+    table.add_column("Status")
+    table.add_column("Devices", justify="right")
+    table.add_column("Connected")
+
+    for user in users:
+        connected = (
+            "[green]Yes[/green]" if user.currently_connected else "[dim]No[/dim]"
+        )
+        table.add_row(
+            user.user_id,
+            user.display_name,
+            user.login_name,
+            user.role,
+            user.status,
+            str(user.device_count or 0),
+            connected,
+        )
+
+    console.print(table)
+
+
+@cli.command("user")
+async def user_command(
+    user_id: Annotated[
+        str,
+        typer.Argument(help="User ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Show detailed information for a single user."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        user = await client.user(user_id)
+
+    info = Table(show_header=False, box=None, padding=(0, 2))
+    info.add_column("Field", style="bold")
+    info.add_column("Value")
+
+    info.add_row("User ID", user.user_id)
+    info.add_row("Name", user.display_name)
+    info.add_row("Login", user.login_name)
+    info.add_row("Role", user.role)
+    info.add_row("Status", user.status)
+    info.add_row("Type", user.user_type)
+
+    if user.device_count is not None:
+        info.add_row("Devices", str(user.device_count))
+
+    if user.currently_connected is not None:
+        connected = (
+            "[green]Yes[/green]" if user.currently_connected else "[dim]No[/dim]"
+        )
+        info.add_row("Connected", connected)
+
+    if user.last_seen:
+        info.add_row("Last Seen", str(user.last_seen))
+
+    if user.created:
+        info.add_row("Created", str(user.created))
+
+    console.print(Panel(info, title=user.display_name, border_style="green"))
+
+
 dump = AsyncTyper(
     help="Dump raw API responses as JSON (useful for debugging/fixtures).",
     no_args_is_help=True,
@@ -746,6 +829,42 @@ async def dump_dns_split_command(
     async with client:
         data = await client._request(  # noqa: SLF001
             f"tailnet/{client.tailnet}/dns/split-dns"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("users")
+async def dump_users_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump all users as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/users"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("user")
+async def dump_user_command(
+    user_id: Annotated[
+        str,
+        typer.Argument(help="User ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump a single user as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"users/{user_id}"
         )
     typer.echo(json.dumps(json.loads(data), indent=2, default=str))
 

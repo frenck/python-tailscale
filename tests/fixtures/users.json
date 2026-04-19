@@ -1,0 +1,32 @@
+{
+  "users": [
+    {
+      "id": "u12345",
+      "displayName": "Alice Engineer",
+      "loginName": "alice@example.com",
+      "profilePicURL": "https://profiles.example.com/alice.jpg",
+      "role": "admin",
+      "status": "active",
+      "type": "member",
+      "created": "2024-03-15T10:00:00Z",
+      "currentlyConnected": true,
+      "deviceCount": 3,
+      "lastSeen": "2026-04-19T12:30:00Z",
+      "tailnetLockKey": "tlpub:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+    },
+    {
+      "id": "u67890",
+      "displayName": "Bob Ops",
+      "loginName": "bob@example.com",
+      "profilePicURL": "",
+      "role": "member",
+      "status": "active",
+      "type": "member",
+      "created": "2025-01-20T14:30:00Z",
+      "currentlyConnected": false,
+      "deviceCount": 1,
+      "lastSeen": "2026-04-18T09:15:00Z",
+      "tailnetLockKey": ""
+    }
+  ]
+}

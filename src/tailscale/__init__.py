@@ -15,6 +15,7 @@ from .models import (
     DNSPreferences,
     DNSSearchPaths,
     Latency,
+    TailscaleUser,
 )
 from .storage import TokenStorage
 from .tailscale import Tailscale
@@ -33,5 +34,6 @@ __all__ = [
     "TailscaleAuthenticationError",
     "TailscaleConnectionError",
     "TailscaleError",
+    "TailscaleUser",
     "TokenStorage",
 ]

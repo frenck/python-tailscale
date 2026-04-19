@@ -20,3 +20,12 @@
 # name: test_dns_search_paths_snapshot
   DNSSearchPaths(search_paths=['corp.example.com', 'internal.example.com'])
 # ---
+# name: test_user_snapshot
+  TailscaleUser(user_id='u12345', display_name='Alice Engineer', login_name='alice@example.com', profile_pic_url='https://profiles.example.com/alice.jpg', role='admin', status='active', user_type='member', created=datetime.datetime(2024, 3, 15, 10, 0, tzinfo=datetime.timezone.utc), currently_connected=True, device_count=3, last_seen=datetime.datetime(2026, 4, 19, 12, 30, tzinfo=datetime.timezone.utc), tailnet_lock_key='tlpub:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890')
+# ---
+# name: test_users_snapshot
+  list([
+    TailscaleUser(user_id='u12345', display_name='Alice Engineer', login_name='alice@example.com', profile_pic_url='https://profiles.example.com/alice.jpg', role='admin', status='active', user_type='member', created=datetime.datetime(2024, 3, 15, 10, 0, tzinfo=datetime.timezone.utc), currently_connected=True, device_count=3, last_seen=datetime.datetime(2026, 4, 19, 12, 30, tzinfo=datetime.timezone.utc), tailnet_lock_key='tlpub:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
+    TailscaleUser(user_id='u67890', display_name='Bob Ops', login_name='bob@example.com', profile_pic_url='', role='member', status='active', user_type='member', created=datetime.datetime(2025, 1, 20, 14, 30, tzinfo=datetime.timezone.utc), currently_connected=False, device_count=1, last_seen=datetime.datetime(2026, 4, 18, 9, 15, tzinfo=datetime.timezone.utc), tailnet_lock_key=''),
+  ])
+# ---
