@@ -32,6 +32,67 @@ automations based on the status of your Tailscale network devices.
 pip install tailscale
 ```
 
+To install with the optional CLI:
+
+```bash
+pip install "tailscale[cli]"
+```
+
+## CLI
+
+The optional CLI lets you query and manage your tailnet directly from
+the terminal. The `--api-key` option can also be set via the
+`TAILSCALE_API_KEY` environment variable.
+
+```bash
+# Set credentials once via environment variable
+export TAILSCALE_API_KEY="tskey-api-..."
+
+# List all devices (includes node IDs for use with other commands)
+tailscale devices
+
+# Show detailed information for a single device
+tailscale device nSRVBN3CNTRL
+
+# Show subnet routes for a device
+tailscale routes nSRVBN3CNTRL
+
+# Authorize / deauthorize a device
+tailscale authorize nSRVBN3CNTRL
+tailscale deauthorize nSRVBN3CNTRL
+
+# Delete a device from the tailnet
+tailscale delete nSRVBN3CNTRL
+
+# Expire a device's key (force re-authentication)
+tailscale expire-key nSRVBN3CNTRL
+
+# Enable or disable key expiry
+tailscale set-key-expiry nSRVBN3CNTRL --disable
+tailscale set-key-expiry nSRVBN3CNTRL --enable
+
+# Rename a device
+tailscale rename nSRVBN3CNTRL new-hostname
+
+# Set ACL tags
+tailscale set-tags nSRVBN3CNTRL tag:server tag:prod
+
+# Set enabled subnet routes
+tailscale set-routes nSRVBN3CNTRL 10.0.0.0/24 192.168.1.0/24
+
+# Set Tailscale IPv4 address
+tailscale set-ip nSRVBN3CNTRL 100.64.0.1
+
+# Dump raw API responses as JSON (useful for debugging/fixtures)
+tailscale dump devices
+tailscale dump device nSRVBN3CNTRL
+tailscale dump routes nSRVBN3CNTRL
+```
+
+OAuth authentication is also supported via `--oauth-client-id` and
+`--oauth-client-secret` (or the `TAILSCALE_OAUTH_CLIENT_ID` and
+`TAILSCALE_OAUTH_CLIENT_SECRET` environment variables).
+
 ## Usage
 
 The client is an async context manager; every API call is a coroutine. A

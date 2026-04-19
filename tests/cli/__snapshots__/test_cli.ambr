@@ -1,0 +1,295 @@
+# serializer version: 1
+# name: test_authentication_error_handler
+  '''
+  ╭───────────────── Authentication error ──────────────────╮
+  │                                                         │
+  │     Authentication failed. Please check your API key or │
+  │     OAuth credentials and try again.                    │
+  │                                                         │
+  ╰─────────────────────────────────────────────────────────╯
+  
+  '''
+# ---
+# name: test_authorize_command
+  '''
+  Device 12345 authorized.
+  
+  '''
+# ---
+# name: test_cli_structure
+  dict({
+    'authorize': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'deauthorize': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'delete': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'device': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'devices': list([
+      'api_key',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'dump': dict({
+      'device': list([
+        'api_key',
+        'device_id',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'devices': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'routes': list([
+        'api_key',
+        'device_id',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+    }),
+    'expire-key': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'rename': list([
+      'api_key',
+      'device_id',
+      'name',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'routes': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'set-ip': list([
+      'api_key',
+      'device_id',
+      'ipv4_address',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'set-key-expiry': list([
+      'api_key',
+      'device_id',
+      'disable',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'set-routes': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'routes',
+      'tailnet',
+    ]),
+    'set-tags': list([
+      'api_key',
+      'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tags',
+      'tailnet',
+    ]),
+  })
+# ---
+# name: test_connection_error_handler
+  '''
+  ╭────────────────────── Connection error ───────────────────────╮
+  │                                                               │
+  │     Could not connect to the Tailscale API. Please check your │
+  │     internet connection and try again.                        │
+  │                                                               │
+  ╰───────────────────────────────────────────────────────────────╯
+  
+  '''
+# ---
+# name: test_deauthorize_command
+  '''
+  Device 12345 deauthorized.
+  
+  '''
+# ---
+# name: test_delete_command
+  '''
+  Device 12345 deleted.
+  
+  '''
+# ---
+# name: test_device_command
+  '''
+  ╭────────────────────────────────────────── exit-node-us ──────────────────────────────────────────╮
+  │   Name                    exit-node-us.tail9876.ts.net                                           │
+  │   Hostname                exit-node-us                                                           │
+  │   Device ID               98765                                                                  │
+  │   Node ID                 nEXNDUS4321                                                            │
+  │   OS                      linux                                                                  │
+  │   Addresses               100.110.42.7, fd7a:115c:a1e0::3a07                                     │
+  │   Client Version          1.78.3                                                                 │
+  │   User                    ops@example.com                                                        │
+  │   Authorized              Yes                                                                    │
+  │   Key Expiry              Disabled                                                               │
+  │   Connected to Control    Yes                                                                    │
+  │   SSH Enabled             No                                                                     │
+  │   Update Available        Yes                                                                    │
+  │   Tags                    tag:exit-node, tag:us-east                                             │
+  │   Advertised Routes       10.200.0.0/16, 192.168.50.0/24                                         │
+  │   Enabled Routes          10.200.0.0/16                                                          │
+  │   Last Seen               2026-04-19 10:15:22+00:00                                              │
+  │   Created                 2025-02-28 16:45:30+00:00                                              │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  ╭────────────────────────────────────────── Connectivity ──────────────────────────────────────────╮
+  │   Endpoints       198.51.100.22:51820, 10.0.0.15:41641                                           │
+  │   Supports        IPv6, UDP, PCP                                                                 │
+  │   DERP Latency    Chicago: 8.3ms *                                                               │
+  │                   Dallas: 22.1ms                                                                 │
+  │                   Toronto: 31.6ms                                                                │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  
+  '''
+# ---
+# name: test_device_command_external
+  '''
+  ╭────────────────────────────────────────── shared-node ───────────────────────────────────────────╮
+  │   Name                    shared-node.other-tailnet.ts.net                                       │
+  │   Hostname                shared-node                                                            │
+  │   Device ID               67890                                                                  │
+  │   Node ID                 nEXTRNL5678                                                            │
+  │   OS                      windows                                                                │
+  │   Addresses               100.104.105.106                                                        │
+  │   Client Version                                                                                 │
+  │   User                    admin@example.com                                                      │
+  │   Authorized              Yes                                                                    │
+  │   Key Expiry              Disabled                                                               │
+  │   Connected to Control    No                                                                     │
+  │   External                Yes                                                                    │
+  │   Tags                    tag:server                                                             │
+  │   Advertised Routes       10.0.0.0/24                                                            │
+  │   Enabled Routes          10.0.0.0/24                                                            │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  
+  '''
+# ---
+# name: test_devices_command
+  '''
+                                                Devices                                               
+  ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+  ┃ Node ID      ┃ Hostname    ┃ OS      ┃ Addresses      ┃ Authorized ┃ Last Seen      ┃ Tags       ┃
+  ┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩
+  │ nSRVBN3CNTRL │ workstation │ linux   │ 100.101.102.1… │ Yes        │ 2026-04-19     │ -          │
+  │              │             │         │ fd7a:115c:a1e… │            │ 14:30:00+00:00 │            │
+  │ nEXTRNL5678  │ shared-node │ windows │ 100.104.105.1… │ Yes        │ -              │ tag:server │
+  └──────────────┴─────────────┴─────────┴────────────────┴────────────┴────────────────┴────────────┘
+  
+  '''
+# ---
+# name: test_expire_key_command
+  '''
+  Key expired for device 12345.
+  
+  '''
+# ---
+# name: test_general_error_handler
+  '''
+  ╭─ Tailscale API error ─╮
+  │ something went wrong  │
+  ╰───────────────────────╯
+  
+  '''
+# ---
+# name: test_missing_auth
+  '''
+  Authentication required.
+  Provide --api-key (or TAILSCALE_API_KEY),
+  or --oauth-client-id and --oauth-client-secret.
+  
+  '''
+# ---
+# name: test_rename_command
+  '''
+  Device 12345 renamed to new-hostname.
+  
+  '''
+# ---
+# name: test_routes_command
+  '''
+           Subnet Routes          
+  ┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+  ┃ Route           ┃ Status     ┃
+  ┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩
+  │ 10.200.0.0/16   │ Enabled    │
+  │ 192.168.50.0/24 │ Enabled    │
+  │ 172.16.0.0/12   │ Advertised │
+  └─────────────────┴────────────┘
+  
+  '''
+# ---
+# name: test_set_ip_command
+  '''
+  IPv4 address for device 12345 set to 100.64.0.1.
+  
+  '''
+# ---
+# name: test_set_key_expiry_disable_command
+  '''
+  Key expiry disabled for device 12345.
+  
+  '''
+# ---
+# name: test_set_key_expiry_enable_command
+  '''
+  Key expiry enabled for device 12345.
+  
+  '''
+# ---
+# name: test_set_routes_command
+  '''
+  Routes updated for device 12345.
+  Advertised: 10.200.0.0/16, 192.168.50.0/24, 172.16.0.0/12
+  Enabled: 10.200.0.0/16, 192.168.50.0/24
+  
+  '''
+# ---
+# name: test_set_tags_command
+  '''
+  Tags set for device 12345: tag:server, tag:prod
+  
+  '''
+# ---
