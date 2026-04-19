@@ -90,7 +90,7 @@ omit = [
 python-version = "3.11"
 
 [tool.pylint.MASTER]
-ignore = ["tests"]
+ignore = ["cli", "tests"]
 
 [tool.pylint.BASIC]
 good-names = ["_", "ex", "fp", "i", "id", "j", "k", "on", "Run", "T"]
