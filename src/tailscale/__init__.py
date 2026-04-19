@@ -6,6 +6,7 @@ from .exceptions import (
     TailscaleError,
 )
 from .models import ClientConnectivity, ClientSupports, Device, Devices, Latency
+from .storage import TokenStorage
 from .tailscale import Tailscale
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "TailscaleAuthenticationError",
     "TailscaleConnectionError",
     "TailscaleError",
+    "TokenStorage",
 ]
