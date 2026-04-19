@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import socket
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Self
 
-import orjson
 from aiohttp.client import ClientError, ClientResponseError, ClientSession
 from aiohttp.hdrs import METH_GET, METH_POST
 from yarl import URL
@@ -38,7 +38,7 @@ class Tailscale:
     session: ClientSession | None = None
     token_storage: TokenStorage | None = None
 
-    _TOKEN_EXPIRY_MARGIN: int = 60
+    _token_expiry_margin: int = 60
 
     _get_oauth_token_task: asyncio.Task[None] | None = None
     _expire_oauth_token_task: asyncio.Task[None] | None = None
@@ -97,7 +97,7 @@ class Tailscale:
             if token_data:
                 access_token, expires_at = token_data
                 expires_in = (expires_at - datetime.now(UTC)).total_seconds()
-                if expires_in > self._TOKEN_EXPIRY_MARGIN:
+                if expires_in > self._token_expiry_margin:
                     self._expire_oauth_token_task = asyncio.create_task(
                         self._expire_oauth_token(expires_in)
                     )
@@ -116,13 +116,13 @@ class Tailscale:
             _use_form_encoding=True,
         )
 
-        json_response = orjson.loads(response)
+        json_response: dict[str, Any] = json.loads(response)
         access_token = str(json_response.get("access_token", ""))
         expires_in = float(json_response.get("expires_in", 0))
         if not access_token or not expires_in:
             msg = "Failed to get OAuth token"
             raise TailscaleAuthenticationError(msg)
-        if expires_in <= self._TOKEN_EXPIRY_MARGIN:
+        if expires_in <= self._token_expiry_margin:
             msg = "OAuth token expires in less than 1 minute"
             raise TailscaleAuthenticationError(msg)
 
@@ -136,7 +136,7 @@ class Tailscale:
 
     async def _expire_oauth_token(self, expires_in: float) -> None:
         """Expire the OAuth token 1 minute before its expiration time."""
-        await asyncio.sleep(expires_in - self._TOKEN_EXPIRY_MARGIN)
+        await asyncio.sleep(expires_in - self._token_expiry_margin)
         self.api_key = None
         self._get_oauth_token_task = None
         self._expire_oauth_token_task = None
