@@ -1,4 +1,4 @@
-"""Exceptions for the Tailscale API client."""
+"""Exceptions for the Tailscale API."""
 
 
 class TailscaleError(Exception):

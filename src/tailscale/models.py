@@ -1,4 +1,4 @@
-"""Asynchronous client for the Tailscale API."""
+"""Asynchronous Python client for the Tailscale API."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from mashumaro.mixins.orjson import DataClassORJSONMixin
 
 @dataclass
 class ClientSupports(DataClassORJSONMixin):
-    """Object holding Tailscale device information."""
+    """Object holding Tailscale client support capabilities."""
 
     hair_pinning: bool | None = field(metadata=field_options(alias="hairPinning"))
     ipv6: bool | None
@@ -24,7 +24,7 @@ class ClientSupports(DataClassORJSONMixin):
 
 @dataclass
 class ClientConnectivity(DataClassORJSONMixin):
-    """Object holding Tailscale device information."""
+    """Object holding Tailscale client connectivity details."""
 
     client_supports: ClientSupports = field(
         metadata=field_options(alias="clientSupports")
@@ -73,15 +73,15 @@ class Device(DataClassORJSONMixin):
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Handle some fields that are inconsistently named in the API.
+        """Pre-process raw API data before deserialization.
 
         Args:
         ----
-            data: The values of the model.
+            d: The raw API response data.
 
         Returns:
         -------
-            The adjusted values of the model.
+            The adjusted data ready for deserialization.
 
         """
         # Convert an empty string to None.
@@ -92,23 +92,23 @@ class Device(DataClassORJSONMixin):
 
 @dataclass
 class Devices(DataClassORJSONMixin):
-    """Object holding Tailscale device information."""
+    """Object holding a collection of Tailscale devices."""
 
     devices: dict[str, Device]
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Handle some fields that are inconsistently named in the API.
+        """Pre-process raw API data before deserialization.
 
         Args:
         ----
-            data: The values of the model.
+            d: The raw API response data.
 
         Returns:
         -------
-            The adjusted values of the model.
+            The adjusted data ready for deserialization.
 
         """
-        # Convert list into dict, keyed by device id.
+        # Convert list into dict, keyed by device ID.
         d["devices"] = {device["id"]: device for device in d["devices"]}
         return d

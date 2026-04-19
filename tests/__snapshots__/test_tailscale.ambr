@@ -1,0 +1,7 @@
+# serializer version: 1
+# name: test_devices_snapshot
+  dict({
+    '12345': Device(addresses=['100.100.100.100'], authorized=True, blocks_incoming_connections=False, client_connectivity=ClientConnectivity(client_supports=ClientSupports(hair_pinning=True, ipv6=True, pcp=True, pmp=True, udp=True, upnp=True), endpoints=['1.2.3.4:12345'], mapping_varies_by_dest_ip=False), client_version='1.30.0', created=datetime.datetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), device_id='12345', expires=datetime.datetime(2024, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), hostname='my-device', is_external=False, key_expiry_disabled=False, last_seen=datetime.datetime(2023, 6, 1, 0, 0, tzinfo=datetime.timezone.utc), machine_key='mkey:abc123', name='my-device.tailnet.ts.net', node_key='nodekey:def456', os='linux', update_available=False, user='user@example.com', advertised_routes=[], enabled_routes=[], tags=[]),
+    '67890': Device(addresses=['100.100.100.101'], authorized=True, blocks_incoming_connections=True, client_connectivity=None, client_version='1.28.0', created=None, device_id='67890', expires=None, hostname='server', is_external=True, key_expiry_disabled=True, last_seen=None, machine_key='mkey:xyz789', name='server.tailnet.ts.net', node_key='nodekey:ghi012', os='windows', update_available=True, user='admin@example.com', advertised_routes=['10.0.0.0/24'], enabled_routes=['10.0.0.0/24'], tags=['tag:server']),
+  })
+# ---
