@@ -1,0 +1,10 @@
+{
+  "devicesApprovalOn": true,
+  "devicesAutoUpdatesOn": true,
+  "devicesKeyDurationDays": 90,
+  "usersApprovalOn": false,
+  "usersRoleAllowedToJoinExternalTailnets": "admin",
+  "networkFlowLoggingOn": true,
+  "regionalRoutingOn": false,
+  "postureIdentityCollectionOn": true
+}

@@ -719,6 +719,63 @@ async def test_user_snapshot(
     assert await tailscale_client.user("u12345") == snapshot
 
 
+# --- Tailnet settings tests ---
+
+
+async def test_tailnet_settings(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting tailnet settings."""
+    responses.get(
+        f"{URL}/tailnet/frenck/settings",
+        status=200,
+        body=load_fixture("tailnet_settings.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.tailnet_settings()
+    assert result.devices_approval_on is True
+    assert result.devices_auto_updates_on is True
+    assert result.devices_key_duration_days == 90
+    assert result.users_approval_on is False
+    assert result.users_role_allowed_to_join_external_tailnets == "admin"
+    assert result.network_flow_logging_on is True
+    assert result.regional_routing_on is False
+    assert result.posture_identity_collection_on is True
+
+
+async def test_tailnet_settings_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test tailnet settings parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/settings",
+        status=200,
+        body=load_fixture("tailnet_settings.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.tailnet_settings() == snapshot
+
+
+async def test_update_tailnet_settings(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test updating tailnet settings."""
+    responses.patch(
+        f"{URL}/tailnet/frenck/settings",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.update_tailnet_settings(
+        devices_key_duration_days=30,
+        network_flow_logging_on=False,
+    )
+
+
 # --- OAuth tests ---
 
 

@@ -144,6 +144,12 @@
         'oauth_client_secret',
         'tailnet',
       ]),
+      'settings': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
       'user': list([
         'api_key',
         'oauth_client_id',
@@ -210,6 +216,12 @@
       'oauth_client_id',
       'oauth_client_secret',
       'tags',
+      'tailnet',
+    ]),
+    'settings': list([
+      'api_key',
+      'oauth_client_id',
+      'oauth_client_secret',
       'tailnet',
     ]),
     'user': list([
@@ -450,6 +462,24 @@
 # name: test_set_tags_command
   '''
   Tags set for device 12345: tag:server, tag:prod
+  
+  '''
+# ---
+# name: test_settings_command
+  '''
+              Tailnet Settings             
+  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┓
+  ┃ Setting                     ┃ Value   ┃
+  ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━┩
+  │ Device Approval             │ Yes     │
+  │ Auto Updates                │ Yes     │
+  │ Key Duration                │ 90 days │
+  │ User Approval               │ No      │
+  │ External Tailnets           │ admin   │
+  │ Network Flow Logging        │ Yes     │
+  │ Regional Routing            │ No      │
+  │ Posture Identity Collection │ Yes     │
+  └─────────────────────────────┴─────────┘
   
   '''
 # ---

@@ -154,6 +154,39 @@ class DNSSearchPaths(DataClassORJSONMixin):
 
 @dataclass
 # pylint: disable-next=too-many-instance-attributes
+class TailnetSettings(DataClassORJSONMixin):
+    """Object holding tailnet-wide settings."""
+
+    devices_approval_on: bool = field(
+        default=False, metadata=field_options(alias="devicesApprovalOn")
+    )
+    devices_auto_updates_on: bool = field(
+        default=False, metadata=field_options(alias="devicesAutoUpdatesOn")
+    )
+    devices_key_duration_days: int = field(
+        default=180, metadata=field_options(alias="devicesKeyDurationDays")
+    )
+    users_approval_on: bool = field(
+        default=False, metadata=field_options(alias="usersApprovalOn")
+    )
+    users_role_allowed_to_join_external_tailnets: str = field(
+        default="none",
+        metadata=field_options(alias="usersRoleAllowedToJoinExternalTailnets"),
+    )
+    network_flow_logging_on: bool = field(
+        default=False, metadata=field_options(alias="networkFlowLoggingOn")
+    )
+    regional_routing_on: bool = field(
+        default=False, metadata=field_options(alias="regionalRoutingOn")
+    )
+    posture_identity_collection_on: bool = field(
+        default=False,
+        metadata=field_options(alias="postureIdentityCollectionOn"),
+    )
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
 class TailscaleUser(DataClassORJSONMixin):
     """Object holding Tailscale user information."""
 

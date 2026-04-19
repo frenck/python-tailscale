@@ -25,6 +25,7 @@ from tailscale.models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    TailnetSettings,
     TailscaleUser,
 )
 from tests.conftest import FIXTURES_DIR
@@ -378,6 +379,26 @@ def test_user_command(
     exit_code, output = _invoke(
         runner,
         ["user", "u12345", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+# --- settings command ---
+
+
+def test_settings_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Settings command renders a table of tailnet settings."""
+    settings = TailnetSettings.from_json(_load_fixture("tailnet_settings.json"))
+    mock_client = _mock_tailscale()
+    mock_client.tailnet_settings.return_value = settings
+    exit_code, output = _invoke(
+        runner,
+        ["settings", "--api-key", "tskey-api-test"],
         mock_client,
     )
     assert exit_code == 0

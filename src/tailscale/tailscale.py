@@ -25,6 +25,7 @@ from .models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    TailnetSettings,
     TailscaleUser,
 )
 
@@ -566,6 +567,73 @@ class Tailscale:
         """
         data = await self._request(f"users/{user_id}")
         return TailscaleUser.from_json(data)
+
+    async def tailnet_settings(self) -> TailnetSettings:
+        """Get the settings for the tailnet.
+
+        Returns
+        -------
+            The tailnet settings.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/settings")
+        return TailnetSettings.from_json(data)
+
+    async def update_tailnet_settings(  # noqa: PLR0913  # pylint: disable=too-many-arguments
+        self,
+        *,
+        devices_approval_on: bool | None = None,
+        devices_auto_updates_on: bool | None = None,
+        devices_key_duration_days: int | None = None,
+        users_approval_on: bool | None = None,
+        users_role_allowed_to_join_external_tailnets: str | None = None,
+        network_flow_logging_on: bool | None = None,
+        regional_routing_on: bool | None = None,
+        posture_identity_collection_on: bool | None = None,
+    ) -> None:
+        """Update the settings for the tailnet.
+
+        Only provided parameters are updated; omitted parameters
+        are left unchanged.
+
+        Args:
+        ----
+            devices_approval_on: Whether device approval is required.
+            devices_auto_updates_on: Whether auto-updates are enabled.
+            devices_key_duration_days: Key expiry duration in days.
+            users_approval_on: Whether user approval is required.
+            users_role_allowed_to_join_external_tailnets: Role allowed
+                to join external tailnets ("none", "admin", "member").
+            network_flow_logging_on: Whether network flow logging is on.
+            regional_routing_on: Whether regional routing is on.
+            posture_identity_collection_on: Whether posture identity
+                collection is on.
+
+        """
+        payload: dict[str, Any] = {}
+        if devices_approval_on is not None:
+            payload["devicesApprovalOn"] = devices_approval_on
+        if devices_auto_updates_on is not None:
+            payload["devicesAutoUpdatesOn"] = devices_auto_updates_on
+        if devices_key_duration_days is not None:
+            payload["devicesKeyDurationDays"] = devices_key_duration_days
+        if users_approval_on is not None:
+            payload["usersApprovalOn"] = users_approval_on
+        if users_role_allowed_to_join_external_tailnets is not None:
+            payload["usersRoleAllowedToJoinExternalTailnets"] = (
+                users_role_allowed_to_join_external_tailnets
+            )
+        if network_flow_logging_on is not None:
+            payload["networkFlowLoggingOn"] = network_flow_logging_on
+        if regional_routing_on is not None:
+            payload["regionalRoutingOn"] = regional_routing_on
+        if posture_identity_collection_on is not None:
+            payload["postureIdentityCollectionOn"] = posture_identity_collection_on
+        await self._request(
+            f"tailnet/{self.tailnet}/settings",
+            method=METH_PATCH,
+            data=payload,
+        )
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""

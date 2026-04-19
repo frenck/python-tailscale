@@ -726,6 +726,43 @@ async def user_command(
     console.print(Panel(info, title=user.display_name, border_style="green"))
 
 
+@cli.command("settings")
+async def settings_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Show the tailnet settings."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        settings = await client.tailnet_settings()
+
+    table = Table(title="Tailnet Settings", show_header=True, border_style="dim")
+    table.add_column("Setting", style="bold")
+    table.add_column("Value")
+
+    def _bool(val: bool) -> str:
+        return "[green]Yes[/green]" if val else "[dim]No[/dim]"
+
+    table.add_row("Device Approval", _bool(settings.devices_approval_on))
+    table.add_row("Auto Updates", _bool(settings.devices_auto_updates_on))
+    table.add_row("Key Duration", f"{settings.devices_key_duration_days} days")
+    table.add_row("User Approval", _bool(settings.users_approval_on))
+    table.add_row(
+        "External Tailnets",
+        settings.users_role_allowed_to_join_external_tailnets,
+    )
+    table.add_row("Network Flow Logging", _bool(settings.network_flow_logging_on))
+    table.add_row("Regional Routing", _bool(settings.regional_routing_on))
+    table.add_row(
+        "Posture Identity Collection",
+        _bool(settings.posture_identity_collection_on),
+    )
+
+    console.print(table)
+
+
 dump = AsyncTyper(
     help="Dump raw API responses as JSON (useful for debugging/fixtures).",
     no_args_is_help=True,
@@ -865,6 +902,22 @@ async def dump_user_command(
     async with client:
         data = await client._request(  # noqa: SLF001
             f"users/{user_id}"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("settings")
+async def dump_settings_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump tailnet settings as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/settings"
         )
     typer.echo(json.dumps(json.loads(data), indent=2, default=str))
 
