@@ -144,8 +144,16 @@ async def test_devices(
     assert device.os == "linux"
     assert device.authorized is True
     assert device.device_id == "12345"
+    assert device.node_id == "n12345"
+    assert device.connected_to_control is True
+    assert device.ssh_enabled is True
+    assert device.tailnet_lock_key == "tlpub:abc123"
+    assert device.tailnet_lock_error is None
     assert device.client_connectivity is not None
     assert device.client_connectivity.client_supports.ipv6 is True
+    assert "New York" in device.client_connectivity.latency
+    assert device.client_connectivity.latency["New York"].latency_ms == 25.5
+    assert device.client_connectivity.latency["New York"].preferred is True
 
 
 async def test_devices_snapshot(
@@ -174,11 +182,14 @@ async def test_devices_empty_created(
         body='{"devices": [{"addresses": ["100.100.100.100"],'
         '"authorized": true, "blocksIncomingConnections": false,'
         '"clientConnectivity": null, "clientVersion": "1.30.0",'
-        '"created": "", "expires": null, "hostname": "my-device",'
+        '"connectedToControl": true, "created": "",'
+        '"expires": null, "hostname": "my-device",'
         '"id": "12345", "isExternal": false, "keyExpiryDisabled": false,'
         '"lastSeen": null, "machineKey": "mkey:abc123",'
-        '"name": "my-device.tailnet.ts.net", "nodeKey": "nodekey:def456",'
-        '"os": "linux", "updateAvailable": false,'
+        '"name": "my-device.tailnet.ts.net", "nodeId": "n12345",'
+        '"nodeKey": "nodekey:def456",'
+        '"os": "linux", "tailnetLockKey": "tlpub:abc",'
+        '"updateAvailable": false,'
         '"user": "user@example.com"}]}',
         content_type="application/json",
     )

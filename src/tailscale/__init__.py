@@ -5,7 +5,7 @@ from .exceptions import (
     TailscaleConnectionError,
     TailscaleError,
 )
-from .models import ClientConnectivity, ClientSupports, Device, Devices
+from .models import ClientConnectivity, ClientSupports, Device, Devices, Latency
 from .tailscale import Tailscale
 
 __all__ = [
@@ -13,6 +13,7 @@ __all__ = [
     "ClientSupports",
     "Device",
     "Devices",
+    "Latency",
     "Tailscale",
     "TailscaleAuthenticationError",
     "TailscaleConnectionError",

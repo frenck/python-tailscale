@@ -13,20 +13,37 @@
           "upnp": true
         },
         "endpoints": ["1.2.3.4:12345"],
+        "latency": {
+          "New York": {
+            "latencyMs": 25.5,
+            "preferred": true
+          },
+          "San Francisco": {
+            "latencyMs": 50.1,
+            "preferred": false
+          }
+        },
         "mappingVariesByDestIP": false
       },
       "clientVersion": "1.30.0",
+      "connectedToControl": true,
       "created": "2023-01-01T00:00:00Z",
       "expires": "2024-01-01T00:00:00Z",
       "hostname": "my-device",
       "id": "12345",
+      "isEphemeral": false,
       "isExternal": false,
       "keyExpiryDisabled": false,
       "lastSeen": "2023-06-01T00:00:00Z",
       "machineKey": "mkey:abc123",
+      "multipleConnections": false,
       "name": "my-device.tailnet.ts.net",
+      "nodeId": "n12345",
       "nodeKey": "nodekey:def456",
       "os": "linux",
+      "sshEnabled": true,
+      "tailnetLockError": "",
+      "tailnetLockKey": "tlpub:abc123",
       "updateAvailable": false,
       "user": "user@example.com"
     },
@@ -36,6 +53,7 @@
       "blocksIncomingConnections": true,
       "clientConnectivity": null,
       "clientVersion": "1.28.0",
+      "connectedToControl": false,
       "created": "",
       "expires": null,
       "hostname": "server",
@@ -45,8 +63,10 @@
       "lastSeen": null,
       "machineKey": "mkey:xyz789",
       "name": "server.tailnet.ts.net",
+      "nodeId": "n67890",
       "nodeKey": "nodekey:ghi012",
       "os": "windows",
+      "tailnetLockKey": "tlpub:xyz789",
       "updateAvailable": true,
       "user": "admin@example.com",
       "advertisedRoutes": ["10.0.0.0/24"],
