@@ -145,7 +145,7 @@ async def test_devices(
     assert device.authorized is True
     assert device.device_id == "12345"
     assert device.client_connectivity is not None
-    assert device.client_connectivity.client_supports.hair_pinning is True
+    assert device.client_connectivity.client_supports.ipv6 is True
 
 
 async def test_devices_snapshot(

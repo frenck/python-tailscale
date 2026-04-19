@@ -6,7 +6,6 @@
       "blocksIncomingConnections": false,
       "clientConnectivity": {
         "clientSupports": {
-          "hairPinning": true,
           "ipv6": true,
           "pcp": true,
           "pmp": true,
