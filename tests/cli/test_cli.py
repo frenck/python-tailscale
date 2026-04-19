@@ -52,7 +52,7 @@ def _mock_tailscale(
     if device_routes is not None:
         client.device_routes.return_value = device_routes
     if raw_response is not None:
-        client._request.return_value = raw_response
+        client._request.return_value = raw_response  # pylint: disable=protected-access
     client.tailnet = "-"
 
     # The CLI does ``async with client:`` on the return of _build_client.
