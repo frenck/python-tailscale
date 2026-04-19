@@ -11,3 +11,12 @@
     '67890': Device(addresses=['100.104.105.106'], authorized=True, blocks_incoming_connections=True, client_version='', connected_to_control=False, device_id='67890', hostname='shared-node', is_external=True, key_expiry_disabled=True, machine_key='', name='shared-node.other-tailnet.ts.net', node_id='nEXTRNL5678', node_key='nodekey:fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321', os='windows', tailnet_lock_key='', update_available=False, user='admin@example.com', advertised_routes=['10.0.0.0/24'], client_connectivity=None, created=None, enabled_routes=['10.0.0.0/24'], expires=None, is_ephemeral=None, last_seen=None, multiple_connections=None, ssh_enabled=None, tags=['tag:server'], tailnet_lock_error=None),
   })
 # ---
+# name: test_dns_nameservers_snapshot
+  DNSNameservers(dns=['8.8.8.8', '8.8.4.4', '1.1.1.1'], magic_dns=True)
+# ---
+# name: test_dns_preferences_snapshot
+  DNSPreferences(magic_dns=True)
+# ---
+# name: test_dns_search_paths_snapshot
+  DNSSearchPaths(search_paths=['corp.example.com', 'internal.example.com'])
+# ---

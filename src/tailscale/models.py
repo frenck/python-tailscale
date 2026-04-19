@@ -126,6 +126,33 @@ class Device(DataClassORJSONMixin):
 
 
 @dataclass
+class DNSNameservers(DataClassORJSONMixin):
+    """Object holding Tailscale DNS nameserver configuration."""
+
+    dns: list[str] = field(default_factory=list)
+    magic_dns: bool | None = field(
+        default=None,
+        metadata=field_options(alias="magicDNS"),
+    )
+
+
+@dataclass
+class DNSPreferences(DataClassORJSONMixin):
+    """Object holding Tailscale DNS preferences."""
+
+    magic_dns: bool = field(metadata=field_options(alias="magicDNS"))
+
+
+@dataclass
+class DNSSearchPaths(DataClassORJSONMixin):
+    """Object holding Tailscale DNS search paths."""
+
+    search_paths: list[str] = field(
+        default_factory=list, metadata=field_options(alias="searchPaths")
+    )
+
+
+@dataclass
 class DeviceRoutes(DataClassORJSONMixin):
     """Object holding Tailscale device route information."""
 

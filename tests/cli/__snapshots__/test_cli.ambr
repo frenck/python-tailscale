@@ -52,6 +52,53 @@
       'oauth_client_secret',
       'tailnet',
     ]),
+    'dns': dict({
+      'nameservers': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'preferences': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'search-paths': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'set-nameservers': list([
+        'api_key',
+        'nameservers',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'set-preferences': list([
+        'api_key',
+        'magic_dns',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'set-search-paths': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'search_paths',
+        'tailnet',
+      ]),
+      'split': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+    }),
     'dump': dict({
       'device': list([
         'api_key',
@@ -61,6 +108,30 @@
         'tailnet',
       ]),
       'devices': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'dns-nameservers': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'dns-preferences': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'dns-search-paths': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'dns-split': list([
         'api_key',
         'oauth_client_id',
         'oauth_client_secret',
@@ -217,6 +288,69 @@
   │              │             │         │ fd7a:115c:a1e… │            │ 14:30:00+00:00 │            │
   │ nEXTRNL5678  │ shared-node │ windows │ 100.104.105.1… │ Yes        │ -              │ tag:server │
   └──────────────┴─────────────┴─────────┴────────────────┴────────────┴────────────────┴────────────┘
+  
+  '''
+# ---
+# name: test_dns_nameservers_command
+  '''
+       DNS      
+   Nameservers  
+  ┏━━━━━━━━━━━━┓
+  ┃ Nameserver ┃
+  ┡━━━━━━━━━━━━┩
+  │ 8.8.8.8    │
+  │ 8.8.4.4    │
+  │ 1.1.1.1    │
+  └────────────┘
+  MagicDNS: Enabled
+  
+  '''
+# ---
+# name: test_dns_preferences_command
+  '''
+  MagicDNS: Enabled
+  
+  '''
+# ---
+# name: test_dns_search_paths_command
+  '''
+      DNS Search Paths    
+  ┏━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃ Search Path          ┃
+  ┡━━━━━━━━━━━━━━━━━━━━━━┩
+  │ corp.example.com     │
+  │ internal.example.com │
+  └──────────────────────┘
+  
+  '''
+# ---
+# name: test_dns_set_nameservers_command
+  '''
+  DNS nameservers updated: 8.8.8.8, 8.8.4.4, 1.1.1.1
+  
+  '''
+# ---
+# name: test_dns_set_preferences_command
+  '''
+  MagicDNS enabled.
+  
+  '''
+# ---
+# name: test_dns_set_search_paths_command
+  '''
+  DNS search paths updated: corp.example.com, internal.example.com
+  
+  '''
+# ---
+# name: test_dns_split_command
+  '''
+                     Split DNS                   
+  ┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃ Domain               ┃ Nameservers          ┃
+  ┡━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━┩
+  │ corp.example.com     │ 10.0.0.53, 10.0.0.54 │
+  │ internal.example.com │ 10.1.0.53            │
+  └──────────────────────┴──────────────────────┘
   
   '''
 # ---

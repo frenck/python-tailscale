@@ -496,6 +496,153 @@ async def set_ip_command(
     )
 
 
+dns = AsyncTyper(
+    help="Manage DNS configuration for the tailnet.",
+    no_args_is_help=True,
+)
+cli.add_typer(dns, name="dns")
+
+
+@dns.command("nameservers")
+async def dns_nameservers_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Show the DNS nameservers for the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        result = await client.dns_nameservers()
+
+    table = Table(title="DNS Nameservers", show_header=True, border_style="dim")
+    table.add_column("Nameserver", style="bold")
+
+    for ns in result.dns:
+        table.add_row(ns)
+
+    console.print(table)
+    if result.magic_dns is not None:
+        magic = "[green]Enabled[/green]" if result.magic_dns else "[dim]Disabled[/dim]"
+        console.print(f"MagicDNS: {magic}")
+
+
+@dns.command("set-nameservers")
+async def dns_set_nameservers_command(
+    nameservers: Annotated[
+        list[str],
+        typer.Argument(help="DNS nameserver IP addresses"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Set the DNS nameservers for the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        result = await client.set_dns_nameservers(dns=nameservers)
+    console.print(f"[green]DNS nameservers updated: {', '.join(result.dns)}[/green]")
+
+
+@dns.command("preferences")
+async def dns_preferences_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Show the DNS preferences for the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        result = await client.dns_preferences()
+
+    magic = "[green]Enabled[/green]" if result.magic_dns else "[dim]Disabled[/dim]"
+    console.print(f"MagicDNS: {magic}")
+
+
+@dns.command("set-preferences")
+async def dns_set_preferences_command(
+    magic_dns: Annotated[
+        bool,
+        typer.Option("--magic-dns/--no-magic-dns", help="Enable or disable MagicDNS"),
+    ] = True,
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Set the DNS preferences for the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.set_dns_preferences(magic_dns=magic_dns)
+    state = "enabled" if magic_dns else "disabled"
+    console.print(f"[green]MagicDNS {state}.[/green]")
+
+
+@dns.command("search-paths")
+async def dns_search_paths_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Show the DNS search paths for the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        result = await client.dns_search_paths()
+
+    table = Table(title="DNS Search Paths", show_header=True, border_style="dim")
+    table.add_column("Search Path", style="bold")
+
+    for path in result.search_paths:
+        table.add_row(path)
+
+    console.print(table)
+
+
+@dns.command("set-search-paths")
+async def dns_set_search_paths_command(
+    search_paths: Annotated[
+        list[str],
+        typer.Argument(help="DNS search paths"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Set the DNS search paths for the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        result = await client.set_dns_search_paths(search_paths=search_paths)
+    console.print(
+        f"[green]DNS search paths updated: {', '.join(result.search_paths)}[/green]"
+    )
+
+
+@dns.command("split")
+async def dns_split_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Show the split DNS configuration for the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        result = await client.split_dns()
+
+    table = Table(title="Split DNS", show_header=True, border_style="dim")
+    table.add_column("Domain", style="bold")
+    table.add_column("Nameservers")
+
+    for domain, nameservers in result.items():
+        table.add_row(domain, ", ".join(nameservers))
+
+    console.print(table)
+
+
 dump = AsyncTyper(
     help="Dump raw API responses as JSON (useful for debugging/fixtures).",
     no_args_is_help=True,
@@ -535,6 +682,70 @@ async def dump_device_command(
     async with client:
         data = await client._request(  # noqa: SLF001
             f"device/{device_id}?fields=all"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("dns-nameservers")
+async def dump_dns_nameservers_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump DNS nameservers as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/dns/nameservers"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("dns-preferences")
+async def dump_dns_preferences_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump DNS preferences as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/dns/preferences"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("dns-search-paths")
+async def dump_dns_search_paths_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump DNS search paths as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/dns/searchpaths"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("dns-split")
+async def dump_dns_split_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump split DNS configuration as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/dns/split-dns"
         )
     typer.echo(json.dumps(json.loads(data), indent=2, default=str))
 

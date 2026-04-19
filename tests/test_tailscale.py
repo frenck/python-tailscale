@@ -437,6 +437,211 @@ async def test_set_device_ipv4_address(
     await tailscale_client.set_device_ipv4_address("12345", ipv4_address="100.64.0.1")
 
 
+# --- DNS tests ---
+
+
+async def test_dns_nameservers(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting DNS nameservers."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/nameservers",
+        status=200,
+        body=load_fixture("dns_nameservers.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.dns_nameservers()
+    assert result.dns == ["8.8.8.8", "8.8.4.4", "1.1.1.1"]
+    assert result.magic_dns is True
+
+
+async def test_dns_nameservers_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test DNS nameservers parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/nameservers",
+        status=200,
+        body=load_fixture("dns_nameservers.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.dns_nameservers() == snapshot
+
+
+async def test_set_dns_nameservers(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting DNS nameservers."""
+    responses.post(
+        f"{URL}/tailnet/frenck/dns/nameservers",
+        status=200,
+        body=load_fixture("dns_nameservers.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.set_dns_nameservers(
+        dns=["8.8.8.8", "8.8.4.4", "1.1.1.1"]
+    )
+    assert result.dns == ["8.8.8.8", "8.8.4.4", "1.1.1.1"]
+    assert result.magic_dns is True
+
+
+async def test_dns_preferences(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting DNS preferences."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/preferences",
+        status=200,
+        body=load_fixture("dns_preferences.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.dns_preferences()
+    assert result.magic_dns is True
+
+
+async def test_dns_preferences_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test DNS preferences parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/preferences",
+        status=200,
+        body=load_fixture("dns_preferences.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.dns_preferences() == snapshot
+
+
+async def test_set_dns_preferences(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting DNS preferences."""
+    responses.post(
+        f"{URL}/tailnet/frenck/dns/preferences",
+        status=200,
+        body=load_fixture("dns_preferences.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.set_dns_preferences(magic_dns=True)
+    assert result.magic_dns is True
+
+
+async def test_dns_search_paths(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting DNS search paths."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/searchpaths",
+        status=200,
+        body=load_fixture("dns_searchpaths.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.dns_search_paths()
+    assert result.search_paths == ["corp.example.com", "internal.example.com"]
+
+
+async def test_dns_search_paths_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test DNS search paths parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/searchpaths",
+        status=200,
+        body=load_fixture("dns_searchpaths.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.dns_search_paths() == snapshot
+
+
+async def test_set_dns_search_paths(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting DNS search paths."""
+    responses.post(
+        f"{URL}/tailnet/frenck/dns/searchpaths",
+        status=200,
+        body=load_fixture("dns_searchpaths.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.set_dns_search_paths(
+        search_paths=["corp.example.com", "internal.example.com"]
+    )
+    assert result.search_paths == ["corp.example.com", "internal.example.com"]
+
+
+async def test_split_dns(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting split DNS configuration."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/split-dns",
+        status=200,
+        body=load_fixture("split_dns.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.split_dns()
+    assert result == {
+        "corp.example.com": ["10.0.0.53", "10.0.0.54"],
+        "internal.example.com": ["10.1.0.53"],
+    }
+
+
+async def test_set_split_dns(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test replacing split DNS configuration."""
+    responses.put(
+        f"{URL}/tailnet/frenck/dns/split-dns",
+        status=200,
+        body=load_fixture("split_dns.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.set_split_dns(
+        split_dns={
+            "corp.example.com": ["10.0.0.53", "10.0.0.54"],
+            "internal.example.com": ["10.1.0.53"],
+        }
+    )
+    assert result == {
+        "corp.example.com": ["10.0.0.53", "10.0.0.54"],
+        "internal.example.com": ["10.1.0.53"],
+    }
+
+
+async def test_update_split_dns(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test partially updating split DNS configuration."""
+    responses.patch(
+        f"{URL}/tailnet/frenck/dns/split-dns",
+        status=200,
+        body=load_fixture("split_dns.json"),
+        content_type="application/json",
+    )
+    result = await tailscale_client.update_split_dns(
+        split_dns={"corp.example.com": ["10.0.0.53", "10.0.0.54"]}
+    )
+    assert result == {
+        "corp.example.com": ["10.0.0.53", "10.0.0.54"],
+        "internal.example.com": ["10.1.0.53"],
+    }
+
+
 # --- OAuth tests ---
 
 

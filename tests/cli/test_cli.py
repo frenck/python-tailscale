@@ -18,7 +18,14 @@ from tailscale.exceptions import (
     TailscaleConnectionError,
     TailscaleError,
 )
-from tailscale.models import Device, DeviceRoutes, Devices
+from tailscale.models import (
+    Device,
+    DeviceRoutes,
+    Devices,
+    DNSNameservers,
+    DNSPreferences,
+    DNSSearchPaths,
+)
 from tests.conftest import FIXTURES_DIR
 
 if TYPE_CHECKING:
@@ -197,6 +204,145 @@ def test_routes_command(
     )
     assert exit_code == 0
     assert output == snapshot
+
+
+# --- dns commands ---
+
+
+def test_dns_nameservers_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS nameservers command renders a table."""
+    ns = DNSNameservers.from_json(_load_fixture("dns_nameservers.json"))
+    mock_client = _mock_tailscale()
+    mock_client.dns_nameservers.return_value = ns
+    exit_code, output = _invoke(
+        runner,
+        ["dns", "nameservers", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_dns_preferences_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS preferences command shows MagicDNS status."""
+    prefs = DNSPreferences.from_json(_load_fixture("dns_preferences.json"))
+    mock_client = _mock_tailscale()
+    mock_client.dns_preferences.return_value = prefs
+    exit_code, output = _invoke(
+        runner,
+        ["dns", "preferences", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_dns_search_paths_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS search paths command renders a table."""
+    paths = DNSSearchPaths.from_json(_load_fixture("dns_searchpaths.json"))
+    mock_client = _mock_tailscale()
+    mock_client.dns_search_paths.return_value = paths
+    exit_code, output = _invoke(
+        runner,
+        ["dns", "search-paths", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_dns_split_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS split command renders a table."""
+    split = json.loads(_load_fixture("split_dns.json"))
+    mock_client = _mock_tailscale()
+    mock_client.split_dns.return_value = split
+    exit_code, output = _invoke(
+        runner,
+        ["dns", "split", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_dns_set_nameservers_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS set-nameservers command prints confirmation."""
+    ns = DNSNameservers.from_json(_load_fixture("dns_nameservers.json"))
+    mock_client = _mock_tailscale()
+    mock_client.set_dns_nameservers.return_value = ns
+    exit_code, output = _invoke(
+        runner,
+        [
+            "dns",
+            "set-nameservers",
+            "8.8.8.8",
+            "8.8.4.4",
+            "--api-key",
+            "tskey-api-test",
+        ],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.set_dns_nameservers.assert_called_once_with(dns=["8.8.8.8", "8.8.4.4"])
+
+
+def test_dns_set_preferences_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS set-preferences command prints confirmation."""
+    mock_client = _mock_tailscale()
+    exit_code, output = _invoke(
+        runner,
+        ["dns", "set-preferences", "--magic-dns", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.set_dns_preferences.assert_called_once_with(magic_dns=True)
+
+
+def test_dns_set_search_paths_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS set-search-paths command prints confirmation."""
+    paths = DNSSearchPaths.from_json(_load_fixture("dns_searchpaths.json"))
+    mock_client = _mock_tailscale()
+    mock_client.set_dns_search_paths.return_value = paths
+    exit_code, output = _invoke(
+        runner,
+        [
+            "dns",
+            "set-search-paths",
+            "corp.example.com",
+            "internal.example.com",
+            "--api-key",
+            "tskey-api-test",
+        ],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.set_dns_search_paths.assert_called_once_with(
+        search_paths=["corp.example.com", "internal.example.com"]
+    )
 
 
 # --- action commands ---
@@ -441,9 +587,13 @@ def test_dump_routes_command(
 
 def test_missing_auth(
     runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
     snapshot: SnapshotAssertion,
 ) -> None:
     """Commands without credentials print an error and exit with 1."""
+    monkeypatch.delenv("TAILSCALE_API_KEY", raising=False)
+    monkeypatch.delenv("TAILSCALE_OAUTH_CLIENT_ID", raising=False)
+    monkeypatch.delenv("TAILSCALE_OAUTH_CLIENT_SECRET", raising=False)
     result = runner.invoke(cli, ["devices"])
     assert result.exit_code == 1
     assert result.stdout == snapshot

@@ -1,0 +1,4 @@
+{
+  "corp.example.com": ["10.0.0.53", "10.0.0.54"],
+  "internal.example.com": ["10.1.0.53"]
+}

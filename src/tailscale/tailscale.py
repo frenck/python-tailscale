@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Self
 
 from aiohttp.client import ClientError, ClientResponseError, ClientSession
-from aiohttp.hdrs import METH_DELETE, METH_GET, METH_POST
+from aiohttp.hdrs import METH_DELETE, METH_GET, METH_PATCH, METH_POST, METH_PUT
 from yarl import URL
 
 from .exceptions import (
@@ -18,7 +18,14 @@ from .exceptions import (
     TailscaleConnectionError,
     TailscaleError,
 )
-from .models import Device, DeviceRoutes, Devices
+from .models import (
+    Device,
+    DeviceRoutes,
+    Devices,
+    DNSNameservers,
+    DNSPreferences,
+    DNSSearchPaths,
+)
 
 if TYPE_CHECKING:
     from .storage import TokenStorage
@@ -386,6 +393,151 @@ class Tailscale:
             method=METH_POST,
             data={"ipv4": ipv4_address},
         )
+
+    async def dns_nameservers(self) -> DNSNameservers:
+        """Get the DNS nameservers for the tailnet.
+
+        Returns
+        -------
+            The DNS nameserver configuration.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/dns/nameservers")
+        return DNSNameservers.from_json(data)
+
+    async def set_dns_nameservers(self, *, dns: list[str]) -> DNSNameservers:
+        """Set the DNS nameservers for the tailnet.
+
+        Args:
+        ----
+            dns: The list of DNS nameserver IP addresses.
+
+        Returns:
+        -------
+            The updated DNS nameserver configuration.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/dns/nameservers",
+            method=METH_POST,
+            data={"dns": dns},
+        )
+        return DNSNameservers.from_json(data)
+
+    async def dns_preferences(self) -> DNSPreferences:
+        """Get the DNS preferences for the tailnet.
+
+        Returns
+        -------
+            The DNS preferences.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/dns/preferences")
+        return DNSPreferences.from_json(data)
+
+    async def set_dns_preferences(self, *, magic_dns: bool) -> DNSPreferences:
+        """Set the DNS preferences for the tailnet.
+
+        Args:
+        ----
+            magic_dns: Whether to enable MagicDNS.
+
+        Returns:
+        -------
+            The updated DNS preferences.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/dns/preferences",
+            method=METH_POST,
+            data={"magicDNS": magic_dns},
+        )
+        return DNSPreferences.from_json(data)
+
+    async def dns_search_paths(self) -> DNSSearchPaths:
+        """Get the DNS search paths for the tailnet.
+
+        Returns
+        -------
+            The DNS search paths.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/dns/searchpaths")
+        return DNSSearchPaths.from_json(data)
+
+    async def set_dns_search_paths(self, *, search_paths: list[str]) -> DNSSearchPaths:
+        """Set the DNS search paths for the tailnet.
+
+        Args:
+        ----
+            search_paths: The list of DNS search paths.
+
+        Returns:
+        -------
+            The updated DNS search paths.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/dns/searchpaths",
+            method=METH_POST,
+            data={"searchPaths": search_paths},
+        )
+        return DNSSearchPaths.from_json(data)
+
+    async def split_dns(self) -> dict[str, list[str]]:
+        """Get the split DNS configuration for the tailnet.
+
+        Returns
+        -------
+            A dictionary mapping domain names to lists of nameserver addresses.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/dns/split-dns")
+        return json.loads(data)
+
+    async def set_split_dns(
+        self, *, split_dns: dict[str, list[str]]
+    ) -> dict[str, list[str]]:
+        """Replace the split DNS configuration for the tailnet.
+
+        Args:
+        ----
+            split_dns: A dictionary mapping domain names to lists of
+                nameserver addresses.
+
+        Returns:
+        -------
+            The updated split DNS configuration.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/dns/split-dns",
+            method=METH_PUT,
+            data=split_dns,
+        )
+        return json.loads(data)
+
+    async def update_split_dns(
+        self, *, split_dns: dict[str, list[str]]
+    ) -> dict[str, list[str]]:
+        """Update part of the split DNS configuration for the tailnet.
+
+        Args:
+        ----
+            split_dns: A dictionary mapping domain names to lists of
+                nameserver addresses. Only provided domains are updated.
+
+        Returns:
+        -------
+            The updated split DNS configuration.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/dns/split-dns",
+            method=METH_PATCH,
+            data=split_dns,
+        )
+        return json.loads(data)
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""
