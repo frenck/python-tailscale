@@ -1,0 +1,26 @@
+---
+name: Issue
+description: Report an issue with the Tailscale Python client.
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of what the issue is.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version of the Tailscale Python client.
+      placeholder: e.g., 0.7.0
+    validations:
+      required: true
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information
+      description: Any logs, tracebacks, or other context.
+    validations:
+      required: false

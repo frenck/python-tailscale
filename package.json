@@ -2,13 +2,13 @@
   "name": "tailscale",
   "version": "0.0.0",
   "private": true,
-  "description": "Asynchronous client for the Tailscale API",
+  "description": "Asynchronous Python client for the Tailscale API",
   "scripts": {
-    "prettier": "prettier --write **/*.{json,js,md,yml,yaml}"
+    "prettier": "prettier --write **/*.{json,js,md,yml,yaml} *.{json,js,md,yml,yaml}"
   },
   "author": "Franck Nijhof <opensource@frenck.dev>",
   "license": "MIT",
   "devDependencies": {
-    "prettier": "3.6.2"
+    "prettier": "3.8.3"
   }
 }

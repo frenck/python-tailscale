@@ -1,11 +1,11 @@
-"""Asynchronous client for the Tailscale API."""
+"""Tests for `tailscale.tailscale`."""
 
 # pylint: disable=protected-access
-import asyncio
 
 import aiohttp
 import pytest
-from aresponses import Response, ResponsesMockServer
+from aioresponses import aioresponses
+from syrupy.assertion import SnapshotAssertion
 
 from tailscale import Tailscale
 from tailscale.exceptions import (
@@ -14,112 +14,173 @@ from tailscale.exceptions import (
     TailscaleError,
 )
 
+from .conftest import URL, load_fixture
 
-async def test_json_request(aresponses: ResponsesMockServer) -> None:
+
+async def test_json_request(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
     """Test JSON response is handled correctly."""
-    aresponses.add(
-        "api.tailscale.com",
-        "/api/v2/test",
-        "GET",
-        aresponses.Response(
-            status=200,
-            headers={"Content-Type": "application/json"},
-            text='{"status": "ok"}',
-        ),
+    responses.get(
+        f"{URL}/test",
+        status=200,
+        body='{"status": "ok"}',
+        content_type="application/json",
     )
-    async with aiohttp.ClientSession() as session:
-        tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
-        response = await tailscale._request("test")
-        assert response == '{"status": "ok"}'
-        await tailscale.close()
+    response = await tailscale_client._request("test")
+    assert response == '{"status": "ok"}'
 
 
-async def test_internal_session(aresponses: ResponsesMockServer) -> None:
-    """Test JSON response is handled correctly."""
-    aresponses.add(
-        "api.tailscale.com",
-        "/api/v2/test",
-        "GET",
-        aresponses.Response(
+async def test_internal_session() -> None:
+    """Test internal session is created and closed correctly."""
+    with aioresponses() as mocked:
+        mocked.get(
+            f"{URL}/test",
             status=200,
-            headers={"Content-Type": "application/json"},
-            text='{"status": "ok"}',
-        ),
-    )
-    async with Tailscale(tailnet="frenck", api_key="abc") as tailscale:
-        response = await tailscale._request("test")
-        assert response == '{"status": "ok"}'
-
-
-async def test_put_request(aresponses: ResponsesMockServer) -> None:
-    """Test PUT requests are handled correctly."""
-    aresponses.add(
-        "api.tailscale.com",
-        "/api/v2/test",
-        "POST",
-        aresponses.Response(
-            status=200,
-            headers={"Content-Type": "application/json"},
-            text='{"status": "ok"}',
-        ),
-    )
-    async with aiohttp.ClientSession() as session:
-        tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
-        response = await tailscale._request(
-            "test",
-            method=aiohttp.hdrs.METH_POST,
-            data={},
+            body='{"status": "ok"}',
+            content_type="application/json",
         )
-        assert response == '{"status": "ok"}'
+        async with Tailscale(tailnet="frenck", api_key="abc") as tailscale:
+            response = await tailscale._request("test")
+            assert response == '{"status": "ok"}'
 
 
-async def test_timeout(aresponses: ResponsesMockServer) -> None:
+async def test_post_request(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test POST requests are handled correctly."""
+    responses.post(
+        f"{URL}/test",
+        status=200,
+        body='{"status": "ok"}',
+        content_type="application/json",
+    )
+    response = await tailscale_client._request(
+        "test",
+        method=aiohttp.hdrs.METH_POST,
+        data={},
+    )
+    assert response == '{"status": "ok"}'
+
+
+async def test_timeout(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
     """Test request timeout from the Tailscale API."""
-
-    # Faking a timeout by sleeping
-    async def response_handler(_: aiohttp.ClientResponse) -> Response:
-        """Response handler for this test."""
-        await asyncio.sleep(2)
-        return aresponses.Response(body="Goodmorning!")
-
-    aresponses.add("api.tailscale.com", "/api/v2/test", "GET", response_handler)
-
-    async with aiohttp.ClientSession() as session:
-        tailscale = Tailscale(
-            tailnet="frenck",
-            api_key="abc",
-            session=session,
-            request_timeout=1,
-        )
-        with pytest.raises(TailscaleConnectionError):
-            assert await tailscale._request("test")
+    responses.get(
+        f"{URL}/test",
+        exception=TimeoutError(),
+    )
+    tailscale_client.request_timeout = 1
+    with pytest.raises(TailscaleConnectionError):
+        await tailscale_client._request("test")
 
 
-async def test_http_error400(aresponses: ResponsesMockServer) -> None:
+async def test_http_error404(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
     """Test HTTP 404 response handling."""
-    aresponses.add(
-        "api.tailscale.com",
-        "/api/v2/test",
-        "GET",
-        aresponses.Response(text="OMG PUPPIES!", status=404),
+    responses.get(
+        f"{URL}/test",
+        status=404,
+        body="OMG PUPPIES!",
+        content_type="text/plain",
     )
-
-    async with aiohttp.ClientSession() as session:
-        tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
-        with pytest.raises(TailscaleError):
-            assert await tailscale._request("test")
+    with pytest.raises(TailscaleError):
+        await tailscale_client._request("test")
 
 
-async def test_http_error401(aresponses: ResponsesMockServer) -> None:
+async def test_http_error401(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
     """Test HTTP 401 response handling."""
-    aresponses.add(
-        "api.tailscale.com",
-        "/api/v2/test",
-        "GET",
-        aresponses.Response(text="Access denied!", status=401),
+    responses.get(
+        f"{URL}/test",
+        status=401,
+        body="Access denied!",
+        content_type="text/plain",
     )
+    with pytest.raises(TailscaleAuthenticationError):
+        await tailscale_client._request("test")
 
-    async with aiohttp.ClientSession() as session:
-        tailscale = Tailscale(tailnet="frenck", api_key="abc", session=session)
-        with pytest.raises(TailscaleAuthenticationError):
-            assert await tailscale._request("test")
+
+async def test_connection_error(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test connection error handling."""
+    responses.get(
+        f"{URL}/test",
+        exception=aiohttp.ClientError(),
+    )
+    with pytest.raises(TailscaleConnectionError):
+        await tailscale_client._request("test")
+
+
+async def test_devices(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test fetching devices from the Tailscale API."""
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=all",
+        status=200,
+        body=load_fixture("devices.json"),
+        content_type="application/json",
+    )
+    devices = await tailscale_client.devices()
+
+    assert len(devices) == 2
+    assert "12345" in devices
+    assert "67890" in devices
+
+    device = devices["12345"]
+    assert device.hostname == "my-device"
+    assert device.os == "linux"
+    assert device.authorized is True
+    assert device.device_id == "12345"
+    assert device.client_connectivity is not None
+    assert device.client_connectivity.client_supports.hair_pinning is True
+
+
+async def test_devices_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test device parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=all",
+        status=200,
+        body=load_fixture("devices.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.devices() == snapshot
+
+
+async def test_devices_empty_created(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test device with empty created field is handled."""
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=all",
+        status=200,
+        body='{"devices": [{"addresses": ["100.100.100.100"],'
+        '"authorized": true, "blocksIncomingConnections": false,'
+        '"clientConnectivity": null, "clientVersion": "1.30.0",'
+        '"created": "", "expires": null, "hostname": "my-device",'
+        '"id": "12345", "isExternal": false, "keyExpiryDisabled": false,'
+        '"lastSeen": null, "machineKey": "mkey:abc123",'
+        '"name": "my-device.tailnet.ts.net", "nodeKey": "nodekey:def456",'
+        '"os": "linux", "updateAvailable": false,'
+        '"user": "user@example.com"}]}',
+        content_type="application/json",
+    )
+    devices = await tailscale_client.devices()
+    assert devices["12345"].created is None

@@ -8,20 +8,23 @@
 
 [![Build Status][build-shield]][build]
 [![Code Coverage][codecov-shield]][codecov]
-[![Quality Gate Status][sonarcloud-shield]][sonarcloud]
+[![OpenSSF Scorecard][scorecard-shield]][scorecard]
 [![Open in Dev Containers][devcontainer-shield]][devcontainer]
 
 [![Sponsor Frenck via GitHub Sponsors][github-sponsors-shield]][github-sponsors]
 
 [![Support Frenck on Patreon][patreon-shield]][patreon]
 
-Asynchronous client for the Tailscale API.
+Asynchronous Python client for the Tailscale API.
 
 ## About
 
 This package allows you to control and monitor Tailscale clients
 programmatically. It is mainly created to allow third-party programs to
 integrate with Tailscale.
+
+An excellent example of this might be Home Assistant, which allows you to write
+automations based on the status of your Tailscale network devices.
 
 ## Installation
 
@@ -31,26 +34,53 @@ pip install tailscale
 
 ## Usage
 
+The client is an async context manager; every API call is a coroutine. A
+quick example that lists all devices in your tailnet:
+
 ```python
 import asyncio
 
 from tailscale import Tailscale
 
 
-async def main():
-    """Show example on using the Tailscale API client."""
+async def main() -> None:
+    """Show example of using the Tailscale API client."""
     async with Tailscale(
         tailnet="frenck",
         api_key="tskey-somethingsomething",
     ) as tailscale:
-
         devices = await tailscale.devices()
-        print(devices)
+
+        for device_id, device in devices.items():
+            print(f"{device.hostname} ({device.os})")
+            print(f"  Addresses: {', '.join(device.addresses)}")
+            print(f"  Last seen: {device.last_seen}")
+            print(f"  Update available: {device.update_available}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+Each device returned is a `Device` dataclass with properties like `hostname`,
+`os`, `addresses`, `authorized`, `client_version`, `last_seen`, `tags`,
+`advertised_routes`, `enabled_routes`, and more. Devices are returned as a
+dictionary keyed by device ID.
+
+### Connection options
+
+All constructor arguments except `tailnet` and `api_key` are optional:
+
+```python
+Tailscale(
+    tailnet="your-tailnet",
+    api_key="tskey-...",
+    request_timeout=10,  # per-request timeout in seconds (default: 8)
+)
+```
+
+You may also pass your own `aiohttp.ClientSession` via `session=...` to
+share a connection pool across multiple clients.
 
 ## Changelog & Releases
 
@@ -72,7 +102,7 @@ This is an active open-source project. We are always open to people who want to
 use the code or contribute to it.
 
 We've set up a separate document for our
-[contribution guidelines](.github/CONTRIBUTING.md).
+[contribution guidelines](CONTRIBUTING.md).
 
 Thank you for being involved! :heart_eyes:
 
@@ -86,7 +116,7 @@ You need at least:
 
 - Python 3.11+
 - [Poetry][poetry-install]
-- NodeJS 20+ (including NPM)
+- NodeJS 24+ (including NPM)
 
 To install all packages, including all development requirements:
 
@@ -95,12 +125,12 @@ npm install
 poetry install
 ```
 
-As this repository uses the [pre-commit][pre-commit] framework, all changes
+As this repository uses the [prek][prek] framework, all changes
 are linted and tested with each commit. You can run all checks and tests
 manually, using the following command:
 
 ```bash
-poetry run pre-commit run --all-files
+poetry run prek run --all-files
 ```
 
 To run just the Python tests:
@@ -116,11 +146,26 @@ The original setup of this repository is by [Franck Nijhof][frenck].
 For a full list of all authors and contributors,
 check [the contributor's page][contributors].
 
+## Disclaimer
+
+This project is an independent, community-driven effort and is **not
+affiliated with, endorsed by, or supported by** Tailscale Inc. All product
+names, trademarks, and registered trademarks are property of their respective
+owners.
+
+This library interacts with the [Tailscale API][tailscale-api], which is a
+publicly documented interface. A valid API key, issued by Tailscale, is
+required to use this library.
+
+Use this software at your own risk. The authors are not responsible for any
+consequences resulting from the use of this library, including but not limited
+to unintended changes to your Tailscale network configuration.
+
 ## License
 
 MIT License
 
-Copyright (c) 2021-2025 Franck Nijhof
+Copyright (c) 2021-2026 Franck Nijhof
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -142,7 +187,7 @@ SOFTWARE.
 
 [build-shield]: https://github.com/frenck/python-tailscale/actions/workflows/tests.yaml/badge.svg
 [build]: https://github.com/frenck/python-tailscale/actions/workflows/tests.yaml
-[codecov-shield]: https://codecov.io/gh/frenck/python-tailscale/branch/master/graph/badge.svg
+[codecov-shield]: https://codecov.io/gh/frenck/python-tailscale/branch/main/graph/badge.svg
 [codecov]: https://codecov.io/gh/frenck/python-tailscale
 [contributors]: https://github.com/frenck/python-tailscale/graphs/contributors
 [devcontainer-shield]: https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode
@@ -152,17 +197,18 @@ SOFTWARE.
 [github-sponsors]: https://github.com/sponsors/frenck
 [keepchangelog]: https://keepachangelog.com/en/1.0.0/
 [license-shield]: https://img.shields.io/github/license/frenck/python-tailscale.svg
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2026.svg
 [patreon-shield]: https://frenck.dev/wp-content/uploads/2019/12/patreon.png
 [patreon]: https://www.patreon.com/frenck
 [poetry-install]: https://python-poetry.org/docs/#installation
 [poetry]: https://python-poetry.org
-[pre-commit]: https://pre-commit.com/
+[prek]: https://github.com/j178/prek
 [project-stage-shield]: https://img.shields.io/badge/project%20stage-production%20ready-brightgreen.svg
 [pypi]: https://pypi.org/project/tailscale/
 [python-versions-shield]: https://img.shields.io/pypi/pyversions/tailscale
 [releases-shield]: https://img.shields.io/github/release/frenck/python-tailscale.svg
 [releases]: https://github.com/frenck/python-tailscale/releases
-[semver]: http://semver.org/spec/v2.0.0.html
-[sonarcloud-shield]: https://sonarcloud.io/api/project_badges/measure?project=frenck_python-tailscale&metric=alert_status
-[sonarcloud]: https://sonarcloud.io/summary/new_code?id=frenck_python-tailscale
+[scorecard]: https://scorecard.dev/viewer/?uri=github.com/frenck/python-tailscale
+[scorecard-shield]: https://api.scorecard.dev/projects/github.com/frenck/python-tailscale/badge
+[semver]: https://semver.org/spec/v2.0.0.html
+[tailscale-api]: https://tailscale.com/api

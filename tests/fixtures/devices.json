@@ -1,0 +1,58 @@
+{
+  "devices": [
+    {
+      "addresses": ["100.100.100.100"],
+      "authorized": true,
+      "blocksIncomingConnections": false,
+      "clientConnectivity": {
+        "clientSupports": {
+          "hairPinning": true,
+          "ipv6": true,
+          "pcp": true,
+          "pmp": true,
+          "udp": true,
+          "upnp": true
+        },
+        "endpoints": ["1.2.3.4:12345"],
+        "mappingVariesByDestIP": false
+      },
+      "clientVersion": "1.30.0",
+      "created": "2023-01-01T00:00:00Z",
+      "expires": "2024-01-01T00:00:00Z",
+      "hostname": "my-device",
+      "id": "12345",
+      "isExternal": false,
+      "keyExpiryDisabled": false,
+      "lastSeen": "2023-06-01T00:00:00Z",
+      "machineKey": "mkey:abc123",
+      "name": "my-device.tailnet.ts.net",
+      "nodeKey": "nodekey:def456",
+      "os": "linux",
+      "updateAvailable": false,
+      "user": "user@example.com"
+    },
+    {
+      "addresses": ["100.100.100.101"],
+      "authorized": true,
+      "blocksIncomingConnections": true,
+      "clientConnectivity": null,
+      "clientVersion": "1.28.0",
+      "created": "",
+      "expires": null,
+      "hostname": "server",
+      "id": "67890",
+      "isExternal": true,
+      "keyExpiryDisabled": true,
+      "lastSeen": null,
+      "machineKey": "mkey:xyz789",
+      "name": "server.tailnet.ts.net",
+      "nodeKey": "nodekey:ghi012",
+      "os": "windows",
+      "updateAvailable": true,
+      "user": "admin@example.com",
+      "advertisedRoutes": ["10.0.0.0/24"],
+      "enabledRoutes": ["10.0.0.0/24"],
+      "tags": ["tag:server"]
+    }
+  ]
+}

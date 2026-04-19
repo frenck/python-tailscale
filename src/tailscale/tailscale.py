@@ -1,4 +1,4 @@
-"""Asynchronous client for the Tailscale API."""
+"""Asynchronous Python client for the Tailscale API."""
 
 from __future__ import annotations
 
@@ -47,13 +47,12 @@ class Tailscale:
         Args:
         ----
             uri: Request URI, without '/api/v2/'.
-            method: HTTP Method to use.
+            method: HTTP method to use.
             data: Dictionary of data to send to the Tailscale API.
 
         Returns:
         -------
-            A Python dictionary (JSON decoded) with the response from
-            the Tailscale API.
+            The response body as a string.
 
         Raises:
         ------
@@ -84,7 +83,7 @@ class Tailscale:
                     headers=headers,
                 )
                 response.raise_for_status()
-        except asyncio.TimeoutError as exception:
+        except TimeoutError as exception:
             msg = "Timeout occurred while connecting to the Tailscale API"
             raise TailscaleConnectionError(msg) from exception
         except ClientResponseError as exception:
@@ -103,11 +102,11 @@ class Tailscale:
         return await response.text()
 
     async def devices(self) -> dict[str, Device]:
-        """Get devices information from the Tailscale API.
+        """Get device information from the Tailscale API.
 
         Returns
         -------
-            Returns a dictionary of Tailscale devices.
+            A dictionary of Tailscale devices, keyed by device ID.
 
         """
         data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
@@ -133,7 +132,7 @@ class Tailscale:
 
         Args:
         ----
-            _exc_info: Exec type.
+            _exc_info: Exception type, value, and traceback.
 
         """
         await self.close()
