@@ -126,6 +126,18 @@ class Device(DataClassORJSONMixin):
 
 
 @dataclass
+class DeviceRoutes(DataClassORJSONMixin):
+    """Object holding Tailscale device route information."""
+
+    advertised_routes: list[str] = field(
+        default_factory=list, metadata=field_options(alias="advertisedRoutes")
+    )
+    enabled_routes: list[str] = field(
+        default_factory=list, metadata=field_options(alias="enabledRoutes")
+    )
+
+
+@dataclass
 class Devices(DataClassORJSONMixin):
     """Object holding a collection of Tailscale devices."""
 

@@ -1,7 +1,7 @@
 {
   "devices": [
     {
-      "addresses": ["100.100.100.100"],
+      "addresses": ["100.101.102.103", "fd7a:115c:a1e0::1"],
       "authorized": true,
       "blocksIncomingConnections": false,
       "clientConnectivity": {
@@ -10,64 +10,67 @@
           "pcp": true,
           "pmp": true,
           "udp": true,
-          "upnp": true
+          "upnp": false
         },
-        "endpoints": ["1.2.3.4:12345"],
+        "endpoints": [
+          "203.0.113.45:41641",
+          "192.168.1.50:41641"
+        ],
         "latency": {
-          "New York": {
-            "latencyMs": 25.5,
+          "New York City": {
+            "latencyMs": 12.548,
             "preferred": true
           },
           "San Francisco": {
-            "latencyMs": 50.1,
+            "latencyMs": 65.124,
             "preferred": false
           }
         },
         "mappingVariesByDestIP": false
       },
-      "clientVersion": "1.30.0",
+      "clientVersion": "1.76.1",
       "connectedToControl": true,
-      "created": "2023-01-01T00:00:00Z",
-      "expires": "2024-01-01T00:00:00Z",
-      "hostname": "my-device",
+      "created": "2024-11-15T09:32:00Z",
+      "expires": "2025-05-15T09:32:00Z",
+      "hostname": "workstation",
       "id": "12345",
       "isEphemeral": false,
       "isExternal": false,
       "keyExpiryDisabled": false,
-      "lastSeen": "2023-06-01T00:00:00Z",
-      "machineKey": "mkey:abc123",
+      "lastSeen": "2026-04-19T14:30:00Z",
+      "machineKey": "mkey:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
       "multipleConnections": false,
-      "name": "my-device.tailnet.ts.net",
-      "nodeId": "n12345",
-      "nodeKey": "nodekey:def456",
+      "name": "workstation.tail1234.ts.net",
+      "nodeId": "nSRVBN3CNTRL",
+      "nodeKey": "nodekey:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
       "os": "linux",
       "sshEnabled": true,
       "tailnetLockError": "",
-      "tailnetLockKey": "tlpub:abc123",
+      "tailnetLockKey": "tlpub:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
       "updateAvailable": false,
       "user": "user@example.com"
     },
     {
-      "addresses": ["100.100.100.101"],
+      "addresses": ["100.104.105.106"],
       "authorized": true,
       "blocksIncomingConnections": true,
       "clientConnectivity": null,
-      "clientVersion": "1.28.0",
+      "clientVersion": "",
       "connectedToControl": false,
       "created": "",
       "expires": null,
-      "hostname": "server",
+      "hostname": "shared-node",
       "id": "67890",
       "isExternal": true,
       "keyExpiryDisabled": true,
       "lastSeen": null,
-      "machineKey": "mkey:xyz789",
-      "name": "server.tailnet.ts.net",
-      "nodeId": "n67890",
-      "nodeKey": "nodekey:ghi012",
+      "machineKey": "",
+      "name": "shared-node.other-tailnet.ts.net",
+      "nodeId": "nEXTRNL5678",
+      "nodeKey": "nodekey:fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
       "os": "windows",
-      "tailnetLockKey": "tlpub:xyz789",
-      "updateAvailable": true,
+      "tailnetLockKey": "",
+      "updateAvailable": false,
       "user": "admin@example.com",
       "advertisedRoutes": ["10.0.0.0/24"],
       "enabledRoutes": ["10.0.0.0/24"],

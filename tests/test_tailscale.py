@@ -71,6 +71,24 @@ async def test_post_request(
     assert response == '{"status": "ok"}'
 
 
+async def test_delete_request(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test DELETE requests are handled correctly."""
+    responses.delete(
+        f"{URL}/test",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    response = await tailscale_client._request(
+        "test",
+        method=aiohttp.hdrs.METH_DELETE,
+    )
+    assert response == ""
+
+
 async def test_timeout(
     responses: aioresponses,
     tailscale_client: Tailscale,
@@ -146,20 +164,22 @@ async def test_devices(
     assert "67890" in devices
 
     device = devices["12345"]
-    assert device.hostname == "my-device"
+    assert device.hostname == "workstation"
     assert device.os == "linux"
     assert device.authorized is True
     assert device.device_id == "12345"
-    assert device.node_id == "n12345"
+    assert device.node_id == "nSRVBN3CNTRL"
     assert device.connected_to_control is True
     assert device.ssh_enabled is True
-    assert device.tailnet_lock_key == "tlpub:abc123"
+    assert device.tailnet_lock_key == (
+        "tlpub:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+    )
     assert device.tailnet_lock_error is None
     assert device.client_connectivity is not None
     assert device.client_connectivity.client_supports.ipv6 is True
-    assert "New York" in device.client_connectivity.latency
-    assert device.client_connectivity.latency["New York"].latency_ms == 25.5
-    assert device.client_connectivity.latency["New York"].preferred is True
+    assert "New York City" in device.client_connectivity.latency
+    assert device.client_connectivity.latency["New York City"].latency_ms == 12.548
+    assert device.client_connectivity.latency["New York City"].preferred is True
 
 
 async def test_devices_snapshot(
@@ -185,22 +205,236 @@ async def test_devices_empty_created(
     responses.get(
         f"{URL}/tailnet/frenck/devices?fields=all",
         status=200,
-        body='{"devices": [{"addresses": ["100.100.100.100"],'
+        body='{"devices": [{"addresses": ["100.101.102.103"],'
         '"authorized": true, "blocksIncomingConnections": false,'
-        '"clientConnectivity": null, "clientVersion": "1.30.0",'
-        '"connectedToControl": true, "created": "",'
-        '"expires": null, "hostname": "my-device",'
-        '"id": "12345", "isExternal": false, "keyExpiryDisabled": false,'
-        '"lastSeen": null, "machineKey": "mkey:abc123",'
-        '"name": "my-device.tailnet.ts.net", "nodeId": "n12345",'
-        '"nodeKey": "nodekey:def456",'
-        '"os": "linux", "tailnetLockKey": "tlpub:abc",'
+        '"clientConnectivity": null, "clientVersion": "",'
+        '"connectedToControl": false, "created": "",'
+        '"expires": null, "hostname": "shared-node",'
+        '"id": "12345", "isExternal": true, "keyExpiryDisabled": false,'
+        '"lastSeen": null, "machineKey": "",'
+        '"name": "shared-node.other-tailnet.ts.net", "nodeId": "nEXTRNL001",'
+        '"nodeKey": "nodekey:fedcba0987654321fedcba0987654321",'
+        '"os": "windows", "tailnetLockKey": "",'
         '"updateAvailable": false,'
-        '"user": "user@example.com"}]}',
+        '"user": "admin@example.com"}]}',
         content_type="application/json",
     )
     devices = await tailscale_client.devices()
     assert devices["12345"].created is None
+
+
+# --- Single device tests ---
+
+
+async def test_device(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test fetching a single device from the Tailscale API."""
+    responses.get(
+        f"{URL}/device/98765?fields=all",
+        status=200,
+        body=load_fixture("device.json"),
+        content_type="application/json",
+    )
+    device = await tailscale_client.device("98765")
+    assert device.hostname == "exit-node-us"
+    assert device.os == "linux"
+    assert device.device_id == "98765"
+    assert device.node_id == "nEXNDUS4321"
+    assert device.key_expiry_disabled is True
+    assert device.update_available is True
+    assert device.multiple_connections is True
+    assert device.ssh_enabled is False
+    assert device.tags == ["tag:exit-node", "tag:us-east"]
+    assert device.advertised_routes == ["10.200.0.0/16", "192.168.50.0/24"]
+    assert device.enabled_routes == ["10.200.0.0/16"]
+    assert device.client_connectivity is not None
+    assert device.client_connectivity.mapping_varies_by_dest_ip is True
+    assert "Chicago" in device.client_connectivity.latency
+    assert device.client_connectivity.latency["Chicago"].latency_ms == 8.341
+
+
+async def test_device_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test single device parsing matches snapshot."""
+    responses.get(
+        f"{URL}/device/98765?fields=all",
+        status=200,
+        body=load_fixture("device.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.device("98765") == snapshot
+
+
+async def test_delete_device(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting a device from the Tailscale API."""
+    responses.delete(
+        f"{URL}/device/12345",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_device("12345")
+
+
+async def test_authorize_device(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test authorizing a device."""
+    responses.post(
+        f"{URL}/device/12345/authorized",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.authorize_device("12345", authorized=True)
+
+
+async def test_deauthorize_device(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deauthorizing a device."""
+    responses.post(
+        f"{URL}/device/12345/authorized",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.authorize_device("12345", authorized=False)
+
+
+async def test_expire_device_key(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test expiring a device key."""
+    responses.post(
+        f"{URL}/device/12345/expire",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.expire_device_key("12345")
+
+
+async def test_set_device_key_expiry(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting device key expiry."""
+    responses.post(
+        f"{URL}/device/12345/key",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.set_device_key_expiry("12345", key_expiry_disabled=True)
+
+
+async def test_rename_device(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test renaming a device."""
+    responses.post(
+        f"{URL}/device/12345/name",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.rename_device("12345", name="new-name")
+
+
+async def test_set_device_tags(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting device tags."""
+    responses.post(
+        f"{URL}/device/12345/tags",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.set_device_tags("12345", tags=["tag:server", "tag:prod"])
+
+
+async def test_device_routes(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting device routes."""
+    responses.get(
+        f"{URL}/device/12345/routes",
+        status=200,
+        body=load_fixture("device_routes.json"),
+        content_type="application/json",
+    )
+    routes = await tailscale_client.device_routes("12345")
+    assert routes.advertised_routes == [
+        "10.200.0.0/16",
+        "192.168.50.0/24",
+        "172.16.0.0/12",
+    ]
+    assert routes.enabled_routes == ["10.200.0.0/16", "192.168.50.0/24"]
+
+
+async def test_device_routes_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test device routes parsing matches snapshot."""
+    responses.get(
+        f"{URL}/device/12345/routes",
+        status=200,
+        body=load_fixture("device_routes.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.device_routes("12345") == snapshot
+
+
+async def test_set_device_routes(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting device routes."""
+    responses.post(
+        f"{URL}/device/12345/routes",
+        status=200,
+        body=load_fixture("device_routes.json"),
+        content_type="application/json",
+    )
+    routes = await tailscale_client.set_device_routes("12345", routes=["10.200.0.0/16"])
+    assert routes.advertised_routes == [
+        "10.200.0.0/16",
+        "192.168.50.0/24",
+        "172.16.0.0/12",
+    ]
+    assert routes.enabled_routes == ["10.200.0.0/16", "192.168.50.0/24"]
+
+
+async def test_set_device_ipv4_address(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting a device IPv4 address."""
+    responses.post(
+        f"{URL}/device/12345/ip",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.set_device_ipv4_address("12345", ipv4_address="100.64.0.1")
 
 
 # --- OAuth tests ---

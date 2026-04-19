@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Self
 
 from aiohttp.client import ClientError, ClientResponseError, ClientSession
-from aiohttp.hdrs import METH_GET, METH_POST
+from aiohttp.hdrs import METH_DELETE, METH_GET, METH_POST
 from yarl import URL
 
 from .exceptions import (
@@ -18,7 +18,7 @@ from .exceptions import (
     TailscaleConnectionError,
     TailscaleError,
 )
-from .models import Device, Devices
+from .models import Device, DeviceRoutes, Devices
 
 if TYPE_CHECKING:
     from .storage import TokenStorage
@@ -222,10 +222,13 @@ class Tailscale:
             msg = "Error occurred while communicating with the Tailscale API"
             raise TailscaleConnectionError(msg) from exception
 
-        return await response.text()
+        text = await response.text()
+        if not text:
+            return text
+        return text
 
     async def devices(self) -> dict[str, Device]:
-        """Get device information from the Tailscale API.
+        """Get all devices in the tailnet.
 
         Returns
         -------
@@ -234,6 +237,158 @@ class Tailscale:
         """
         data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
         return Devices.from_json(data).devices
+
+    async def device(self, device_id: str) -> Device:
+        """Get a single device by ID.
+
+        Args:
+        ----
+            device_id: The ID of the device to retrieve.
+
+        Returns:
+        -------
+            The device information.
+
+        """
+        data = await self._request(f"device/{device_id}?fields=all")
+        return Device.from_json(data)
+
+    async def delete_device(self, device_id: str) -> None:
+        """Delete a device from the tailnet.
+
+        Args:
+        ----
+            device_id: The ID of the device to delete.
+
+        """
+        await self._request(f"device/{device_id}", method=METH_DELETE)
+
+    async def authorize_device(self, device_id: str, *, authorized: bool) -> None:
+        """Authorize or deauthorize a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            authorized: Whether to authorize or deauthorize the device.
+
+        """
+        await self._request(
+            f"device/{device_id}/authorized",
+            method=METH_POST,
+            data={"authorized": authorized},
+        )
+
+    async def expire_device_key(self, device_id: str) -> None:
+        """Expire the key of a device, forcing it to re-authenticate.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+
+        """
+        await self._request(f"device/{device_id}/expire", method=METH_POST)
+
+    async def set_device_key_expiry(
+        self, device_id: str, *, key_expiry_disabled: bool
+    ) -> None:
+        """Enable or disable key expiry for a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            key_expiry_disabled: Whether to disable key expiry.
+
+        """
+        await self._request(
+            f"device/{device_id}/key",
+            method=METH_POST,
+            data={"keyExpiryDisabled": key_expiry_disabled},
+        )
+
+    async def rename_device(self, device_id: str, *, name: str) -> None:
+        """Rename a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            name: The new name for the device. Use an empty string
+                to reset to the OS hostname.
+
+        """
+        await self._request(
+            f"device/{device_id}/name",
+            method=METH_POST,
+            data={"name": name},
+        )
+
+    async def set_device_tags(self, device_id: str, *, tags: list[str]) -> None:
+        """Set the ACL tags for a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            tags: The list of ACL tags (e.g., ["tag:server", "tag:prod"]).
+
+        """
+        await self._request(
+            f"device/{device_id}/tags",
+            method=METH_POST,
+            data={"tags": tags},
+        )
+
+    async def device_routes(self, device_id: str) -> DeviceRoutes:
+        """Get the subnet routes for a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+
+        Returns:
+        -------
+            The advertised and enabled routes for the device.
+
+        """
+        data = await self._request(f"device/{device_id}/routes")
+        return DeviceRoutes.from_json(data)
+
+    async def set_device_routes(
+        self, device_id: str, *, routes: list[str]
+    ) -> DeviceRoutes:
+        """Set the enabled subnet routes for a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            routes: The list of routes to enable (e.g., ["10.0.0.0/16"]).
+
+        Returns:
+        -------
+            The updated advertised and enabled routes for the device.
+
+        """
+        data = await self._request(
+            f"device/{device_id}/routes",
+            method=METH_POST,
+            data={"routes": routes},
+        )
+        return DeviceRoutes.from_json(data)
+
+    async def set_device_ipv4_address(
+        self, device_id: str, *, ipv4_address: str
+    ) -> None:
+        """Set the Tailscale IPv4 address for a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            ipv4_address: The IPv4 address to assign.
+
+        """
+        await self._request(
+            f"device/{device_id}/ip",
+            method=METH_POST,
+            data={"ipv4": ipv4_address},
+        )
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""
