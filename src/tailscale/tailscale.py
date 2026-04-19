@@ -222,10 +222,7 @@ class Tailscale:
             msg = "Error occurred while communicating with the Tailscale API"
             raise TailscaleConnectionError(msg) from exception
 
-        text = await response.text()
-        if not text:
-            return text
-        return text
+        return await response.text()
 
     async def devices(self) -> dict[str, Device]:
         """Get all devices in the tailnet.
