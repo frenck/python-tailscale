@@ -12,10 +12,7 @@
           "udp": true,
           "upnp": false
         },
-        "endpoints": [
-          "203.0.113.45:41641",
-          "192.168.1.50:41641"
-        ],
+        "endpoints": ["203.0.113.45:41641", "192.168.1.50:41641"],
         "latency": {
           "New York City": {
             "latencyMs": 12.548,
