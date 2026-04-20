@@ -39,6 +39,13 @@
       'oauth_client_secret',
       'tailnet',
     ]),
+    'delete-key': list([
+      'api_key',
+      'key_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
     'device': list([
       'api_key',
       'device_id',
@@ -137,6 +144,19 @@
         'oauth_client_secret',
         'tailnet',
       ]),
+      'key': list([
+        'api_key',
+        'key_id',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'keys': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
       'routes': list([
         'api_key',
         'device_id',
@@ -167,6 +187,12 @@
     'expire-key': list([
       'api_key',
       'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'keys': list([
+      'api_key',
       'oauth_client_id',
       'oauth_client_secret',
       'tailnet',
@@ -259,6 +285,12 @@
 # name: test_delete_command
   '''
   Device 12345 deleted.
+  
+  '''
+# ---
+# name: test_delete_key_command
+  '''
+  Key k1234567890abcdef deleted.
   
   '''
 # ---
@@ -403,6 +435,20 @@
   ╭─ Tailscale API error ─╮
   │ something went wrong  │
   ╰───────────────────────╯
+  
+  '''
+# ---
+# name: test_keys_command
+  '''
+                                                  Keys                                                
+  ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃ Key ID            ┃ Type ┃ Description          ┃ Reusable ┃ Ephemeral ┃ Expires                 ┃
+  ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩
+  │ k1234567890abcdef │ auth │ CI deploy key        │ Yes      │ No        │ 2026-04-15              │
+  │                   │      │                      │          │           │ 08:00:00+00:00          │
+  │ kfedcba0987654321 │ auth │ Ephemeral test nodes │ Yes      │ Yes       │ 2026-06-01              │
+  │                   │      │                      │          │           │ 12:00:00+00:00          │
+  └───────────────────┴──────┴──────────────────────┴──────────┴───────────┴─────────────────────────┘
   
   '''
 # ---

@@ -26,6 +26,7 @@ from tailscale.models import (
     DNSPreferences,
     DNSSearchPaths,
     TailnetSettings,
+    TailscaleKey,
     TailscaleUser,
 )
 from tests.conftest import FIXTURES_DIR
@@ -383,6 +384,43 @@ def test_user_command(
     )
     assert exit_code == 0
     assert output == snapshot
+
+
+# --- key commands ---
+
+
+def test_keys_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Keys command renders a table of all keys."""
+    raw = json.loads(_load_fixture("keys.json"))
+    keys = [TailscaleKey.from_dict(k) for k in raw["keys"]]
+    mock_client = _mock_tailscale()
+    mock_client.keys.return_value = keys
+    exit_code, output = _invoke(
+        runner,
+        ["keys", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_delete_key_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Delete-key command prints confirmation."""
+    mock_client = _mock_tailscale()
+    exit_code, output = _invoke(
+        runner,
+        ["delete-key", "k1234567890abcdef", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.delete_key.assert_called_once_with("k1234567890abcdef")
 
 
 # --- settings command ---

@@ -1,0 +1,20 @@
+{
+  "id": "k1234567890abcdef",
+  "description": "CI deploy key",
+  "key": "tskey-auth-k1234567890abcdef-abcdef1234567890abcdef1234567890",
+  "keyType": "auth",
+  "created": "2026-01-15T08:00:00Z",
+  "expires": "2026-04-15T08:00:00Z",
+  "revoked": null,
+  "invalid": false,
+  "capabilities": {
+    "devices": {
+      "create": {
+        "reusable": true,
+        "ephemeral": false,
+        "preauthorized": true,
+        "tags": ["tag:ci", "tag:deploy"]
+      }
+    }
+  }
+}

@@ -719,6 +719,114 @@ async def test_user_snapshot(
     assert await tailscale_client.user("u12345") == snapshot
 
 
+# --- Key tests ---
+
+
+async def test_keys(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test fetching keys from the Tailscale API."""
+    responses.get(
+        f"{URL}/tailnet/frenck/keys?all=true",
+        status=200,
+        body=load_fixture("keys.json"),
+        content_type="application/json",
+    )
+    keys = await tailscale_client.keys()
+    assert len(keys) == 2
+    assert keys[0].key_id == "k1234567890abcdef"
+    assert keys[0].description == "CI deploy key"
+    assert keys[0].key_type == "auth"
+    assert keys[0].capabilities.devices.create.reusable is True
+    assert keys[0].capabilities.devices.create.preauthorized is True
+    assert keys[0].capabilities.devices.create.tags == ["tag:ci", "tag:deploy"]
+    assert keys[1].key_id == "kfedcba0987654321"
+    assert keys[1].capabilities.devices.create.ephemeral is True
+
+
+async def test_keys_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test keys parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/keys?all=true",
+        status=200,
+        body=load_fixture("keys.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.keys() == snapshot
+
+
+async def test_key(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test fetching a single key from the Tailscale API."""
+    responses.get(
+        f"{URL}/tailnet/frenck/keys/k1234567890abcdef",
+        status=200,
+        body=load_fixture("key.json"),
+        content_type="application/json",
+    )
+    key = await tailscale_client.key("k1234567890abcdef")
+    assert key.key_id == "k1234567890abcdef"
+    assert key.description == "CI deploy key"
+    assert key.key == ("tskey-auth-k1234567890abcdef-abcdef1234567890abcdef1234567890")
+
+
+async def test_key_snapshot(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test single key parsing matches snapshot."""
+    responses.get(
+        f"{URL}/tailnet/frenck/keys/k1234567890abcdef",
+        status=200,
+        body=load_fixture("key.json"),
+        content_type="application/json",
+    )
+    assert await tailscale_client.key("k1234567890abcdef") == snapshot
+
+
+async def test_create_key(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating an auth key."""
+    responses.post(
+        f"{URL}/tailnet/frenck/keys",
+        status=200,
+        body=load_fixture("key.json"),
+        content_type="application/json",
+    )
+    key = await tailscale_client.create_key(
+        description="CI deploy key",
+        reusable=True,
+        preauthorized=True,
+        tags=["tag:ci", "tag:deploy"],
+    )
+    assert key.key_id == "k1234567890abcdef"
+    assert key.key != ""
+
+
+async def test_delete_key(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting a key."""
+    responses.delete(
+        f"{URL}/tailnet/frenck/keys/k1234567890abcdef",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_key("k1234567890abcdef")
+
+
 # --- Tailnet settings tests ---
 
 

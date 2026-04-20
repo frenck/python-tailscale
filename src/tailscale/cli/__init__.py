@@ -763,6 +763,68 @@ async def settings_command(
     console.print(table)
 
 
+@cli.command("keys")
+async def keys_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """List all keys in the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        keys = await client.keys()
+
+    table = Table(title="Keys", show_header=True, border_style="dim")
+    table.add_column("Key ID", style="cyan")
+    table.add_column("Type")
+    table.add_column("Description", style="bold")
+    table.add_column("Reusable")
+    table.add_column("Ephemeral")
+    table.add_column("Expires")
+
+    for k in keys:
+        reusable = (
+            "[green]Yes[/green]"
+            if k.capabilities.devices.create.reusable
+            else "[dim]No[/dim]"
+        )
+        ephemeral = (
+            "[green]Yes[/green]"
+            if k.capabilities.devices.create.ephemeral
+            else "[dim]No[/dim]"
+        )
+        expires = str(k.expires) if k.expires else "[dim]-[/dim]"
+        table.add_row(
+            k.key_id,
+            k.key_type or "",
+            k.description,
+            reusable,
+            ephemeral,
+            expires,
+        )
+
+    console.print(table)
+
+
+@cli.command("delete-key")
+async def delete_key_command(
+    key_id: Annotated[
+        str,
+        typer.Argument(help="Key ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Delete a key from the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.delete_key(key_id)
+    console.print(f"[red]Key {key_id} deleted.[/red]")
+
+
 dump = AsyncTyper(
     help="Dump raw API responses as JSON (useful for debugging/fixtures).",
     no_args_is_help=True,
@@ -902,6 +964,42 @@ async def dump_user_command(
     async with client:
         data = await client._request(  # noqa: SLF001
             f"users/{user_id}"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("keys")
+async def dump_keys_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump all keys as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/keys?all=true"
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
+
+@dump.command("key")
+async def dump_key_command(
+    key_id: Annotated[
+        str,
+        typer.Argument(help="Key ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump a single key as raw JSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            f"tailnet/{client.tailnet}/keys/{key_id}"
         )
     typer.echo(json.dumps(json.loads(data), indent=2, default=str))
 

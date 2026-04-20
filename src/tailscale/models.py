@@ -153,6 +153,46 @@ class DNSSearchPaths(DataClassORJSONMixin):
 
 
 @dataclass
+class KeyCapabilitiesCreate(DataClassORJSONMixin):
+    """Object holding key device creation capabilities."""
+
+    reusable: bool = False
+    ephemeral: bool = False
+    preauthorized: bool = False
+    tags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class KeyCapabilitiesDevices(DataClassORJSONMixin):
+    """Object holding key device capabilities."""
+
+    create: KeyCapabilitiesCreate = field(default_factory=KeyCapabilitiesCreate)
+
+
+@dataclass
+class KeyCapabilities(DataClassORJSONMixin):
+    """Object holding key capabilities."""
+
+    devices: KeyCapabilitiesDevices = field(default_factory=KeyCapabilitiesDevices)
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class TailscaleKey(DataClassORJSONMixin):
+    """Object holding Tailscale auth/API key information."""
+
+    key_id: str = field(metadata=field_options(alias="id"))
+    description: str = ""
+    key: str = ""
+    created: datetime | None = None
+    expires: datetime | None = None
+    revoked: datetime | None = None
+    invalid: bool = False
+    capabilities: KeyCapabilities = field(default_factory=KeyCapabilities)
+    key_type: str | None = field(default=None, metadata=field_options(alias="keyType"))
+
+
+@dataclass
 # pylint: disable-next=too-many-instance-attributes
 class TailnetSettings(DataClassORJSONMixin):
     """Object holding tailnet-wide settings."""

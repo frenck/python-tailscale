@@ -1,0 +1,44 @@
+{
+  "keys": [
+    {
+      "id": "k1234567890abcdef",
+      "description": "CI deploy key",
+      "key": "",
+      "keyType": "auth",
+      "created": "2026-01-15T08:00:00Z",
+      "expires": "2026-04-15T08:00:00Z",
+      "revoked": null,
+      "invalid": false,
+      "capabilities": {
+        "devices": {
+          "create": {
+            "reusable": true,
+            "ephemeral": false,
+            "preauthorized": true,
+            "tags": ["tag:ci", "tag:deploy"]
+          }
+        }
+      }
+    },
+    {
+      "id": "kfedcba0987654321",
+      "description": "Ephemeral test nodes",
+      "key": "",
+      "keyType": "auth",
+      "created": "2026-03-01T12:00:00Z",
+      "expires": "2026-06-01T12:00:00Z",
+      "revoked": null,
+      "invalid": false,
+      "capabilities": {
+        "devices": {
+          "create": {
+            "reusable": true,
+            "ephemeral": true,
+            "preauthorized": true,
+            "tags": ["tag:test"]
+          }
+        }
+      }
+    }
+  ]
+}

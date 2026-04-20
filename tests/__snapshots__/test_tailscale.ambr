@@ -20,6 +20,15 @@
 # name: test_dns_search_paths_snapshot
   DNSSearchPaths(search_paths=['corp.example.com', 'internal.example.com'])
 # ---
+# name: test_key_snapshot
+  TailscaleKey(key_id='k1234567890abcdef', description='CI deploy key', key='tskey-auth-k1234567890abcdef-abcdef1234567890abcdef1234567890', created=datetime.datetime(2026, 1, 15, 8, 0, tzinfo=datetime.timezone.utc), expires=datetime.datetime(2026, 4, 15, 8, 0, tzinfo=datetime.timezone.utc), revoked=None, invalid=False, capabilities=KeyCapabilities(devices=KeyCapabilitiesDevices(create=KeyCapabilitiesCreate(reusable=True, ephemeral=False, preauthorized=True, tags=['tag:ci', 'tag:deploy']))), key_type='auth')
+# ---
+# name: test_keys_snapshot
+  list([
+    TailscaleKey(key_id='k1234567890abcdef', description='CI deploy key', key='', created=datetime.datetime(2026, 1, 15, 8, 0, tzinfo=datetime.timezone.utc), expires=datetime.datetime(2026, 4, 15, 8, 0, tzinfo=datetime.timezone.utc), revoked=None, invalid=False, capabilities=KeyCapabilities(devices=KeyCapabilitiesDevices(create=KeyCapabilitiesCreate(reusable=True, ephemeral=False, preauthorized=True, tags=['tag:ci', 'tag:deploy']))), key_type='auth'),
+    TailscaleKey(key_id='kfedcba0987654321', description='Ephemeral test nodes', key='', created=datetime.datetime(2026, 3, 1, 12, 0, tzinfo=datetime.timezone.utc), expires=datetime.datetime(2026, 6, 1, 12, 0, tzinfo=datetime.timezone.utc), revoked=None, invalid=False, capabilities=KeyCapabilities(devices=KeyCapabilitiesDevices(create=KeyCapabilitiesCreate(reusable=True, ephemeral=True, preauthorized=True, tags=['tag:test']))), key_type='auth'),
+  ])
+# ---
 # name: test_tailnet_settings_snapshot
   TailnetSettings(devices_approval_on=True, devices_auto_updates_on=True, devices_key_duration_days=90, users_approval_on=False, users_role_allowed_to_join_external_tailnets='admin', network_flow_logging_on=True, regional_routing_on=False, posture_identity_collection_on=True)
 # ---

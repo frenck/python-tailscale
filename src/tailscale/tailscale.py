@@ -26,6 +26,7 @@ from .models import (
     DNSPreferences,
     DNSSearchPaths,
     TailnetSettings,
+    TailscaleKey,
     TailscaleUser,
 )
 
@@ -633,6 +634,96 @@ class Tailscale:
             f"tailnet/{self.tailnet}/settings",
             method=METH_PATCH,
             data=payload,
+        )
+
+    async def keys(self) -> list[TailscaleKey]:
+        """Get all keys in the tailnet.
+
+        Returns
+        -------
+            A list of Tailscale keys.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/keys?all=true")
+        raw: list[dict[str, Any]] = json.loads(data).get("keys", [])
+        return [TailscaleKey.from_dict(key) for key in raw]
+
+    async def key(self, key_id: str) -> TailscaleKey:
+        """Get a single key by ID.
+
+        Args:
+        ----
+            key_id: The ID of the key to retrieve.
+
+        Returns:
+        -------
+            The key information.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/keys/{key_id}")
+        return TailscaleKey.from_json(data)
+
+    async def create_key(  # noqa: PLR0913  # pylint: disable=too-many-arguments
+        self,
+        *,
+        key_type: str = "auth",
+        description: str = "",
+        expiry_seconds: int = 86400,
+        reusable: bool = False,
+        ephemeral: bool = False,
+        preauthorized: bool = False,
+        tags: list[str] | None = None,
+    ) -> TailscaleKey:
+        """Create a new auth key.
+
+        Args:
+        ----
+            key_type: The type of key ("auth" or "client").
+            description: A description for the key.
+            expiry_seconds: Expiry time in seconds (default: 86400 / 24h).
+            reusable: Whether the key can be used multiple times.
+            ephemeral: Whether devices using this key are ephemeral.
+            preauthorized: Whether devices are pre-authorized.
+            tags: ACL tags to assign to devices using this key.
+
+        Returns:
+        -------
+            The created key, including the secret key value.
+
+        """
+        payload: dict[str, Any] = {
+            "keyType": key_type,
+            "description": description,
+            "expirySeconds": expiry_seconds,
+            "capabilities": {
+                "devices": {
+                    "create": {
+                        "reusable": reusable,
+                        "ephemeral": ephemeral,
+                        "preauthorized": preauthorized,
+                        "tags": tags or [],
+                    },
+                },
+            },
+        }
+        data = await self._request(
+            f"tailnet/{self.tailnet}/keys",
+            method=METH_POST,
+            data=payload,
+        )
+        return TailscaleKey.from_json(data)
+
+    async def delete_key(self, key_id: str) -> None:
+        """Delete a key from the tailnet.
+
+        Args:
+        ----
+            key_id: The ID of the key to delete.
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/keys/{key_id}",
+            method=METH_DELETE,
         )
 
     async def close(self) -> None:
