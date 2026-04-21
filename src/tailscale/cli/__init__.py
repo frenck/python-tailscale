@@ -726,8 +726,20 @@ async def user_command(
     console.print(Panel(info, title=user.display_name, border_style="green"))
 
 
-@cli.command("settings")
-async def settings_command(
+settings = AsyncTyper(
+    help="View and manage tailnet settings.",
+    no_args_is_help=True,
+)
+cli.add_typer(settings, name="settings")
+
+
+def _bool_display(val: bool) -> str:
+    """Format a boolean for Rich display."""
+    return "[green]Yes[/green]" if val else "[dim]No[/dim]"
+
+
+@settings.command("show")
+async def settings_show_command(
     tailnet: Tailnet = "-",
     api_key: ApiKey = None,
     oauth_client_id: OAuthClientId = None,
@@ -736,28 +748,25 @@ async def settings_command(
     """Show the tailnet settings."""
     client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
     async with client:
-        settings = await client.tailnet_settings()
+        s = await client.tailnet_settings()
 
     table = Table(title="Tailnet Settings", show_header=True, border_style="dim")
     table.add_column("Setting", style="bold")
     table.add_column("Value")
 
-    def _bool(val: bool) -> str:
-        return "[green]Yes[/green]" if val else "[dim]No[/dim]"
-
-    table.add_row("Device Approval", _bool(settings.devices_approval_on))
-    table.add_row("Auto Updates", _bool(settings.devices_auto_updates_on))
-    table.add_row("Key Duration", f"{settings.devices_key_duration_days} days")
-    table.add_row("User Approval", _bool(settings.users_approval_on))
+    table.add_row("Device Approval", _bool_display(s.devices_approval_on))
+    table.add_row("Auto Updates", _bool_display(s.devices_auto_updates_on))
+    table.add_row("Key Duration", f"{s.devices_key_duration_days} days")
+    table.add_row("User Approval", _bool_display(s.users_approval_on))
     table.add_row(
         "External Tailnets",
-        settings.users_role_allowed_to_join_external_tailnets,
+        s.users_role_allowed_to_join_external_tailnets,
     )
-    table.add_row("Network Flow Logging", _bool(settings.network_flow_logging_on))
-    table.add_row("Regional Routing", _bool(settings.regional_routing_on))
+    table.add_row("Network Flow Logging", _bool_display(s.network_flow_logging_on))
+    table.add_row("Regional Routing", _bool_display(s.regional_routing_on))
     table.add_row(
         "Posture Identity Collection",
-        _bool(settings.posture_identity_collection_on),
+        _bool_display(s.posture_identity_collection_on),
     )
 
     console.print(table)
@@ -823,6 +832,165 @@ async def delete_key_command(
     async with client:
         await client.delete_key(key_id)
     console.print(f"[red]Key {key_id} deleted.[/red]")
+
+
+@settings.command("device-approval")
+async def settings_device_approval_command(
+    enable: Annotated[
+        bool,
+        typer.Option("--enable/--disable", help="Enable or disable device approval"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Enable or disable device approval."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(devices_approval_on=enable)
+    state = "enabled" if enable else "disabled"
+    console.print(f"[green]Device approval {state}.[/green]")
+
+
+@settings.command("auto-updates")
+async def settings_auto_updates_command(
+    enable: Annotated[
+        bool,
+        typer.Option("--enable/--disable", help="Enable or disable auto-updates"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Enable or disable device auto-updates."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(devices_auto_updates_on=enable)
+    state = "enabled" if enable else "disabled"
+    console.print(f"[green]Auto-updates {state}.[/green]")
+
+
+@settings.command("key-duration")
+async def settings_key_duration_command(
+    days: Annotated[
+        int,
+        typer.Argument(help="Key expiry duration in days"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Set the device key expiry duration."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(devices_key_duration_days=days)
+    console.print(f"[green]Key duration set to {days} days.[/green]")
+
+
+@settings.command("user-approval")
+async def settings_user_approval_command(
+    enable: Annotated[
+        bool,
+        typer.Option("--enable/--disable", help="Enable or disable user approval"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Enable or disable user approval."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(users_approval_on=enable)
+    state = "enabled" if enable else "disabled"
+    console.print(f"[green]User approval {state}.[/green]")
+
+
+@settings.command("external-tailnets")
+async def settings_external_tailnets_command(
+    role: Annotated[
+        str,
+        typer.Argument(help="Role for external tailnets (none/admin/member)"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Set which role can join external tailnets."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(
+            users_role_allowed_to_join_external_tailnets=role,
+        )
+    console.print(f"[green]External tailnets role set to {role}.[/green]")
+
+
+@settings.command("network-flow-logging")
+async def settings_network_flow_logging_command(
+    enable: Annotated[
+        bool,
+        typer.Option(
+            "--enable/--disable", help="Enable or disable network flow logging"
+        ),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Enable or disable network flow logging."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(network_flow_logging_on=enable)
+    state = "enabled" if enable else "disabled"
+    console.print(f"[green]Network flow logging {state}.[/green]")
+
+
+@settings.command("regional-routing")
+async def settings_regional_routing_command(
+    enable: Annotated[
+        bool,
+        typer.Option("--enable/--disable", help="Enable or disable regional routing"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Enable or disable regional routing."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(regional_routing_on=enable)
+    state = "enabled" if enable else "disabled"
+    console.print(f"[green]Regional routing {state}.[/green]")
+
+
+@settings.command("posture-identity")
+async def settings_posture_identity_command(
+    enable: Annotated[
+        bool,
+        typer.Option(
+            "--enable/--disable",
+            help="Enable or disable posture identity collection",
+        ),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Enable or disable posture identity collection."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(
+            posture_identity_collection_on=enable,
+        )
+    state = "enabled" if enable else "disabled"
+    console.print(f"[green]Posture identity collection {state}.[/green]")
 
 
 dump = AsyncTyper(

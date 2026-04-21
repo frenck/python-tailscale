@@ -83,10 +83,44 @@ tailscale set-routes nSRVBN3CNTRL 10.0.0.0/24 192.168.1.0/24
 # Set Tailscale IPv4 address
 tailscale set-ip nSRVBN3CNTRL 100.64.0.1
 
+# DNS management
+tailscale dns nameservers
+tailscale dns set-nameservers 8.8.8.8 1.1.1.1
+tailscale dns preferences
+tailscale dns set-preferences --magic-dns
+tailscale dns search-paths
+tailscale dns set-search-paths corp.example.com
+tailscale dns split
+
+# List users and show user details
+tailscale users
+tailscale user u12345
+
+# Tailnet settings
+tailscale settings show
+tailscale settings device-approval --enable
+tailscale settings auto-updates --disable
+tailscale settings key-duration 90
+tailscale settings network-flow-logging --enable
+tailscale settings external-tailnets admin
+
+# List and manage auth keys
+tailscale keys
+tailscale delete-key k1234567890abcdef
+
 # Dump raw API responses as JSON (useful for debugging/fixtures)
 tailscale dump devices
 tailscale dump device nSRVBN3CNTRL
 tailscale dump routes nSRVBN3CNTRL
+tailscale dump dns-nameservers
+tailscale dump dns-preferences
+tailscale dump dns-search-paths
+tailscale dump dns-split
+tailscale dump users
+tailscale dump user u12345
+tailscale dump settings
+tailscale dump keys
+tailscale dump key k1234567890abcdef
 ```
 
 OAuth authentication is also supported via `--oauth-client-id` and

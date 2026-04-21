@@ -423,24 +423,78 @@ def test_delete_key_command(
     mock_client.delete_key.assert_called_once_with("k1234567890abcdef")
 
 
-# --- settings command ---
+# --- settings commands ---
 
 
-def test_settings_command(
+def test_settings_show_command(
     runner: CliRunner,
     snapshot: SnapshotAssertion,
 ) -> None:
-    """Settings command renders a table of tailnet settings."""
-    settings = TailnetSettings.from_json(_load_fixture("tailnet_settings.json"))
+    """Settings show command renders a table of tailnet settings."""
+    ts = TailnetSettings.from_json(_load_fixture("tailnet_settings.json"))
     mock_client = _mock_tailscale()
-    mock_client.tailnet_settings.return_value = settings
+    mock_client.tailnet_settings.return_value = ts
     exit_code, output = _invoke(
         runner,
-        ["settings", "--api-key", "tskey-api-test"],
+        ["settings", "show", "--api-key", "tskey-api-test"],
         mock_client,
     )
     assert exit_code == 0
     assert output == snapshot
+
+
+def test_settings_device_approval_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Settings device-approval command prints confirmation."""
+    mock_client = _mock_tailscale()
+    exit_code, output = _invoke(
+        runner,
+        ["settings", "device-approval", "--enable", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.update_tailnet_settings.assert_called_once_with(
+        devices_approval_on=True,
+    )
+
+
+def test_settings_key_duration_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Settings key-duration command prints confirmation."""
+    mock_client = _mock_tailscale()
+    exit_code, output = _invoke(
+        runner,
+        ["settings", "key-duration", "90", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.update_tailnet_settings.assert_called_once_with(
+        devices_key_duration_days=90,
+    )
+
+
+def test_settings_external_tailnets_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Settings external-tailnets command prints confirmation."""
+    mock_client = _mock_tailscale()
+    exit_code, output = _invoke(
+        runner,
+        ["settings", "external-tailnets", "admin", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.update_tailnet_settings.assert_called_once_with(
+        users_role_allowed_to_join_external_tailnets="admin",
+    )
 
 
 # --- action commands ---
@@ -674,6 +728,141 @@ def test_dump_routes_command(
     exit_code, output = _invoke(
         runner,
         ["dump", "routes", "12345", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_dns_nameservers_command(
+    runner: CliRunner,
+) -> None:
+    """Dump DNS nameservers command outputs raw JSON."""
+    raw = _load_fixture("dns_nameservers.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "dns-nameservers", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_dns_preferences_command(
+    runner: CliRunner,
+) -> None:
+    """Dump DNS preferences command outputs raw JSON."""
+    raw = _load_fixture("dns_preferences.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "dns-preferences", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_dns_search_paths_command(
+    runner: CliRunner,
+) -> None:
+    """Dump DNS search paths command outputs raw JSON."""
+    raw = _load_fixture("dns_searchpaths.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "dns-search-paths", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_dns_split_command(
+    runner: CliRunner,
+) -> None:
+    """Dump split DNS command outputs raw JSON."""
+    raw = _load_fixture("split_dns.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "dns-split", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_users_command(
+    runner: CliRunner,
+) -> None:
+    """Dump users command outputs raw JSON."""
+    raw = _load_fixture("users.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "users", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_user_command(
+    runner: CliRunner,
+) -> None:
+    """Dump user command outputs raw JSON for a single user."""
+    raw = _load_fixture("user.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "user", "u12345", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_settings_command(
+    runner: CliRunner,
+) -> None:
+    """Dump settings command outputs raw JSON."""
+    raw = _load_fixture("tailnet_settings.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "settings", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_keys_command(
+    runner: CliRunner,
+) -> None:
+    """Dump keys command outputs raw JSON."""
+    raw = _load_fixture("keys.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "keys", "--api-key", "tskey-api-test"],
+        mock_cls,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == json.loads(raw)
+
+
+def test_dump_key_command(
+    runner: CliRunner,
+) -> None:
+    """Dump key command outputs raw JSON for a single key."""
+    raw = _load_fixture("key.json")
+    mock_cls = _mock_tailscale(raw_response=raw)
+    exit_code, output = _invoke(
+        runner,
+        ["dump", "key", "k1234567890abcdef", "--api-key", "tskey-api-test"],
         mock_cls,
     )
     assert exit_code == 0

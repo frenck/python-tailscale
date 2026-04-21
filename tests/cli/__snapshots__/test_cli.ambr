@@ -244,12 +244,70 @@
       'tags',
       'tailnet',
     ]),
-    'settings': list([
-      'api_key',
-      'oauth_client_id',
-      'oauth_client_secret',
-      'tailnet',
-    ]),
+    'settings': dict({
+      'auto-updates': list([
+        'api_key',
+        'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'device-approval': list([
+        'api_key',
+        'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'external-tailnets': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'role',
+        'tailnet',
+      ]),
+      'key-duration': list([
+        'api_key',
+        'days',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'network-flow-logging': list([
+        'api_key',
+        'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'posture-identity': list([
+        'api_key',
+        'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'regional-routing': list([
+        'api_key',
+        'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'show': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'user-approval': list([
+        'api_key',
+        'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+    }),
     'user': list([
       'api_key',
       'oauth_client_id',
@@ -511,7 +569,25 @@
   
   '''
 # ---
-# name: test_settings_command
+# name: test_settings_device_approval_command
+  '''
+  Device approval enabled.
+  
+  '''
+# ---
+# name: test_settings_external_tailnets_command
+  '''
+  External tailnets role set to admin.
+  
+  '''
+# ---
+# name: test_settings_key_duration_command
+  '''
+  Key duration set to 90 days.
+  
+  '''
+# ---
+# name: test_settings_show_command
   '''
               Tailnet Settings             
   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┓
