@@ -23,6 +23,7 @@ from .models import (
     Device,
     DeviceRoutes,
     Devices,
+    DNSConfiguration,
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
@@ -462,6 +463,39 @@ class Tailscale:
             method=METH_POST,
             data={"ipv4": ipv4_address},
         )
+
+    async def dns_configuration(self) -> DNSConfiguration:
+        """Get the full DNS configuration of the tailnet.
+
+        Returns
+        -------
+            The nameservers, split DNS, search paths, and preferences.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/dns/configuration")
+        return DNSConfiguration.from_json(data)
+
+    async def set_dns_configuration(
+        self, configuration: DNSConfiguration
+    ) -> DNSConfiguration:
+        """Replace the full DNS configuration of the tailnet.
+
+        Args:
+        ----
+            configuration: The new DNS configuration. It replaces the current
+                one as a whole; get the current one first to change a part.
+
+        Returns:
+        -------
+            The new DNS configuration.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/dns/configuration",
+            method=METH_POST,
+            data=configuration.to_dict(),
+        )
+        return DNSConfiguration.from_json(data)
 
     async def dns_nameservers(self) -> DNSNameservers:
         """Get the DNS nameservers for the tailnet.

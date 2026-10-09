@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from mashumaro import field_options
+from mashumaro.config import BaseConfig
 from mashumaro.mixins.orjson import DataClassORJSONMixin
 
 
@@ -191,6 +192,78 @@ class DNSSearchPaths(DataClassORJSONMixin):
     search_paths: list[str] = field(
         default_factory=list, metadata=field_options(alias="searchPaths")
     )
+
+
+# pylint: disable-next=too-few-public-methods
+class _DNSConfigurationConfig(BaseConfig):
+    """Send the DNS configuration with the names the API uses."""
+
+    serialize_by_alias = True
+    omit_none = True
+
+
+@dataclass
+class DNSResolver(DataClassORJSONMixin):
+    """Object holding a DNS resolver of the DNS configuration."""
+
+    address: str
+    use_with_exit_node: bool | None = field(
+        default=None, metadata=field_options(alias="useWithExitNode")
+    )
+
+    Config = _DNSConfigurationConfig
+
+
+@dataclass
+class DNSConfigurationPreferences(DataClassORJSONMixin):
+    """Object holding the preferences of the DNS configuration."""
+
+    magic_dns: bool | None = field(
+        default=None, metadata=field_options(alias="magicDNS")
+    )
+    override_local_dns: bool | None = field(
+        default=None, metadata=field_options(alias="overrideLocalDNS")
+    )
+
+    Config = _DNSConfigurationConfig
+
+
+@dataclass
+class DNSConfiguration(DataClassORJSONMixin):
+    """Object holding the full DNS configuration of a tailnet."""
+
+    nameservers: list[DNSResolver] = field(default_factory=list)
+    preferences: DNSConfigurationPreferences = field(
+        default_factory=DNSConfigurationPreferences
+    )
+    search_paths: list[str] = field(
+        default_factory=list, metadata=field_options(alias="searchPaths")
+    )
+    split_dns: dict[str, list[DNSResolver]] = field(
+        default_factory=dict, metadata=field_options(alias="splitDNS")
+    )
+
+    Config = _DNSConfigurationConfig
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null values.
+
+        """
+        d = {key: value for key, value in d.items() if value is not None}
+        if "splitDNS" in d:
+            d["splitDNS"] = {
+                domain: resolvers or [] for domain, resolvers in d["splitDNS"].items()
+            }
+        return d
 
 
 @dataclass

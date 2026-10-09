@@ -1,0 +1,12 @@
+{
+  "nameservers": [
+    { "address": "8.8.8.8", "useWithExitNode": true },
+    { "address": "1.1.1.1" }
+  ],
+  "splitDNS": {
+    "corp.example.com": [{ "address": "10.0.0.53", "useWithExitNode": true }],
+    "other.internal": null
+  },
+  "searchPaths": ["user1.example.com"],
+  "preferences": { "overrideLocalDNS": true, "magicDNS": true }
+}

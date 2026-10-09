@@ -11,7 +11,12 @@ import pytest
 from aioresponses import aioresponses
 from syrupy.assertion import SnapshotAssertion
 
-from tailscale import Tailscale
+from tailscale import (
+    DNSConfiguration,
+    DNSConfigurationPreferences,
+    DNSResolver,
+    Tailscale,
+)
 from tailscale.exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
@@ -750,6 +755,79 @@ async def test_update_split_dns(
 
 
 # --- User tests ---
+
+
+async def test_dns_configuration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the full DNS configuration."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/configuration",
+        status=200,
+        body=load_fixture("dns_configuration.json"),
+        content_type="application/json",
+    )
+    configuration = await tailscale_client.dns_configuration()
+
+    assert configuration.nameservers == [
+        DNSResolver(address="8.8.8.8", use_with_exit_node=True),
+        DNSResolver(address="1.1.1.1"),
+    ]
+    assert configuration.split_dns == {
+        "corp.example.com": [DNSResolver(address="10.0.0.53", use_with_exit_node=True)],
+        "other.internal": [],
+    }
+    assert configuration.search_paths == ["user1.example.com"]
+    assert configuration.preferences.magic_dns is True
+    assert configuration.preferences.override_local_dns is True
+
+
+async def test_dns_configuration_empty(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test a DNS configuration the API leaves mostly out."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/configuration",
+        status=200,
+        body='{"splitDNS": null, "preferences": {"magicDNS": false}}',
+        content_type="application/json",
+    )
+    configuration = await tailscale_client.dns_configuration()
+
+    assert configuration.nameservers == []
+    assert configuration.split_dns == {}
+    assert configuration.preferences.magic_dns is False
+    assert configuration.preferences.override_local_dns is None
+
+
+async def test_set_dns_configuration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test replacing the full DNS configuration."""
+    responses.post(
+        f"{URL}/tailnet/frenck/dns/configuration",
+        status=200,
+        body=load_fixture("dns_configuration.json"),
+        content_type="application/json",
+    )
+    configuration = DNSConfiguration(
+        nameservers=[DNSResolver(address="1.1.1.1", use_with_exit_node=False)],
+        preferences=DNSConfigurationPreferences(magic_dns=True),
+        split_dns={"corp.example.com": [DNSResolver(address="10.0.0.53")]},
+    )
+    await tailscale_client.set_dns_configuration(configuration)
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "nameservers": [{"address": "1.1.1.1", "useWithExitNode": False}],
+        "preferences": {"magicDNS": True},
+        "searchPaths": [],
+        "splitDNS": {"corp.example.com": [{"address": "10.0.0.53"}]},
+    }
 
 
 async def test_users(
