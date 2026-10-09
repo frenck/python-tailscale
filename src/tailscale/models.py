@@ -244,8 +244,8 @@ class DNSSearchPaths(DataClassORJSONMixin):
 
 
 # pylint: disable-next=too-few-public-methods
-class _DNSConfigurationConfig(BaseConfig):
-    """Send the DNS configuration with the names the API uses."""
+class _RequestBodyConfig(BaseConfig):
+    """Send a model with the names the API uses, leaving out unset values."""
 
     serialize_by_alias = True
     omit_none = True
@@ -260,7 +260,7 @@ class DNSResolver(DataClassORJSONMixin):
         default=None, metadata=field_options(alias="useWithExitNode")
     )
 
-    Config = _DNSConfigurationConfig
+    Config = _RequestBodyConfig
 
 
 @dataclass
@@ -274,7 +274,7 @@ class DNSConfigurationPreferences(DataClassORJSONMixin):
         default=None, metadata=field_options(alias="overrideLocalDNS")
     )
 
-    Config = _DNSConfigurationConfig
+    Config = _RequestBodyConfig
 
 
 @dataclass
@@ -292,7 +292,7 @@ class DNSConfiguration(DataClassORJSONMixin):
         default_factory=dict, metadata=field_options(alias="splitDNS")
     )
 
-    Config = _DNSConfigurationConfig
+    Config = _RequestBodyConfig
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
@@ -638,3 +638,55 @@ class TailscaleWebhook(DataClassORJSONMixin):
 
         """
         return {key: value for key, value in d.items() if value not in (None, "")}
+
+
+@dataclass
+class TailscaleService(DataClassORJSONMixin):
+    """Object holding a Tailscale Service."""
+
+    name: str
+    addrs: list[str] = field(default_factory=list)
+    comment: str | None = None
+    display_name: str | None = field(
+        default=None, metadata=field_options(alias="displayName")
+    )
+    ports: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+
+    Config = _RequestBodyConfig
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null and empty values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null and empty values.
+
+        """
+        return {key: value for key, value in d.items() if value not in (None, "")}
+
+
+@dataclass
+class ServiceHost(DataClassORJSONMixin):
+    """Object holding a device that hosts a Tailscale Service."""
+
+    stable_node_id: str = field(metadata=field_options(alias="stableNodeID"))
+    approval_level: str | None = field(
+        default=None, metadata=field_options(alias="approvalLevel")
+    )
+    configured: str | None = None
+
+
+@dataclass
+class ServiceApproval(DataClassORJSONMixin):
+    """Object holding whether a Tailscale Service is approved on a device."""
+
+    approved: bool = False
+    auto_approved: bool = field(
+        default=False, metadata=field_options(alias="autoApproved")
+    )

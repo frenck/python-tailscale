@@ -31,8 +31,11 @@ from .models import (
     PolicyFile,
     PolicyFileValidation,
     PolicyRulePreview,
+    ServiceApproval,
+    ServiceHost,
     TailnetSettings,
     TailscaleKey,
+    TailscaleService,
     TailscaleUser,
     TailscaleWebhook,
 )
@@ -1290,6 +1293,125 @@ class Tailscale:
         """
         data = await self._request(f"webhooks/{endpoint_id}/rotate", method=METH_POST)
         return TailscaleWebhook.from_json(data)
+
+    async def services(self) -> list[TailscaleService]:
+        """Get all Tailscale Services of the tailnet.
+
+        Returns
+        -------
+            A list of Services.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/services")
+        raw: list[dict[str, Any]] = json.loads(data).get("vipServices") or []
+        return [TailscaleService.from_dict(service) for service in raw]
+
+    async def service(self, name: str) -> TailscaleService:
+        """Get a single Tailscale Service by name.
+
+        Args:
+        ----
+            name: The name of the Service, like "svc:example".
+
+        Returns:
+        -------
+            The Service.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/services/{name}")
+        return TailscaleService.from_json(data)
+
+    async def set_service(
+        self, service: TailscaleService, *, name: str | None = None
+    ) -> TailscaleService:
+        """Create or update a Tailscale Service.
+
+        Args:
+        ----
+            service: The Service to create, or the new details of the Service.
+            name: The current name of the Service, to rename it to the name
+                of the given Service. Defaults to the name of the Service.
+
+        Returns:
+        -------
+            The created or updated Service.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/services/{name or service.name}",
+            method=METH_PUT,
+            data=service.to_dict(),
+        )
+        return TailscaleService.from_json(data)
+
+    async def delete_service(self, name: str) -> None:
+        """Delete a Tailscale Service.
+
+        Args:
+        ----
+            name: The name of the Service to delete.
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/services/{name}", method=METH_DELETE
+        )
+
+    async def service_hosts(self, name: str) -> list[ServiceHost]:
+        """Get the devices that host a Tailscale Service.
+
+        Args:
+        ----
+            name: The name of the Service.
+
+        Returns:
+        -------
+            A list of the devices hosting the Service.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/services/{name}/devices")
+        raw: list[dict[str, Any]] = json.loads(data).get("hosts") or []
+        return [ServiceHost.from_dict(host) for host in raw]
+
+    async def service_approval(self, name: str, device_id: str) -> ServiceApproval:
+        """Get whether a Tailscale Service is approved on a device.
+
+        Args:
+        ----
+            name: The name of the Service.
+            device_id: The ID of the device.
+
+        Returns:
+        -------
+            The approval of the Service on the device.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/services/{name}/device/{device_id}/approved"
+        )
+        return ServiceApproval.from_json(data)
+
+    async def set_service_approval(
+        self, name: str, device_id: str, *, approved: bool
+    ) -> ServiceApproval:
+        """Approve a Tailscale Service on a device, or revoke the approval.
+
+        Args:
+        ----
+            name: The name of the Service.
+            device_id: The ID of the device.
+            approved: Whether the Service is approved on the device.
+
+        Returns:
+        -------
+            The approval of the Service on the device.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/services/{name}/device/{device_id}/approved",
+            method=METH_POST,
+            data={"approved": approved},
+        )
+        return ServiceApproval.from_json(data)
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""
