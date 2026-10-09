@@ -790,6 +790,7 @@ async def keys_command(
     table.add_column("Description", style="bold")
     table.add_column("Reusable")
     table.add_column("Ephemeral")
+    table.add_column("Scopes")
     table.add_column("Expires")
 
     for k in keys:
@@ -804,12 +805,14 @@ async def keys_command(
             else "[dim]No[/dim]"
         )
         expires = str(k.expires) if k.expires else "[dim]-[/dim]"
+        scopes = ", ".join(k.scopes) if k.scopes else "[dim]-[/dim]"
         table.add_row(
             k.key_id,
             k.key_type or "",
             k.description,
             reusable,
             ephemeral,
+            scopes,
             expires,
         )
 

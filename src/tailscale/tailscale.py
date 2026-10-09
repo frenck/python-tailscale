@@ -686,18 +686,36 @@ class Tailscale:
         ephemeral: bool = False,
         preauthorized: bool = False,
         tags: list[str] | None = None,
+        scopes: list[str] | None = None,
+        issuer: str | None = None,
+        subject: str | None = None,
+        audience: str | None = None,
+        custom_claim_rules: dict[str, str] | None = None,
     ) -> TailscaleKey:
-        """Create a new auth key.
+        """Create a new auth key, OAuth client, or federated identity.
 
         Args:
         ----
-            key_type: The type of key ("auth" or "client").
+            key_type: The type of key ("auth", "client", or "federated").
             description: A description for the key.
             expiry_seconds: Expiry time in seconds (default: 86400 / 24h).
-            reusable: Whether the key can be used multiple times.
-            ephemeral: Whether devices using this key are ephemeral.
-            preauthorized: Whether devices are pre-authorized.
-            tags: ACL tags to assign to devices using this key.
+                Only applies to auth keys.
+            reusable: Whether the auth key can be used multiple times.
+            ephemeral: Whether devices using this auth key are ephemeral.
+            preauthorized: Whether devices using this auth key are
+                pre-authorized.
+            tags: For auth keys, the tags to assign to devices using the key.
+                For OAuth clients and federated identities, the tags of the
+                credential.
+            scopes: The scopes of an OAuth client or federated identity.
+            issuer: The issuer of the OIDC identity token of a federated
+                identity.
+            subject: The pattern to match the subject of the OIDC identity
+                token of a federated identity against.
+            audience: The audience of a federated identity; Tailscale
+                generates one when left out.
+            custom_claim_rules: Patterns to match other claims of the OIDC
+                identity token of a federated identity against.
 
         Returns:
         -------
@@ -707,8 +725,10 @@ class Tailscale:
         payload: dict[str, Any] = {
             "keyType": key_type,
             "description": description,
-            "expirySeconds": expiry_seconds,
-            "capabilities": {
+        }
+        if key_type == "auth":
+            payload["expirySeconds"] = expiry_seconds
+            payload["capabilities"] = {
                 "devices": {
                     "create": {
                         "reusable": reusable,
@@ -717,11 +737,78 @@ class Tailscale:
                         "tags": tags or [],
                     },
                 },
-            },
-        }
+            }
+        else:
+            payload.update(
+                _trust_credential_payload(
+                    scopes=scopes,
+                    tags=tags,
+                    issuer=issuer,
+                    subject=subject,
+                    audience=audience,
+                    custom_claim_rules=custom_claim_rules,
+                )
+            )
+
         data = await self._request(
             f"tailnet/{self.tailnet}/keys",
             method=METH_POST,
+            data=payload,
+        )
+        return TailscaleKey.from_json(data)
+
+    async def set_key(  # noqa: PLR0913  # pylint: disable=too-many-arguments
+        self,
+        key_id: str,
+        *,
+        key_type: str,
+        scopes: list[str],
+        description: str | None = None,
+        tags: list[str] | None = None,
+        issuer: str | None = None,
+        subject: str | None = None,
+        audience: str | None = None,
+        custom_claim_rules: dict[str, str] | None = None,
+    ) -> TailscaleKey:
+        """Set the configuration of an OAuth client or federated identity.
+
+        Args:
+        ----
+            key_id: The ID of the key to configure.
+            key_type: The type of key ("client" or "federated").
+            scopes: The scopes of the key.
+            description: A description for the key.
+            tags: The tags of the key.
+            issuer: The issuer of the OIDC identity token of a federated
+                identity.
+            subject: The pattern to match the subject of the OIDC identity
+                token of a federated identity against.
+            audience: The audience of a federated identity.
+            custom_claim_rules: Patterns to match other claims of the OIDC
+                identity token of a federated identity against.
+
+        Returns:
+        -------
+            The configured key.
+
+        """
+        payload: dict[str, Any] = {"keyType": key_type}
+        if description is not None:
+            payload["description"] = description
+        payload.update(
+            _trust_credential_payload(
+                scopes=scopes,
+                tags=tags,
+                issuer=issuer,
+                subject=subject,
+                audience=audience,
+                custom_claim_rules=custom_claim_rules,
+            )
+        )
+
+        data = await self._request(
+            f"tailnet/{self.tailnet}/keys/{key_id}",
+            method=METH_PUT,
             data=payload,
         )
         return TailscaleKey.from_json(data)
@@ -767,3 +854,32 @@ class Tailscale:
 
         """
         await self.close()
+
+
+def _trust_credential_payload(  # noqa: PLR0913  # pylint: disable=too-many-arguments
+    *,
+    scopes: list[str] | None,
+    tags: list[str] | None,
+    issuer: str | None,
+    subject: str | None,
+    audience: str | None,
+    custom_claim_rules: dict[str, str] | None,
+) -> dict[str, Any]:
+    """Build the payload fields of an OAuth client or federated identity.
+
+    Fields that are None are left out, so the API applies its defaults.
+
+    Returns
+    -------
+        The payload fields.
+
+    """
+    fields: dict[str, Any] = {
+        "scopes": scopes,
+        "tags": tags,
+        "issuer": issuer,
+        "subject": subject,
+        "audience": audience,
+        "customClaimRules": custom_claim_rules,
+    }
+    return {name: value for name, value in fields.items() if value is not None}

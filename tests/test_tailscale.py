@@ -811,7 +811,7 @@ async def test_keys(
         content_type="application/json",
     )
     keys = await tailscale_client.keys()
-    assert len(keys) == 2
+    assert len(keys) == 5
     assert keys[0].key_id == "k1234567890abcdef"
     assert keys[0].description == "CI deploy key"
     assert keys[0].key_type == "auth"
@@ -820,6 +820,25 @@ async def test_keys(
     assert keys[0].capabilities.devices.create.tags == ["tag:ci", "tag:deploy"]
     assert keys[1].key_id == "kfedcba0987654321"
     assert keys[1].capabilities.devices.create.ephemeral is True
+
+    client = keys[2]
+    assert client.key_type == "client"
+    assert client.scopes == ["devices:core:read", "users:read"]
+    assert client.tags == ["tag:homeassistant"]
+    assert client.user_id == "u12345"
+    assert client.updated is not None
+
+    federated = keys[3]
+    assert federated.key_type == "federated"
+    assert federated.issuer == "https://token.actions.githubusercontent.com"
+    assert federated.subject == "repo:frenck/python-tailscale:*"
+    assert federated.audience == "api.tailscale.com/kfederated123456"
+    assert federated.custom_claim_rules == {"repository_owner": "frenck"}
+
+    api = keys[4]
+    assert api.key_type == "api"
+    assert api.expiry_seconds == 7776000
+    assert api.scopes == ["all", "all:read"]
 
 
 async def test_keys_snapshot(
@@ -888,6 +907,113 @@ async def test_create_key(
     )
     assert key.key_id == "k1234567890abcdef"
     assert key.key != ""
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "keyType": "auth",
+        "description": "CI deploy key",
+        "expirySeconds": 86400,
+        "capabilities": {
+            "devices": {
+                "create": {
+                    "reusable": True,
+                    "ephemeral": False,
+                    "preauthorized": True,
+                    "tags": ["tag:ci", "tag:deploy"],
+                },
+            },
+        },
+    }
+
+
+async def test_create_oauth_client(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating an OAuth client."""
+    responses.post(
+        f"{URL}/tailnet/frenck/keys",
+        status=200,
+        body=load_fixture("key.json"),
+        content_type="application/json",
+    )
+    await tailscale_client.create_key(
+        key_type="client",
+        description="Home Assistant",
+        scopes=["devices:core:read"],
+        tags=["tag:homeassistant"],
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "keyType": "client",
+        "description": "Home Assistant",
+        "scopes": ["devices:core:read"],
+        "tags": ["tag:homeassistant"],
+    }
+
+
+async def test_create_federated_identity(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating a federated identity."""
+    responses.post(
+        f"{URL}/tailnet/frenck/keys",
+        status=200,
+        body=load_fixture("key.json"),
+        content_type="application/json",
+    )
+    await tailscale_client.create_key(
+        key_type="federated",
+        scopes=["auth_keys"],
+        tags=["tag:ci"],
+        issuer="https://token.actions.githubusercontent.com",
+        subject="repo:frenck/python-tailscale:*",
+        custom_claim_rules={"repository_owner": "frenck"},
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "keyType": "federated",
+        "description": "",
+        "scopes": ["auth_keys"],
+        "tags": ["tag:ci"],
+        "issuer": "https://token.actions.githubusercontent.com",
+        "subject": "repo:frenck/python-tailscale:*",
+        "customClaimRules": {"repository_owner": "frenck"},
+    }
+
+
+async def test_set_key(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting the configuration of an OAuth client."""
+    responses.put(
+        f"{URL}/tailnet/frenck/keys/kclient1234567890",
+        status=200,
+        body=load_fixture("key.json"),
+        content_type="application/json",
+    )
+    key = await tailscale_client.set_key(
+        "kclient1234567890",
+        key_type="client",
+        scopes=["devices:core:read", "users:read"],
+        description="Home Assistant",
+    )
+    assert key.key_id == "k1234567890abcdef"
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "keyType": "client",
+        "description": "Home Assistant",
+        "scopes": ["devices:core:read", "users:read"],
+    }
 
 
 async def test_delete_key(
