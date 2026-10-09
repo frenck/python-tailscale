@@ -9,15 +9,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Self
 
-from aiohttp.client import ClientError, ClientResponseError, ClientSession
+from aiohttp.client import ClientError, ClientSession
 from aiohttp.hdrs import METH_DELETE, METH_GET, METH_PATCH, METH_POST, METH_PUT
 from yarl import URL
 
 from .exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
-    TailscaleError,
     TailscaleNotFoundError,
+    TailscalePermissionError,
+    TailscaleResponseError,
+    TailscaleUnauthorizedError,
 )
 from .models import (
     Device,
@@ -234,12 +236,13 @@ class Tailscale:
 
         Raises:
         ------
-            TailscaleAuthenticationError: If the API key is invalid.
+            TailscaleUnauthorizedError: The API did not accept the credentials.
+            TailscalePermissionError: The credentials lack the permission for
+                the request, or the billing plan lacks the feature.
+            TailscaleNotFoundError: The requested resource does not exist.
+            TailscaleResponseError: The API responded with another error.
             TailscaleConnectionError: An error occurred while communicating with
                 the Tailscale API.
-            TailscaleNotFoundError: The requested resource does not exist.
-            TailscaleError: Received an unexpected response from the Tailscale
-                API.
 
         """
         url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
@@ -270,26 +273,10 @@ class Tailscale:
                     else (data if _use_form_encoding else None),
                     json=data if not _use_form_encoding else None,
                 )
-                response.raise_for_status()
                 body = await response.text()
         except TimeoutError as exception:
             msg = "Timeout occurred while connecting to the Tailscale API"
             raise TailscaleConnectionError(msg) from exception
-        except ClientResponseError as exception:
-            if exception.status in [401, 403]:
-                if _use_authentication and self.api_key and self.oauth_client_id:
-                    self.api_key = None
-                    self._get_oauth_token_task = None
-                    if self._expire_oauth_token_task:
-                        self._expire_oauth_token_task.cancel()
-                    self._expire_oauth_token_task = None
-                msg = "Authentication to the Tailscale API failed"
-                raise TailscaleAuthenticationError(msg) from exception
-            if exception.status == 404:
-                msg = "The requested Tailscale API resource was not found"
-                raise TailscaleNotFoundError(msg) from exception
-            msg = "Error occurred while connecting to the Tailscale API"
-            raise TailscaleError(msg) from exception
         except (
             ClientError,
             socket.gaierror,
@@ -297,7 +284,23 @@ class Tailscale:
             msg = "Error occurred while communicating with the Tailscale API"
             raise TailscaleConnectionError(msg) from exception
 
+        if response.status >= 400:
+            if response.status in (401, 403):
+                self._forget_oauth_token(use_authentication=_use_authentication)
+            raise _response_error(response.status, response.reason, body)
+
         return body, response.headers
+
+    def _forget_oauth_token(self, *, use_authentication: bool) -> None:
+        """Forget the OAuth token the API refused, so a new one is requested."""
+        if not (use_authentication and self.api_key and self.oauth_client_id):
+            return
+
+        self.api_key = None
+        self._get_oauth_token_task = None
+        if self._expire_oauth_token_task:
+            self._expire_oauth_token_task.cancel()
+        self._expire_oauth_token_task = None
 
     async def devices(self) -> dict[str, Device]:
         """Get all devices in the tailnet.
@@ -1470,3 +1473,33 @@ def _trust_credential_payload(  # noqa: PLR0913  # pylint: disable=too-many-argu
         "customClaimRules": custom_claim_rules,
     }
     return {name: value for name, value in fields.items() if value is not None}
+
+
+def _response_error(
+    status: int, http_reason: str | None, body: str
+) -> TailscaleResponseError:
+    """Build the error for a response with an error status.
+
+    The Tailscale API explains errors in the "message" of a JSON body; fall
+    back to the HTTP reason when it does not.
+
+    Returns
+    -------
+        The error that fits the status.
+
+    """
+    reason = http_reason or f"HTTP {status}"
+    try:
+        message = json.loads(body).get("message")
+    except (AttributeError, ValueError):
+        message = None
+    if isinstance(message, str) and message:
+        reason = message
+
+    if status == 401:
+        return TailscaleUnauthorizedError(status, reason)
+    if status == 403:
+        return TailscalePermissionError(status, reason)
+    if status == 404:
+        return TailscaleNotFoundError(status, reason)
+    return TailscaleResponseError(status, reason)
