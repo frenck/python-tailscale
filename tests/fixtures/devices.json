@@ -45,7 +45,16 @@
       "tailnetLockError": "",
       "tailnetLockKey": "tlpub:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
       "updateAvailable": false,
-      "user": "user@example.com"
+      "user": "user@example.com",
+      "distro": {
+        "name": "ubuntu",
+        "version": "25.04",
+        "codeName": "plucky"
+      },
+      "postureIdentity": {
+        "serialNumbers": ["ABC123XYZ"],
+        "disabled": false
+      }
     },
     {
       "addresses": ["100.104.105.106"],

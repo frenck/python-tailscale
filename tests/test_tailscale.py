@@ -198,6 +198,11 @@ async def test_devices(
     assert "New York City" in device.client_connectivity.latency
     assert device.client_connectivity.latency["New York City"].latency_ms == 12.548
     assert device.client_connectivity.latency["New York City"].preferred is True
+    assert device.distro is not None
+    assert device.distro.name == "ubuntu"
+    assert device.distro.code_name == "plucky"
+    assert device.posture_identity is not None
+    assert device.posture_identity.serial_numbers == ["ABC123XYZ"]
 
 
 async def test_devices_snapshot(
@@ -239,6 +244,30 @@ async def test_devices_empty_created(
     )
     devices = await tailscale_client.devices()
     assert devices["12345"].created is None
+
+
+async def test_devices_minimal(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test a device with only its identifiers is handled."""
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=all",
+        status=200,
+        body='{"devices": [{"id": "12345", "nodeId": "nMINIMAL001",'
+        '"hostname": "minimal", "name": "minimal.example.ts.net"}]}',
+        content_type="application/json",
+    )
+    devices = await tailscale_client.devices()
+
+    device = devices["12345"]
+    assert device.node_id == "nMINIMAL001"
+    assert device.addresses == []
+    assert device.connected_to_control is None
+    assert device.client_version is None
+    assert device.distro is None
+    assert device.is_external is False
+    assert device.posture_identity is None
 
 
 async def test_devices_fallback_to_default_fields(

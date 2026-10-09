@@ -159,8 +159,12 @@ if __name__ == "__main__":
 
 Each device returned is a `Device` dataclass with properties like `hostname`,
 `os`, `addresses`, `authorized`, `client_version`, `last_seen`, `tags`,
-`advertised_routes`, `enabled_routes`, and more. Devices are returned as a
-dictionary keyed by device ID.
+`advertised_routes`, `enabled_routes`, `distro`, and more. Devices are
+returned as a dictionary keyed by device ID.
+
+Only the identifiers (`device_id`, `node_id`, `hostname`, and `name`) are
+always set. The API leaves out many fields for devices shared in from another
+tailnet, so the other fields are `None` when the API does not return them.
 
 ### Connection options
 
