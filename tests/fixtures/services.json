@@ -1,0 +1,20 @@
+{
+  "vipServices": [
+    {
+      "name": "svc:example",
+      "displayName": "Example",
+      "addrs": ["100.100.100.100", "fd7a:115c:a1e0::1"],
+      "comment": "An example Service",
+      "ports": ["tcp:80", "tcp:443"],
+      "tags": ["tag:web"]
+    },
+    {
+      "name": "svc:bare",
+      "displayName": "",
+      "addrs": null,
+      "comment": "",
+      "ports": ["do-not-validate"],
+      "tags": null
+    }
+  ]
+}

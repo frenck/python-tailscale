@@ -16,7 +16,10 @@ from tailscale import (
     DNSConfiguration,
     DNSConfigurationPreferences,
     DNSResolver,
+    ServiceApproval,
+    ServiceHost,
     Tailscale,
+    TailscaleService,
 )
 from tailscale.exceptions import (
     TailscaleAuthenticationError,
@@ -1716,6 +1719,181 @@ async def test_rotate_webhook_secret(
     )
     webhook = await tailscale_client.rotate_webhook_secret("e1234CNTRL")
     assert webhook.secret == WEBHOOK_SECRET
+
+
+# --- Service tests ---
+
+
+async def test_services(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the Services."""
+    responses.get(
+        f"{URL}/tailnet/frenck/services",
+        status=200,
+        body=load_fixture("services.json"),
+        content_type="application/json",
+    )
+    services = await tailscale_client.services()
+
+    assert services == [
+        TailscaleService(
+            name="svc:example",
+            addrs=["100.100.100.100", "fd7a:115c:a1e0::1"],
+            comment="An example Service",
+            display_name="Example",
+            ports=["tcp:80", "tcp:443"],
+            tags=["tag:web"],
+        ),
+        TailscaleService(name="svc:bare", ports=["do-not-validate"]),
+    ]
+
+
+async def test_services_none(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the Services when there are none."""
+    responses.get(
+        f"{URL}/tailnet/frenck/services",
+        status=200,
+        body='{"vipServices": null}',
+        content_type="application/json",
+    )
+    assert await tailscale_client.services() == []
+
+
+async def test_service(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting a single Service."""
+    responses.get(
+        f"{URL}/tailnet/frenck/services/svc:example",
+        status=200,
+        body='{"name": "svc:example", "ports": ["tcp:443"]}',
+        content_type="application/json",
+    )
+    service = await tailscale_client.service("svc:example")
+    assert service == TailscaleService(name="svc:example", ports=["tcp:443"])
+
+
+async def test_set_service(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating a Service."""
+    responses.put(
+        f"{URL}/tailnet/frenck/services/svc:example",
+        status=200,
+        body='{"name": "svc:example", "addrs": ["100.100.100.100"],'
+        '"ports": ["tcp:443"]}',
+        content_type="application/json",
+    )
+    service = await tailscale_client.set_service(
+        TailscaleService(name="svc:example", ports=["tcp:443"], comment="Web")
+    )
+    assert service.addrs == ["100.100.100.100"]
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "name": "svc:example",
+        "addrs": [],
+        "comment": "Web",
+        "ports": ["tcp:443"],
+        "tags": [],
+    }
+
+
+async def test_rename_service(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test renaming a Service, by its current name."""
+    responses.put(
+        f"{URL}/tailnet/frenck/services/svc:old",
+        status=200,
+        body='{"name": "svc:new"}',
+        content_type="application/json",
+    )
+    service = await tailscale_client.set_service(
+        TailscaleService(name="svc:new"), name="svc:old"
+    )
+    assert service.name == "svc:new"
+
+
+async def test_delete_service(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting a Service."""
+    responses.delete(
+        f"{URL}/tailnet/frenck/services/svc:example",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_service("svc:example")
+
+
+async def test_service_hosts(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the devices that host a Service."""
+    responses.get(
+        f"{URL}/tailnet/frenck/services/svc:example/devices",
+        status=200,
+        body='{"hosts": [{"stableNodeID": "nDEVICE123",'
+        '"approvalLevel": "approved:manual", "configured": "configured"}]}',
+        content_type="application/json",
+    )
+    hosts = await tailscale_client.service_hosts("svc:example")
+    assert hosts == [
+        ServiceHost(
+            stable_node_id="nDEVICE123",
+            approval_level="approved:manual",
+            configured="configured",
+        )
+    ]
+
+
+async def test_service_approval(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the approval of a Service on a device."""
+    responses.get(
+        f"{URL}/tailnet/frenck/services/svc:example/device/nDEVICE123/approved",
+        status=200,
+        body='{"approved": true, "autoApproved": true}',
+        content_type="application/json",
+    )
+    approval = await tailscale_client.service_approval("svc:example", "nDEVICE123")
+    assert approval == ServiceApproval(approved=True, auto_approved=True)
+
+
+async def test_set_service_approval(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test revoking the approval of a Service on a device."""
+    responses.post(
+        f"{URL}/tailnet/frenck/services/svc:example/device/nDEVICE123/approved",
+        status=200,
+        body='{"approved": false, "autoApproved": false}',
+        content_type="application/json",
+    )
+    approval = await tailscale_client.set_service_approval(
+        "svc:example", "nDEVICE123", approved=False
+    )
+    assert approval.approved is False
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"approved": False}
 
 
 # --- OAuth tests ---
