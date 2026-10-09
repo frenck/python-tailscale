@@ -45,39 +45,61 @@ class ClientConnectivity(DataClassORJSONMixin):
 
 
 @dataclass
+class DeviceDistro(DataClassORJSONMixin):
+    """Object holding the operating system distribution of a device."""
+
+    name: str | None = None
+    version: str | None = None
+    code_name: str | None = field(
+        default=None, metadata=field_options(alias="codeName")
+    )
+
+
+@dataclass
+class DevicePostureIdentity(DataClassORJSONMixin):
+    """Object holding the posture identifiers of a device."""
+
+    disabled: bool | None = None
+    serial_numbers: list[str] = field(
+        default_factory=list, metadata=field_options(alias="serialNumbers")
+    )
+
+
+@dataclass
 # pylint: disable-next=too-many-instance-attributes
 class Device(DataClassORJSONMixin):
-    """Object holding Tailscale device information."""
+    """Object holding Tailscale device information.
 
-    addresses: list[str]
-    authorized: bool
-    blocks_incoming_connections: bool = field(
-        metadata=field_options(alias="blocksIncomingConnections")
-    )
-    client_version: str = field(metadata=field_options(alias="clientVersion"))
-    connected_to_control: bool = field(
-        metadata=field_options(alias="connectedToControl")
-    )
+    The API marks none of the fields as required, and leaves out a lot of
+    them for devices shared in from another tailnet. Only the identifiers
+    of the device are required here; the rest is None when the API leaves
+    it out.
+    """
+
     device_id: str = field(metadata=field_options(alias="id"))
     hostname: str
-    is_external: bool = field(metadata=field_options(alias="isExternal"))
-    key_expiry_disabled: bool = field(metadata=field_options(alias="keyExpiryDisabled"))
-    machine_key: str = field(metadata=field_options(alias="machineKey"))
     name: str
     node_id: str = field(metadata=field_options(alias="nodeId"))
-    node_key: str = field(metadata=field_options(alias="nodeKey"))
-    os: str
-    tailnet_lock_key: str = field(metadata=field_options(alias="tailnetLockKey"))
-    update_available: bool = field(metadata=field_options(alias="updateAvailable"))
-    user: str
+    addresses: list[str] = field(default_factory=list)
     advertised_routes: list[str] = field(
         default_factory=list, metadata=field_options(alias="advertisedRoutes")
+    )
+    authorized: bool | None = None
+    blocks_incoming_connections: bool | None = field(
+        default=None, metadata=field_options(alias="blocksIncomingConnections")
     )
     client_connectivity: ClientConnectivity | None = field(
         default=None,
         metadata=field_options(alias="clientConnectivity"),
     )
+    client_version: str | None = field(
+        default=None, metadata=field_options(alias="clientVersion")
+    )
+    connected_to_control: bool | None = field(
+        default=None, metadata=field_options(alias="connectedToControl")
+    )
     created: datetime | None = None
+    distro: DeviceDistro | None = None
     enabled_routes: list[str] = field(
         default_factory=list, metadata=field_options(alias="enabledRoutes")
     )
@@ -86,13 +108,25 @@ class Device(DataClassORJSONMixin):
         default=None,
         metadata=field_options(alias="isEphemeral"),
     )
+    is_external: bool = field(default=False, metadata=field_options(alias="isExternal"))
+    key_expiry_disabled: bool | None = field(
+        default=None, metadata=field_options(alias="keyExpiryDisabled")
+    )
     last_seen: datetime | None = field(
         default=None,
         metadata=field_options(alias="lastSeen"),
     )
+    machine_key: str | None = field(
+        default=None, metadata=field_options(alias="machineKey")
+    )
     multiple_connections: bool | None = field(
         default=None,
         metadata=field_options(alias="multipleConnections"),
+    )
+    node_key: str | None = field(default=None, metadata=field_options(alias="nodeKey"))
+    os: str | None = None
+    posture_identity: DevicePostureIdentity | None = field(
+        default=None, metadata=field_options(alias="postureIdentity")
     )
     ssh_enabled: bool | None = field(
         default=None,
@@ -103,6 +137,13 @@ class Device(DataClassORJSONMixin):
         default=None,
         metadata=field_options(alias="tailnetLockError"),
     )
+    tailnet_lock_key: str | None = field(
+        default=None, metadata=field_options(alias="tailnetLockKey")
+    )
+    update_available: bool | None = field(
+        default=None, metadata=field_options(alias="updateAvailable")
+    )
+    user: str | None = None
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
