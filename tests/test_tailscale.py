@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 
 import asyncio
+import json
 from datetime import UTC, datetime, timedelta
 
 import aiohttp
@@ -1179,6 +1180,171 @@ async def test_update_tailnet_settings(
         "aclsExternallyManagedOn": True,
         "aclsExternalLink": "https://github.com/frenck/tailnet-policy",
     }
+
+
+# --- Policy file tests ---
+
+
+async def test_policy_file(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the policy file as HuJSON, with its ETag."""
+    responses.get(
+        f"{URL}/tailnet/frenck/acl",
+        status=200,
+        body=load_fixture("policy.hujson"),
+        headers={"ETag": '"e1234"'},
+        content_type="application/hujson",
+    )
+    policy_file = await tailscale_client.policy_file()
+
+    assert policy_file.policy == load_fixture("policy.hujson")
+    assert policy_file.etag == '"e1234"'
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["headers"]["Accept"] == "application/hujson"
+
+
+async def test_set_policy_file(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting the policy file, guarded by the ETag."""
+    responses.post(
+        f"{URL}/tailnet/frenck/acl",
+        status=200,
+        body=load_fixture("policy.hujson"),
+        headers={"ETag": '"e5678"'},
+        content_type="application/hujson",
+    )
+    policy_file = await tailscale_client.set_policy_file(
+        load_fixture("policy.hujson"), etag='"e1234"'
+    )
+
+    assert policy_file.etag == '"e5678"'
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["data"] == load_fixture("policy.hujson")
+    assert request.kwargs["json"] is None
+    assert request.kwargs["headers"]["Content-Type"] == "application/hujson"
+    assert request.kwargs["headers"]["If-Match"] == '"e1234"'
+
+
+async def test_set_policy_file_without_etag(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting the policy file without an ETag."""
+    responses.post(
+        f"{URL}/tailnet/frenck/acl",
+        status=200,
+        body=load_fixture("policy.hujson"),
+        content_type="application/hujson",
+    )
+    policy_file = await tailscale_client.set_policy_file(load_fixture("policy.hujson"))
+
+    assert policy_file.etag is None
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert "If-Match" not in request.kwargs["headers"]
+
+
+async def test_validate_policy_file(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test validating a valid policy file."""
+    responses.post(
+        f"{URL}/tailnet/frenck/acl/validate",
+        status=200,
+        body="{}",
+        content_type="application/json",
+    )
+    validation = await tailscale_client.validate_policy_file(
+        load_fixture("policy.hujson")
+    )
+
+    assert validation.valid is True
+    assert validation.message is None
+    assert validation.data == []
+
+
+async def test_validate_policy_file_invalid(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test validating an invalid policy file."""
+    responses.post(
+        f"{URL}/tailnet/frenck/acl/validate",
+        status=200,
+        body='{"message":"action=\\"nope\\" is not supported"}',
+        content_type="application/json",
+    )
+    validation = await tailscale_client.validate_policy_file(
+        '{"acls": [{"action": "nope"}]}'
+    )
+
+    assert validation.valid is False
+    assert validation.message == 'action="nope" is not supported'
+
+
+async def test_test_policy_file(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test running tests against the current policy file."""
+    responses.post(
+        f"{URL}/tailnet/frenck/acl/validate",
+        status=200,
+        body='{"message":"test(s) failed","data":[{"user":"alice@example.com",'
+        '"errors":["address \\"100.64.0.1:22\\": want: Drop, got: Accept"],'
+        '"warnings":null}]}',
+        content_type="application/json",
+    )
+    tests = [{"src": "alice@example.com", "deny": ["100.64.0.1:22"]}]
+    validation = await tailscale_client.test_policy_file(tests)
+
+    assert validation.valid is False
+    (result,) = validation.data
+    assert result.user == "alice@example.com"
+    assert result.errors == ['address "100.64.0.1:22": want: Drop, got: Accept']
+    assert result.warnings == []
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert json.loads(request.kwargs["data"]) == tests
+    assert request.kwargs["headers"]["Content-Type"] == "application/json"
+
+
+async def test_preview_policy_rules(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test previewing the rules that apply to a resource."""
+    responses.post(
+        f"{URL}/tailnet/frenck/acl/preview?type=ipport&previewFor=100.64.0.1:22",
+        status=200,
+        body='{"matches":[{"users":["*"],"ports":["*:*"],"lineNumber":4,'
+        '"postures":null}],"type":"ipport","previewFor":"100.64.0.1:22"}',
+        content_type="application/json",
+    )
+    preview = await tailscale_client.preview_policy_rules(
+        load_fixture("policy.hujson"),
+        preview_type="ipport",
+        preview_for="100.64.0.1:22",
+    )
+
+    assert preview.preview_type == "ipport"
+    assert preview.preview_for == "100.64.0.1:22"
+    (match,) = preview.matches
+    assert match.users == ["*"]
+    assert match.ports == ["*:*"]
+    assert match.postures == []
+    assert match.line_number == 4
 
 
 # --- OAuth tests ---

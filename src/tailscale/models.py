@@ -363,3 +363,120 @@ class Devices(DataClassORJSONMixin):
         # Convert list into dict, keyed by device ID.
         d["devices"] = {device["id"]: device for device in d["devices"]}
         return d
+
+
+@dataclass
+class PolicyFile:
+    """Object holding the policy file of a tailnet.
+
+    The policy is kept as HuJSON text, so its comments and formatting
+    survive a round trip. The ETag identifies this version of the policy
+    file; pass it along when setting the policy file, to avoid overwriting
+    changes made by someone else in the meantime.
+    """
+
+    policy: str
+    etag: str | None = None
+
+
+@dataclass
+class PolicyTestResult(DataClassORJSONMixin):
+    """Object holding the result of a failing policy file test."""
+
+    user: str = ""
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null values.
+
+        """
+        return {key: value for key, value in d.items() if value is not None}
+
+
+@dataclass
+class PolicyFileValidation(DataClassORJSONMixin):
+    """Object holding the result of validating or testing a policy file."""
+
+    message: str | None = None
+    data: list[PolicyTestResult] = field(default_factory=list)
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null values.
+
+        """
+        return {key: value for key, value in d.items() if value is not None}
+
+    @property
+    def valid(self) -> bool:
+        """Return whether the policy file is valid and its tests pass."""
+        return self.message is None
+
+
+@dataclass
+class PolicyRuleMatch(DataClassORJSONMixin):
+    """Object holding a policy file rule that applies to a resource."""
+
+    users: list[str] = field(default_factory=list)
+    ports: list[str] = field(default_factory=list)
+    postures: list[str] = field(default_factory=list)
+    line_number: int | None = field(
+        default=None, metadata=field_options(alias="lineNumber")
+    )
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null values.
+
+        """
+        return {key: value for key, value in d.items() if value is not None}
+
+
+@dataclass
+class PolicyRulePreview(DataClassORJSONMixin):
+    """Object holding the policy file rules that apply to a resource."""
+
+    preview_type: str = field(metadata=field_options(alias="type"))
+    preview_for: str = field(metadata=field_options(alias="previewFor"))
+    matches: list[PolicyRuleMatch] = field(default_factory=list)
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null values.
+
+        """
+        return {key: value for key, value in d.items() if value is not None}

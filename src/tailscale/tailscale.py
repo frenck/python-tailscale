@@ -26,12 +26,17 @@ from .models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    PolicyFile,
+    PolicyFileValidation,
+    PolicyRulePreview,
     TailnetSettings,
     TailscaleKey,
     TailscaleUser,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from .storage import TokenStorage
 
 
@@ -164,6 +169,44 @@ class Tailscale:
     ) -> str:
         """Handle a request to the Tailscale API.
 
+        Args:
+        ----
+            uri: Request URI, without '/api/v2/'.
+            method: HTTP method to use.
+            data: Dictionary of data to send to the Tailscale API.
+            params: Query string parameters to add to the request URI.
+            _use_authentication: Whether to include authentication headers.
+            _use_form_encoding: Whether to use form encoding instead of JSON.
+
+        Returns:
+        -------
+            The response body as a string.
+
+        """
+        body, _ = await self._request_with_headers(
+            uri,
+            method=method,
+            data=data,
+            params=params,
+            _use_authentication=_use_authentication,
+            _use_form_encoding=_use_form_encoding,
+        )
+        return body
+
+    async def _request_with_headers(  # noqa: PLR0913  # pylint: disable=too-many-arguments
+        self,
+        uri: str,
+        *,
+        method: str = METH_GET,
+        data: dict[str, Any] | None = None,
+        params: dict[str, str] | None = None,
+        content: str | None = None,
+        headers: dict[str, str] | None = None,
+        _use_authentication: bool = True,
+        _use_form_encoding: bool = False,
+    ) -> tuple[str, Mapping[str, str]]:
+        """Handle a request to the Tailscale API, and return its headers too.
+
         A generic method for sending/handling HTTP requests done against
         the Tailscale API.
 
@@ -172,12 +215,15 @@ class Tailscale:
             uri: Request URI, without '/api/v2/'.
             method: HTTP method to use.
             data: Dictionary of data to send to the Tailscale API.
+            params: Query string parameters to add to the request URI.
+            content: Raw body to send to the Tailscale API, instead of data.
+            headers: Extra headers to send, like a different Accept header.
             _use_authentication: Whether to include authentication headers.
             _use_form_encoding: Whether to use form encoding instead of JSON.
 
         Returns:
         -------
-            The response body as a string.
+            The response body as a string, and the response headers.
 
         Raises:
         ------
@@ -193,13 +239,14 @@ class Tailscale:
         if params:
             url = url.update_query(params)
 
-        headers: dict[str, str] = {
+        request_headers: dict[str, str] = {
             "Accept": "application/json",
+            **(headers or {}),
         }
 
         if _use_authentication:
             await self._check_api_key()
-            headers["Authorization"] = f"Bearer {self.api_key}"
+            request_headers["Authorization"] = f"Bearer {self.api_key}"
 
         if self.session is None:
             self.session = ClientSession()
@@ -210,11 +257,14 @@ class Tailscale:
                 response = await self.session.request(
                     method,
                     url,
-                    headers=headers,
-                    data=data if _use_form_encoding else None,
+                    headers=request_headers,
+                    data=content
+                    if content is not None
+                    else (data if _use_form_encoding else None),
                     json=data if not _use_form_encoding else None,
                 )
                 response.raise_for_status()
+                body = await response.text()
         except TimeoutError as exception:
             msg = "Timeout occurred while connecting to the Tailscale API"
             raise TailscaleConnectionError(msg) from exception
@@ -240,7 +290,7 @@ class Tailscale:
             msg = "Error occurred while communicating with the Tailscale API"
             raise TailscaleConnectionError(msg) from exception
 
-        return await response.text()
+        return body, response.headers
 
     async def devices(self) -> dict[str, Device]:
         """Get all devices in the tailnet.
@@ -557,6 +607,121 @@ class Tailscale:
             data=split_dns,
         )
         return json.loads(data)
+
+    async def policy_file(self) -> PolicyFile:
+        """Get the policy file of the tailnet.
+
+        Returns
+        -------
+            The policy file as HuJSON, with its ETag.
+
+        """
+        policy, headers = await self._request_with_headers(
+            f"tailnet/{self.tailnet}/acl",
+            headers={"Accept": "application/hujson"},
+        )
+        return PolicyFile(policy=policy, etag=headers.get("ETag"))
+
+    async def set_policy_file(
+        self, policy: str, *, etag: str | None = None
+    ) -> PolicyFile:
+        """Set the policy file of the tailnet.
+
+        Args:
+        ----
+            policy: The new policy file, as HuJSON or JSON.
+            etag: The ETag of the policy file this one is based on. When the
+                policy file has changed since, the API refuses the update
+                and a TailscaleError is raised.
+
+        Returns:
+        -------
+            The new policy file as HuJSON, with its ETag.
+
+        """
+        headers = {
+            "Accept": "application/hujson",
+            "Content-Type": "application/hujson",
+        }
+        if etag is not None:
+            headers["If-Match"] = etag
+
+        new_policy, response_headers = await self._request_with_headers(
+            f"tailnet/{self.tailnet}/acl",
+            method=METH_POST,
+            content=policy,
+            headers=headers,
+        )
+        return PolicyFile(policy=new_policy, etag=response_headers.get("ETag"))
+
+    async def validate_policy_file(self, policy: str) -> PolicyFileValidation:
+        """Validate a policy file, and run its tests, without saving it.
+
+        Args:
+        ----
+            policy: The policy file to validate, as HuJSON or JSON.
+
+        Returns:
+        -------
+            The result of the validation.
+
+        """
+        data, _ = await self._request_with_headers(
+            f"tailnet/{self.tailnet}/acl/validate",
+            method=METH_POST,
+            content=policy,
+            headers={"Content-Type": "application/hujson"},
+        )
+        return PolicyFileValidation.from_json(data)
+
+    async def test_policy_file(
+        self, tests: list[dict[str, Any]]
+    ) -> PolicyFileValidation:
+        """Run tests against the current policy file of the tailnet.
+
+        Args:
+        ----
+            tests: The tests to run, in the format of the "tests" section
+                of a policy file.
+
+        Returns:
+        -------
+            The result of the tests.
+
+        """
+        data, _ = await self._request_with_headers(
+            f"tailnet/{self.tailnet}/acl/validate",
+            method=METH_POST,
+            content=json.dumps(tests),
+            headers={"Content-Type": "application/json"},
+        )
+        return PolicyFileValidation.from_json(data)
+
+    async def preview_policy_rules(
+        self, policy: str, *, preview_type: str, preview_for: str
+    ) -> PolicyRulePreview:
+        """Preview the rules of a policy file that apply to a resource.
+
+        Args:
+        ----
+            policy: The policy file to preview, as HuJSON or JSON.
+            preview_type: The type of resource, "user" for a user's email
+                or "ipport" for an IP address and port.
+            preview_for: The user's email, or the IP address and port.
+
+        Returns:
+        -------
+            The rules that apply to the resource.
+
+        """
+        data, _ = await self._request_with_headers(
+            f"tailnet/{self.tailnet}/acl/preview",
+            method=METH_POST,
+            params={"type": preview_type, "previewFor": preview_for},
+            content=policy,
+            headers={"Content-Type": "application/hujson"},
+        )
+        return PolicyRulePreview.from_json(data)
 
     async def users(
         self,
