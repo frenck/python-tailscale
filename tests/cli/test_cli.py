@@ -497,6 +497,64 @@ def test_settings_external_tailnets_command(
     )
 
 
+def test_settings_show_command_unknown(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Settings show command marks settings the API left out as unknown."""
+    mock_client = _mock_tailscale()
+    mock_client.tailnet_settings.return_value = TailnetSettings.from_dict({})
+    exit_code, output = _invoke(
+        runner,
+        ["settings", "show", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_settings_https_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Settings https command prints confirmation."""
+    mock_client = _mock_tailscale()
+    exit_code, output = _invoke(
+        runner,
+        ["settings", "https", "--disable", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.update_tailnet_settings.assert_called_once_with(
+        https_enabled=False,
+    )
+
+
+def test_settings_route_selection_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Settings route-selection command prints confirmation."""
+    mock_client = _mock_tailscale()
+    exit_code, output = _invoke(
+        runner,
+        [
+            "settings",
+            "route-selection",
+            "regional-routing",
+            "--api-key",
+            "tskey-api-test",
+        ],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.update_tailnet_settings.assert_called_once_with(
+        route_selection="regional-routing",
+    )
+
+
 # --- action commands ---
 
 

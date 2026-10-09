@@ -733,8 +733,10 @@ settings = AsyncTyper(
 cli.add_typer(settings, name="settings")
 
 
-def _bool_display(val: bool) -> str:
+def _bool_display(val: bool | None) -> str:
     """Format a boolean for Rich display."""
+    if val is None:
+        return "[dim]Unknown[/dim]"
     return "[green]Yes[/green]" if val else "[dim]No[/dim]"
 
 
@@ -756,11 +758,16 @@ async def settings_show_command(
 
     table.add_row("Device Approval", _bool_display(s.devices_approval_on))
     table.add_row("Auto Updates", _bool_display(s.devices_auto_updates_on))
-    table.add_row("Key Duration", f"{s.devices_key_duration_days} days")
+    table.add_row(
+        "Key Duration",
+        f"{s.devices_key_duration_days} days"
+        if s.devices_key_duration_days is not None
+        else "[dim]Unknown[/dim]",
+    )
     table.add_row("User Approval", _bool_display(s.users_approval_on))
     table.add_row(
         "External Tailnets",
-        s.users_role_allowed_to_join_external_tailnets,
+        s.users_role_allowed_to_join_external_tailnets or "[dim]Unknown[/dim]",
     )
     table.add_row("Network Flow Logging", _bool_display(s.network_flow_logging_on))
     table.add_row("Regional Routing", _bool_display(s.regional_routing_on))
@@ -768,6 +775,13 @@ async def settings_show_command(
         "Posture Identity Collection",
         _bool_display(s.posture_identity_collection_on),
     )
+    table.add_row("HTTPS", _bool_display(s.https_enabled))
+    table.add_row("Route Selection", s.route_selection or "[dim]Unknown[/dim]")
+    table.add_row(
+        "ACLs Externally Managed", _bool_display(s.acls_externally_managed_on)
+    )
+    if s.acls_external_link:
+        table.add_row("ACLs External Link", s.acls_external_link)
 
     console.print(table)
 
@@ -967,6 +981,48 @@ async def settings_regional_routing_command(
         await client.update_tailnet_settings(regional_routing_on=enable)
     state = "enabled" if enable else "disabled"
     console.print(f"[green]Regional routing {state}.[/green]")
+
+
+@settings.command("https")
+async def settings_https_command(
+    enable: Annotated[
+        bool,
+        typer.Option("--enable/--disable", help="Enable or disable HTTPS"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Enable or disable HTTPS certificates."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(https_enabled=enable)
+    state = "enabled" if enable else "disabled"
+    console.print(f"[green]HTTPS {state}.[/green]")
+
+
+@settings.command("route-selection")
+async def settings_route_selection_command(
+    mode: Annotated[
+        str,
+        typer.Argument(
+            help=(
+                "Route selection (active-passive-failover/regional-routing/"
+                "regional-routing-failover)"
+            )
+        ),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Set how routes are selected."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        await client.update_tailnet_settings(route_selection=mode)
+    console.print(f"[green]Route selection set to {mode}.[/green]")
 
 
 @settings.command("posture-identity")

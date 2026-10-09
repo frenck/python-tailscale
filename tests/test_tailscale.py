@@ -927,6 +927,27 @@ async def test_tailnet_settings(
     assert result.network_flow_logging_on is True
     assert result.regional_routing_on is False
     assert result.posture_identity_collection_on is True
+    assert result.https_enabled is True
+    assert result.route_selection == "active-passive-failover"
+    assert result.acls_externally_managed_on is False
+    assert result.acls_external_link is None
+
+
+async def test_tailnet_settings_empty(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test settings the API leaves out are None."""
+    responses.get(
+        f"{URL}/tailnet/frenck/settings",
+        status=200,
+        body="{}",
+        content_type="application/json",
+    )
+    result = await tailscale_client.tailnet_settings()
+    assert result.devices_approval_on is None
+    assert result.devices_key_duration_days is None
+    assert result.route_selection is None
 
 
 async def test_tailnet_settings_snapshot(
@@ -956,9 +977,36 @@ async def test_update_tailnet_settings(
         content_type="application/json",
     )
     await tailscale_client.update_tailnet_settings(
+        devices_approval_on=True,
+        devices_auto_updates_on=True,
         devices_key_duration_days=30,
+        users_approval_on=False,
+        users_role_allowed_to_join_external_tailnets="member",
         network_flow_logging_on=False,
+        regional_routing_on=True,
+        posture_identity_collection_on=False,
+        https_enabled=True,
+        route_selection="regional-routing",
+        acls_externally_managed_on=True,
+        acls_external_link="https://github.com/frenck/tailnet-policy",
     )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "devicesApprovalOn": True,
+        "devicesAutoUpdatesOn": True,
+        "devicesKeyDurationDays": 30,
+        "usersApprovalOn": False,
+        "usersRoleAllowedToJoinExternalTailnets": "member",
+        "networkFlowLoggingOn": False,
+        "regionalRoutingOn": True,
+        "postureIdentityCollectionOn": False,
+        "httpsEnabled": True,
+        "routeSelection": "regional-routing",
+        "aclsExternallyManagedOn": True,
+        "aclsExternalLink": "https://github.com/frenck/tailnet-policy",
+    }
 
 
 # --- OAuth tests ---

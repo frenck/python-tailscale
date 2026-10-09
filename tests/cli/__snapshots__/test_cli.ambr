@@ -266,6 +266,13 @@
         'role',
         'tailnet',
       ]),
+      'https': list([
+        'api_key',
+        'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
       'key-duration': list([
         'api_key',
         'days',
@@ -290,6 +297,13 @@
       'regional-routing': list([
         'api_key',
         'enable',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'route-selection': list([
+        'api_key',
+        'mode',
         'oauth_client_id',
         'oauth_client_secret',
         'tailnet',
@@ -581,26 +595,62 @@
   
   '''
 # ---
+# name: test_settings_https_command
+  '''
+  HTTPS disabled.
+  
+  '''
+# ---
 # name: test_settings_key_duration_command
   '''
   Key duration set to 90 days.
   
   '''
 # ---
+# name: test_settings_route_selection_command
+  '''
+  Route selection set to regional-routing.
+  
+  '''
+# ---
 # name: test_settings_show_command
+  '''
+                      Tailnet Settings                     
+  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃ Setting                     ┃ Value                   ┃
+  ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩
+  │ Device Approval             │ Yes                     │
+  │ Auto Updates                │ Yes                     │
+  │ Key Duration                │ 90 days                 │
+  │ User Approval               │ No                      │
+  │ External Tailnets           │ admin                   │
+  │ Network Flow Logging        │ Yes                     │
+  │ Regional Routing            │ No                      │
+  │ Posture Identity Collection │ Yes                     │
+  │ HTTPS                       │ Yes                     │
+  │ Route Selection             │ active-passive-failover │
+  │ ACLs Externally Managed     │ No                      │
+  └─────────────────────────────┴─────────────────────────┘
+  
+  '''
+# ---
+# name: test_settings_show_command_unknown
   '''
               Tailnet Settings             
   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┓
   ┃ Setting                     ┃ Value   ┃
   ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━┩
-  │ Device Approval             │ Yes     │
-  │ Auto Updates                │ Yes     │
-  │ Key Duration                │ 90 days │
-  │ User Approval               │ No      │
-  │ External Tailnets           │ admin   │
-  │ Network Flow Logging        │ Yes     │
-  │ Regional Routing            │ No      │
-  │ Posture Identity Collection │ Yes     │
+  │ Device Approval             │ Unknown │
+  │ Auto Updates                │ Unknown │
+  │ Key Duration                │ Unknown │
+  │ User Approval               │ Unknown │
+  │ External Tailnets           │ Unknown │
+  │ Network Flow Logging        │ Unknown │
+  │ Regional Routing            │ Unknown │
+  │ Posture Identity Collection │ Unknown │
+  │ HTTPS                       │ Unknown │
+  │ Route Selection             │ Unknown │
+  │ ACLs Externally Managed     │ Unknown │
   └─────────────────────────────┴─────────┘
   
   '''
