@@ -28,6 +28,7 @@ from .conftest import URL, load_fixture
 from .storage import InMemoryTokenStorage
 
 OAUTH_URL = f"{URL}/oauth/token"
+WEBHOOK_SECRET = "tskey-webhook-abcdef1234567890"  # noqa: S105
 
 
 async def test_json_request(
@@ -1434,6 +1435,173 @@ async def test_preview_policy_rules(
     assert match.ports == ["*:*"]
     assert match.postures == []
     assert match.line_number == 4
+
+
+# --- Webhook tests ---
+
+
+async def test_webhooks(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the webhooks."""
+    responses.get(
+        f"{URL}/tailnet/frenck/webhooks",
+        status=200,
+        body=load_fixture("webhooks.json"),
+        content_type="application/json",
+    )
+    webhooks = await tailscale_client.webhooks()
+
+    assert len(webhooks) == 2
+    assert webhooks[0].endpoint_id == "e1234CNTRL"
+    assert webhooks[0].endpoint_url == "https://example.com/tailscale"
+    assert webhooks[0].provider_type is None
+    assert webhooks[0].secret is None
+    assert webhooks[0].subscriptions == ["nodeCreated", "nodeKeyExpired"]
+    assert webhooks[1].provider_type == "slack"
+
+
+async def test_webhooks_none(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the webhooks when there are none."""
+    responses.get(
+        f"{URL}/tailnet/frenck/webhooks",
+        status=200,
+        body='{"webhooks": null}',
+        content_type="application/json",
+    )
+    assert await tailscale_client.webhooks() == []
+
+
+async def test_webhook(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting a single webhook."""
+    responses.get(
+        f"{URL}/webhooks/e1234CNTRL",
+        status=200,
+        body=load_fixture("webhook.json"),
+        content_type="application/json",
+    )
+    webhook = await tailscale_client.webhook("e1234CNTRL")
+
+    assert webhook.creator_login_name == "alice@example.com"
+    assert webhook.created is not None
+    assert webhook.last_modified is not None
+    assert webhook.secret == WEBHOOK_SECRET
+
+
+async def test_create_webhook(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating a webhook."""
+    responses.post(
+        f"{URL}/tailnet/frenck/webhooks",
+        status=200,
+        body=load_fixture("webhook.json"),
+        content_type="application/json",
+    )
+    webhook = await tailscale_client.create_webhook(
+        endpoint_url="https://hooks.slack.com/services/T000/B000/XXXX",
+        subscriptions=["userNeedsApproval"],
+        provider_type="slack",
+    )
+    assert webhook.secret == WEBHOOK_SECRET
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "endpointUrl": "https://hooks.slack.com/services/T000/B000/XXXX",
+        "subscriptions": ["userNeedsApproval"],
+        "providerType": "slack",
+    }
+
+
+async def test_create_webhook_without_provider(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating a webhook without a provider type."""
+    responses.post(
+        f"{URL}/tailnet/frenck/webhooks",
+        status=200,
+        body=load_fixture("webhook.json"),
+        content_type="application/json",
+    )
+    await tailscale_client.create_webhook(
+        endpoint_url="https://example.com/tailscale",
+        subscriptions=["nodeCreated"],
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert "providerType" not in request.kwargs["json"]
+
+
+async def test_update_webhook(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test updating the subscriptions of a webhook."""
+    responses.patch(
+        f"{URL}/webhooks/e1234CNTRL",
+        status=200,
+        body=load_fixture("webhook.json"),
+        content_type="application/json",
+    )
+    await tailscale_client.update_webhook("e1234CNTRL", subscriptions=["nodeDeleted"])
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"subscriptions": ["nodeDeleted"]}
+
+
+async def test_delete_webhook(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting a webhook."""
+    responses.delete(
+        f"{URL}/webhooks/e1234CNTRL",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_webhook("e1234CNTRL")
+
+
+async def test_test_webhook(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test sending a test event to a webhook."""
+    responses.post(
+        f"{URL}/webhooks/e1234CNTRL/test",
+        status=202,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.test_webhook("e1234CNTRL")
+
+
+async def test_rotate_webhook_secret(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test rotating the secret of a webhook."""
+    responses.post(
+        f"{URL}/webhooks/e1234CNTRL/rotate",
+        status=200,
+        body=load_fixture("webhook.json"),
+        content_type="application/json",
+    )
+    webhook = await tailscale_client.rotate_webhook_secret("e1234CNTRL")
+    assert webhook.secret == WEBHOOK_SECRET
 
 
 # --- OAuth tests ---

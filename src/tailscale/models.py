@@ -579,3 +579,39 @@ class PolicyRulePreview(DataClassORJSONMixin):
 
         """
         return {key: value for key, value in d.items() if value is not None}
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class TailscaleWebhook(DataClassORJSONMixin):
+    """Object holding a webhook of a tailnet."""
+
+    endpoint_id: str = field(metadata=field_options(alias="endpointId"))
+    endpoint_url: str = field(metadata=field_options(alias="endpointUrl"))
+    created: datetime | None = None
+    creator_login_name: str | None = field(
+        default=None, metadata=field_options(alias="creatorLoginName")
+    )
+    last_modified: datetime | None = field(
+        default=None, metadata=field_options(alias="lastModified")
+    )
+    provider_type: str | None = field(
+        default=None, metadata=field_options(alias="providerType")
+    )
+    secret: str | None = None
+    subscriptions: list[str] = field(default_factory=list)
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null and empty values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null and empty values.
+
+        """
+        return {key: value for key, value in d.items() if value not in (None, "")}

@@ -1,0 +1,22 @@
+{
+  "webhooks": [
+    {
+      "endpointId": "e1234CNTRL",
+      "endpointUrl": "https://example.com/tailscale",
+      "providerType": "",
+      "creatorLoginName": "alice@example.com",
+      "created": "2026-05-01T09:00:00Z",
+      "lastModified": "2026-05-02T09:00:00Z",
+      "subscriptions": ["nodeCreated", "nodeKeyExpired"]
+    },
+    {
+      "endpointId": "e5678CNTRL",
+      "endpointUrl": "https://hooks.slack.com/services/T000/B000/XXXX",
+      "providerType": "slack",
+      "creatorLoginName": "bob@example.com",
+      "created": "2026-06-01T09:00:00Z",
+      "lastModified": "2026-06-01T09:00:00Z",
+      "subscriptions": ["userNeedsApproval"]
+    }
+  ]
+}

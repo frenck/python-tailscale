@@ -97,7 +97,7 @@ good-names = ["_", "ex", "fp", "i", "id", "j", "k", "on", "Run", "T"]
 
 [tool.pylint.DESIGN]
 max-attributes = 8
-max-public-methods = 40
+max-public-methods = 100
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["duplicate-code", "format", "unsubscriptable-object"]
