@@ -220,17 +220,34 @@ class KeyCapabilities(DataClassORJSONMixin):
 @dataclass
 # pylint: disable-next=too-many-instance-attributes
 class TailscaleKey(DataClassORJSONMixin):
-    """Object holding Tailscale auth/API key information."""
+    """Object holding a Tailscale key.
+
+    A key is an auth key, an API access token, an OAuth client, or a
+    federated identity; the key type tells which one.
+    """
 
     key_id: str = field(metadata=field_options(alias="id"))
     description: str = ""
     key: str = ""
     created: datetime | None = None
+    updated: datetime | None = None
     expires: datetime | None = None
+    expiry_seconds: int | None = field(
+        default=None, metadata=field_options(alias="expirySeconds")
+    )
     revoked: datetime | None = None
     invalid: bool = False
     capabilities: KeyCapabilities = field(default_factory=KeyCapabilities)
     key_type: str | None = field(default=None, metadata=field_options(alias="keyType"))
+    user_id: str | None = field(default=None, metadata=field_options(alias="userId"))
+    scopes: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    issuer: str | None = None
+    subject: str | None = None
+    audience: str | None = None
+    custom_claim_rules: dict[str, str] = field(
+        default_factory=dict, metadata=field_options(alias="customClaimRules")
+    )
 
 
 @dataclass

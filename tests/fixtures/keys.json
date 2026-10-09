@@ -39,6 +39,39 @@
           }
         }
       }
+    },
+    {
+      "id": "kclient1234567890",
+      "description": "Home Assistant",
+      "keyType": "client",
+      "created": "2026-05-01T09:00:00Z",
+      "updated": "2026-05-02T09:00:00Z",
+      "scopes": ["devices:core:read", "users:read"],
+      "tags": ["tag:homeassistant"],
+      "userId": "u12345"
+    },
+    {
+      "id": "kfederated123456",
+      "description": "GitHub Actions",
+      "keyType": "federated",
+      "created": "2026-06-01T09:00:00Z",
+      "scopes": ["auth_keys"],
+      "tags": ["tag:ci"],
+      "issuer": "https://token.actions.githubusercontent.com",
+      "subject": "repo:frenck/python-tailscale:*",
+      "audience": "api.tailscale.com/kfederated123456",
+      "customClaimRules": { "repository_owner": "frenck" },
+      "userId": "u12345"
+    },
+    {
+      "id": "kapi1234567890ab",
+      "description": "Testing",
+      "keyType": "api",
+      "created": "2026-10-09T12:00:00Z",
+      "expires": "2027-01-07T12:00:00Z",
+      "expirySeconds": 7776000,
+      "scopes": ["all", "all:read"],
+      "userId": "u12345"
     }
   ]
 }
