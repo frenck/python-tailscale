@@ -17,6 +17,7 @@ from .exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
     TailscaleError,
+    TailscaleNotFoundError,
 )
 from .models import (
     Device,
@@ -182,6 +183,7 @@ class Tailscale:
             TailscaleAuthenticationError: If the API key is invalid.
             TailscaleConnectionError: An error occurred while communicating with
                 the Tailscale API.
+            TailscaleNotFoundError: The requested resource does not exist.
             TailscaleError: Received an unexpected response from the Tailscale
                 API.
 
@@ -223,6 +225,9 @@ class Tailscale:
                     self._expire_oauth_token_task = None
                 msg = "Authentication to the Tailscale API failed"
                 raise TailscaleAuthenticationError(msg) from exception
+            if exception.status == 404:
+                msg = "The requested Tailscale API resource was not found"
+                raise TailscaleNotFoundError(msg) from exception
             msg = "Error occurred while connecting to the Tailscale API"
             raise TailscaleError(msg) from exception
         except (
@@ -242,7 +247,15 @@ class Tailscale:
             A dictionary of Tailscale devices, keyed by device ID.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
+        try:
+            data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
+        except TailscaleNotFoundError:
+            # Since 2026-10-08, the Tailscale API fails the whole list with a 404
+            # when the tailnet has devices shared in from another tailnet. The
+            # default fields still work; they lack only the client connectivity.
+            # https://github.com/tailscale/tailscale/issues/21721
+            data = await self._request(f"tailnet/{self.tailnet}/devices?fields=default")
+
         return Devices.from_json(data).devices
 
     async def device(self, device_id: str) -> Device:

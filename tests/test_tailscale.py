@@ -15,6 +15,7 @@ from tailscale.exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
     TailscaleError,
+    TailscaleNotFoundError,
 )
 
 from .conftest import URL, load_fixture
@@ -114,8 +115,25 @@ async def test_http_error404(
         body="OMG PUPPIES!",
         content_type="text/plain",
     )
-    with pytest.raises(TailscaleError):
+    with pytest.raises(TailscaleNotFoundError):
         await tailscale_client._request("test")
+
+
+async def test_http_error500(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test HTTP 500 response handling."""
+    responses.get(
+        f"{URL}/test",
+        status=500,
+        body="Kaboom!",
+        content_type="text/plain",
+    )
+    with pytest.raises(TailscaleError) as excinfo:
+        await tailscale_client._request("test")
+
+    assert not isinstance(excinfo.value, TailscaleNotFoundError)
 
 
 async def test_http_error401(
@@ -221,6 +239,65 @@ async def test_devices_empty_created(
     )
     devices = await tailscale_client.devices()
     assert devices["12345"].created is None
+
+
+async def test_devices_fallback_to_default_fields(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test the default fields are used when all fields fail with a 404.
+
+    The Tailscale API answers a 404 for all fields when the tailnet has
+    devices shared in from another tailnet.
+    """
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=all",
+        status=404,
+        body='{"message":"unable to load devices"}',
+        content_type="application/json",
+    )
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=default",
+        status=200,
+        body='{"devices": [{"addresses": ["100.101.102.103"],'
+        '"authorized": true, "blocksIncomingConnections": false,'
+        '"clientVersion": "1.90.0", "connectedToControl": true,'
+        '"created": "2026-01-01T00:00:00Z", "expires": null,'
+        '"hostname": "shared-node", "id": "12345", "isExternal": true,'
+        '"keyExpiryDisabled": false, "lastSeen": null, "machineKey": "",'
+        '"name": "shared-node.other-tailnet.ts.net", "nodeId": "nEXTRNL001",'
+        '"nodeKey": "nodekey:fedcba0987654321fedcba0987654321",'
+        '"os": "windows", "tailnetLockKey": "", "updateAvailable": false,'
+        '"user": "admin@example.com"}]}',
+        content_type="application/json",
+    )
+    devices = await tailscale_client.devices()
+
+    device = devices["12345"]
+    assert device.is_external is True
+    assert device.connected_to_control is True
+    assert device.client_connectivity is None
+
+
+async def test_devices_not_found(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test a 404 for the default fields as well is raised."""
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=all",
+        status=404,
+        body='{"message":"unable to load devices"}',
+        content_type="application/json",
+    )
+    responses.get(
+        f"{URL}/tailnet/frenck/devices?fields=default",
+        status=404,
+        body='{"message":"tailnet not found"}',
+        content_type="application/json",
+    )
+    with pytest.raises(TailscaleNotFoundError):
+        await tailscale_client.devices()
 
 
 # --- Single device tests ---
