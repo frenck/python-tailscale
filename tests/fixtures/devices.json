@@ -53,8 +53,15 @@
       },
       "postureIdentity": {
         "serialNumbers": ["ABC123XYZ"],
+        "hardwareAddresses": ["00:11:22:33:44:55"],
         "disabled": false
-      }
+      },
+      "postureStatus": {
+        "passing": false,
+        "impacting": true,
+        "failingAssertions": ["node:os == 'macos'"]
+      },
+      "oauthClientId": "kclient1234567890"
     },
     {
       "addresses": ["100.104.105.106"],
@@ -78,6 +85,9 @@
       "tailnetLockKey": "",
       "updateAvailable": false,
       "user": "admin@example.com",
+      "distro": {},
+      "oauthClientId": "",
+      "postureStatus": {},
       "advertisedRoutes": ["10.0.0.0/24"],
       "enabledRoutes": ["10.0.0.0/24"],
       "tags": ["tag:server"]

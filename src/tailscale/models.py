@@ -60,9 +60,23 @@ class DevicePostureIdentity(DataClassORJSONMixin):
     """Object holding the posture identifiers of a device."""
 
     disabled: bool | None = None
+    hardware_addresses: list[str] = field(
+        default_factory=list, metadata=field_options(alias="hardwareAddresses")
+    )
     serial_numbers: list[str] = field(
         default_factory=list, metadata=field_options(alias="serialNumbers")
     )
+
+
+@dataclass
+class DevicePostureStatus(DataClassORJSONMixin):
+    """Object holding the posture status of a device."""
+
+    failing_assertions: list[str] = field(
+        default_factory=list, metadata=field_options(alias="failingAssertions")
+    )
+    impacting: bool | None = None
+    passing: bool | None = None
 
 
 @dataclass
@@ -124,9 +138,15 @@ class Device(DataClassORJSONMixin):
         metadata=field_options(alias="multipleConnections"),
     )
     node_key: str | None = field(default=None, metadata=field_options(alias="nodeKey"))
+    oauth_client_id: str | None = field(
+        default=None, metadata=field_options(alias="oauthClientId")
+    )
     os: str | None = None
     posture_identity: DevicePostureIdentity | None = field(
         default=None, metadata=field_options(alias="postureIdentity")
+    )
+    posture_status: DevicePostureStatus | None = field(
+        default=None, metadata=field_options(alias="postureStatus")
     )
     ssh_enabled: bool | None = field(
         default=None,
@@ -158,11 +178,17 @@ class Device(DataClassORJSONMixin):
             The adjusted data ready for deserialization.
 
         """
-        # Convert an empty string to None.
-        if not d.get("created"):
-            d["created"] = None
-        if not d.get("tailnetLockError"):
-            d["tailnetLockError"] = None
+        # The API sends an empty string or object for values it does not have.
+        for key in (
+            "created",
+            "distro",
+            "oauthClientId",
+            "postureIdentity",
+            "postureStatus",
+            "tailnetLockError",
+        ):
+            if not d.get(key):
+                d[key] = None
         return d
 
 

@@ -203,6 +203,17 @@ async def test_devices(
     assert device.distro.code_name == "plucky"
     assert device.posture_identity is not None
     assert device.posture_identity.serial_numbers == ["ABC123XYZ"]
+    assert device.posture_identity.hardware_addresses == ["00:11:22:33:44:55"]
+    assert device.posture_status is not None
+    assert device.posture_status.passing is False
+    assert device.posture_status.impacting is True
+    assert device.posture_status.failing_assertions == ["node:os == 'macos'"]
+    assert device.oauth_client_id == "kclient1234567890"
+
+    shared = devices["67890"]
+    assert shared.distro is None
+    assert shared.oauth_client_id is None
+    assert shared.posture_status is None
 
 
 async def test_devices_snapshot(
