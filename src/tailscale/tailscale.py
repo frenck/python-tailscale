@@ -33,6 +33,7 @@ from .models import (
     TailnetSettings,
     TailscaleKey,
     TailscaleUser,
+    TailscaleWebhook,
 )
 
 if TYPE_CHECKING:
@@ -1062,6 +1063,128 @@ class Tailscale:
             f"tailnet/{self.tailnet}/keys/{key_id}",
             method=METH_DELETE,
         )
+
+    async def webhooks(self) -> list[TailscaleWebhook]:
+        """Get all webhooks of the tailnet.
+
+        Returns
+        -------
+            A list of webhooks.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/webhooks")
+        # The API returns null instead of an empty list when there are none.
+        raw: list[dict[str, Any]] = json.loads(data).get("webhooks") or []
+        return [TailscaleWebhook.from_dict(webhook) for webhook in raw]
+
+    async def webhook(self, endpoint_id: str) -> TailscaleWebhook:
+        """Get a single webhook by ID.
+
+        Args:
+        ----
+            endpoint_id: The ID of the webhook.
+
+        Returns:
+        -------
+            The webhook.
+
+        """
+        data = await self._request(f"webhooks/{endpoint_id}")
+        return TailscaleWebhook.from_json(data)
+
+    async def create_webhook(
+        self,
+        *,
+        endpoint_url: str,
+        subscriptions: list[str],
+        provider_type: str | None = None,
+    ) -> TailscaleWebhook:
+        """Create a webhook in the tailnet.
+
+        Args:
+        ----
+            endpoint_url: The URL that Tailscale sends the events to.
+            subscriptions: The events to send, like "nodeCreated".
+            provider_type: The provider of the endpoint, like "slack" or
+                "discord", so the events are formatted for it.
+
+        Returns:
+        -------
+            The created webhook, including its secret.
+
+        """
+        payload: dict[str, Any] = {
+            "endpointUrl": endpoint_url,
+            "subscriptions": subscriptions,
+        }
+        if provider_type is not None:
+            payload["providerType"] = provider_type
+
+        data = await self._request(
+            f"tailnet/{self.tailnet}/webhooks",
+            method=METH_POST,
+            data=payload,
+        )
+        return TailscaleWebhook.from_json(data)
+
+    async def update_webhook(
+        self, endpoint_id: str, *, subscriptions: list[str]
+    ) -> TailscaleWebhook:
+        """Update the events a webhook is subscribed to.
+
+        Args:
+        ----
+            endpoint_id: The ID of the webhook.
+            subscriptions: The events to send, like "nodeCreated".
+
+        Returns:
+        -------
+            The updated webhook.
+
+        """
+        data = await self._request(
+            f"webhooks/{endpoint_id}",
+            method=METH_PATCH,
+            data={"subscriptions": subscriptions},
+        )
+        return TailscaleWebhook.from_json(data)
+
+    async def delete_webhook(self, endpoint_id: str) -> None:
+        """Delete a webhook.
+
+        Args:
+        ----
+            endpoint_id: The ID of the webhook to delete.
+
+        """
+        await self._request(f"webhooks/{endpoint_id}", method=METH_DELETE)
+
+    async def test_webhook(self, endpoint_id: str) -> None:
+        """Send a test event to a webhook.
+
+        The API queues the event and sends it shortly after.
+
+        Args:
+        ----
+            endpoint_id: The ID of the webhook to test.
+
+        """
+        await self._request(f"webhooks/{endpoint_id}/test", method=METH_POST)
+
+    async def rotate_webhook_secret(self, endpoint_id: str) -> TailscaleWebhook:
+        """Rotate the secret a webhook signs its events with.
+
+        Args:
+        ----
+            endpoint_id: The ID of the webhook.
+
+        Returns:
+        -------
+            The webhook, including its new secret.
+
+        """
+        data = await self._request(f"webhooks/{endpoint_id}/rotate", method=METH_POST)
+        return TailscaleWebhook.from_json(data)
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""

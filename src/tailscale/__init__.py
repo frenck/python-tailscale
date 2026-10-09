@@ -33,6 +33,7 @@ from .models import (
     TailnetSettings,
     TailscaleKey,
     TailscaleUser,
+    TailscaleWebhook,
 )
 from .storage import TokenStorage
 from .tailscale import Tailscale
@@ -69,5 +70,6 @@ __all__ = [
     "TailscaleKey",
     "TailscaleNotFoundError",
     "TailscaleUser",
+    "TailscaleWebhook",
     "TokenStorage",
 ]

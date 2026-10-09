@@ -1,0 +1,10 @@
+{
+  "endpointId": "e1234CNTRL",
+  "endpointUrl": "https://example.com/tailscale",
+  "providerType": "",
+  "creatorLoginName": "alice@example.com",
+  "created": "2026-05-01T09:00:00Z",
+  "lastModified": "2026-05-02T09:00:00Z",
+  "subscriptions": ["nodeCreated", "nodeKeyExpired"],
+  "secret": "tskey-webhook-abcdef1234567890"
+}
