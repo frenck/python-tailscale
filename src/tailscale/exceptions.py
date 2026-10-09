@@ -11,3 +11,7 @@ class TailscaleAuthenticationError(TailscaleError):
 
 class TailscaleConnectionError(TailscaleError):
     """Tailscale connection exception."""
+
+
+class TailscaleNotFoundError(TailscaleError):
+    """Tailscale resource not found exception."""

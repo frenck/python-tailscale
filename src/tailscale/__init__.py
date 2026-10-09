@@ -4,6 +4,7 @@ from .exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
     TailscaleError,
+    TailscaleNotFoundError,
 )
 from .models import (
     ClientConnectivity,
@@ -44,6 +45,7 @@ __all__ = [
     "TailscaleConnectionError",
     "TailscaleError",
     "TailscaleKey",
+    "TailscaleNotFoundError",
     "TailscaleUser",
     "TokenStorage",
 ]
