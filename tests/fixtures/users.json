@@ -4,7 +4,7 @@
       "id": "u12345",
       "displayName": "Alice Engineer",
       "loginName": "alice@example.com",
-      "profilePicURL": "https://profiles.example.com/alice.jpg",
+      "profilePicUrl": "https://profiles.example.com/alice.jpg",
       "role": "admin",
       "status": "active",
       "type": "member",
@@ -12,13 +12,13 @@
       "currentlyConnected": true,
       "deviceCount": 3,
       "lastSeen": "2026-04-19T12:30:00Z",
-      "tailnetLockKey": "tlpub:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+      "tailnetId": "T1234CNTRL"
     },
     {
       "id": "u67890",
       "displayName": "Bob Ops",
       "loginName": "bob@example.com",
-      "profilePicURL": "",
+      "profilePicUrl": "",
       "role": "member",
       "status": "active",
       "type": "member",
@@ -26,7 +26,7 @@
       "currentlyConnected": false,
       "deviceCount": 1,
       "lastSeen": "2026-04-18T09:15:00Z",
-      "tailnetLockKey": ""
+      "tailnetId": "T1234CNTRL"
     }
   ]
 }

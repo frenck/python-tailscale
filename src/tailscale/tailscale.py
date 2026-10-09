@@ -158,6 +158,7 @@ class Tailscale:
         *,
         method: str = METH_GET,
         data: dict[str, Any] | None = None,
+        params: dict[str, str] | None = None,
         _use_authentication: bool = True,
         _use_form_encoding: bool = False,
     ) -> str:
@@ -189,6 +190,8 @@ class Tailscale:
 
         """
         url = URL("https://api.tailscale.com/api/v2/").join(URL(uri))
+        if params:
+            url = url.update_query(params)
 
         headers: dict[str, str] = {
             "Accept": "application/json",
@@ -555,15 +558,32 @@ class Tailscale:
         )
         return json.loads(data)
 
-    async def users(self) -> list[TailscaleUser]:
-        """Get all users in the tailnet.
+    async def users(
+        self,
+        *,
+        user_type: str | None = None,
+        role: str | None = None,
+    ) -> list[TailscaleUser]:
+        """Get the users in the tailnet.
 
-        Returns
+        Args:
+        ----
+            user_type: Only return users of this type, like "member" or
+                "shared". The API returns members only by default.
+            role: Only return users with this role, like "admin".
+
+        Returns:
         -------
             A list of Tailscale users.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/users")
+        params: dict[str, str] = {}
+        if user_type is not None:
+            params["type"] = user_type
+        if role is not None:
+            params["role"] = role
+
+        data = await self._request(f"tailnet/{self.tailnet}/users", params=params)
         raw: list[dict[str, Any]] = json.loads(data).get("users", [])
         return [TailscaleUser.from_dict(user) for user in raw]
 

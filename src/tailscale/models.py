@@ -275,7 +275,7 @@ class TailscaleUser(DataClassORJSONMixin):
     display_name: str = field(metadata=field_options(alias="displayName"))
     login_name: str = field(metadata=field_options(alias="loginName"))
     profile_pic_url: str = field(
-        default="", metadata=field_options(alias="profilePicURL")
+        default="", metadata=field_options(alias="profilePicUrl")
     )
     role: str = ""
     status: str = ""
@@ -291,8 +291,8 @@ class TailscaleUser(DataClassORJSONMixin):
         default=None,
         metadata=field_options(alias="lastSeen"),
     )
-    tailnet_lock_key: str | None = field(
-        default=None, metadata=field_options(alias="tailnetLockKey")
+    tailnet_id: str | None = field(
+        default=None, metadata=field_options(alias="tailnetId")
     )
 
 
