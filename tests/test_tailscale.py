@@ -12,6 +12,7 @@ from aioresponses import aioresponses
 from syrupy.assertion import SnapshotAssertion
 
 from tailscale import (
+    DevicePostureAttributeUpdate,
     DNSConfiguration,
     DNSConfigurationPreferences,
     DNSResolver,
@@ -766,6 +767,119 @@ async def test_update_split_dns(
 
 
 # --- User tests ---
+
+
+async def test_device_posture_attributes(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the posture attributes of a device."""
+    responses.get(
+        f"{URL}/device/nDEVICE123/attributes",
+        status=200,
+        body='{"attributes": {"node:os": "linux", "custom:myScore": 80,'
+        '"custom:diskEncryption": true}, "expiries":'
+        '{"custom:myScore": "2026-12-01T05:23:30Z"}}',
+        content_type="application/json",
+    )
+    posture = await tailscale_client.device_posture_attributes("nDEVICE123")
+
+    assert posture.attributes == {
+        "node:os": "linux",
+        "custom:myScore": 80,
+        "custom:diskEncryption": True,
+    }
+    assert posture.expiries == {
+        "custom:myScore": datetime(2026, 12, 1, 5, 23, 30, tzinfo=UTC)
+    }
+
+
+async def test_set_device_posture_attribute(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting a custom posture attribute of a device."""
+    responses.post(
+        f"{URL}/device/nDEVICE123/attributes/custom:myScore",
+        status=200,
+        body='{"attributes": {"custom:myScore": 80}}',
+        content_type="application/json",
+    )
+    posture = await tailscale_client.set_device_posture_attribute(
+        "nDEVICE123",
+        "custom:myScore",
+        value=80,
+        expiry=datetime(2026, 12, 1, 5, 23, 30, tzinfo=UTC),
+        comment="Scored by the scanner",
+    )
+    assert posture.attributes == {"custom:myScore": 80}
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "value": 80,
+        "expiry": "2026-12-01T05:23:30+00:00",
+        "comment": "Scored by the scanner",
+    }
+
+
+async def test_delete_device_posture_attribute(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting a custom posture attribute of a device."""
+    responses.delete(
+        f"{URL}/device/nDEVICE123/attributes/custom:myScore",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_device_posture_attribute(
+        "nDEVICE123", "custom:myScore"
+    )
+
+
+async def test_update_device_posture_attributes(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting and deleting posture attributes of several devices."""
+    responses.patch(
+        f"{URL}/tailnet/frenck/device-attributes",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.update_device_posture_attributes(
+        {
+            "nDEVICE123": {
+                "custom:myScore": DevicePostureAttributeUpdate(value=80),
+                "custom:old": None,
+            },
+            "nDEVICE456": {
+                "custom:flag": DevicePostureAttributeUpdate(
+                    value=True,
+                    expiry=datetime(2026, 12, 1, 5, 23, 30, tzinfo=UTC),
+                ),
+            },
+        },
+        comment="Bulk update",
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "nodes": {
+            "nDEVICE123": {"custom:myScore": {"value": 80}, "custom:old": None},
+            "nDEVICE456": {
+                "custom:flag": {
+                    "value": True,
+                    "expiry": "2026-12-01T05:23:30+00:00",
+                },
+            },
+        },
+        "comment": "Bulk update",
+    }
 
 
 async def test_dns_configuration(

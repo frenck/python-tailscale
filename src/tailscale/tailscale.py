@@ -21,6 +21,7 @@ from .exceptions import (
 )
 from .models import (
     Device,
+    DevicePostureAttributes,
     DeviceRoutes,
     Devices,
     DNSConfiguration,
@@ -38,6 +39,7 @@ from .models import (
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from .models import DevicePostureAttributeUpdate, PostureAttributeValue
     from .storage import TokenStorage
 
 
@@ -462,6 +464,109 @@ class Tailscale:
             f"device/{device_id}/ip",
             method=METH_POST,
             data={"ipv4": ipv4_address},
+        )
+
+    async def device_posture_attributes(
+        self, device_id: str
+    ) -> DevicePostureAttributes:
+        """Get the posture attributes of a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+
+        Returns:
+        -------
+            The posture attributes of the device, with their expiries.
+
+        """
+        data = await self._request(f"device/{device_id}/attributes")
+        return DevicePostureAttributes.from_json(data)
+
+    async def set_device_posture_attribute(  # pylint: disable=too-many-arguments
+        self,
+        device_id: str,
+        key: str,
+        *,
+        value: PostureAttributeValue,
+        expiry: datetime | None = None,
+        comment: str | None = None,
+    ) -> DevicePostureAttributes:
+        """Set a custom posture attribute of a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            key: The name of the attribute, starting with "custom:".
+            value: The value of the attribute.
+            expiry: When Tailscale removes the attribute again.
+            comment: Why the attribute is set, for the audit log.
+
+        Returns:
+        -------
+            The posture attributes of the device.
+
+        """
+        payload: dict[str, Any] = {"value": value}
+        if expiry is not None:
+            payload["expiry"] = expiry.isoformat()
+        if comment is not None:
+            payload["comment"] = comment
+
+        data = await self._request(
+            f"device/{device_id}/attributes/{key}",
+            method=METH_POST,
+            data=payload,
+        )
+        return DevicePostureAttributes.from_json(data)
+
+    async def delete_device_posture_attribute(self, device_id: str, key: str) -> None:
+        """Delete a custom posture attribute of a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+            key: The name of the attribute, starting with "custom:".
+
+        """
+        await self._request(f"device/{device_id}/attributes/{key}", method=METH_DELETE)
+
+    async def update_device_posture_attributes(
+        self,
+        attributes: dict[str, dict[str, DevicePostureAttributeUpdate | None]],
+        *,
+        comment: str | None = None,
+    ) -> None:
+        """Set or delete custom posture attributes of several devices at once.
+
+        Args:
+        ----
+            attributes: The attributes per device ID. An attribute that is
+                None is deleted.
+            comment: Why the attributes are changed, for the audit log.
+
+        """
+        nodes: dict[str, dict[str, dict[str, Any] | None]] = {}
+        for device_id, device_attributes in attributes.items():
+            nodes[device_id] = {}
+            for key, update in device_attributes.items():
+                if update is None:
+                    nodes[device_id][key] = None
+                    continue
+
+                attribute: dict[str, Any] = {"value": update.value}
+                if update.expiry is not None:
+                    attribute["expiry"] = update.expiry.isoformat()
+                nodes[device_id][key] = attribute
+
+        payload: dict[str, Any] = {"nodes": nodes}
+        if comment is not None:
+            payload["comment"] = comment
+
+        await self._request(
+            f"tailnet/{self.tailnet}/device-attributes",
+            method=METH_PATCH,
+            data=payload,
         )
 
     async def dns_configuration(self) -> DNSConfiguration:
