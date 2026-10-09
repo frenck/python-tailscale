@@ -1,10 +1,13 @@
 {
+  "aclsExternallyManagedOn": false,
   "devicesApprovalOn": true,
   "devicesAutoUpdatesOn": true,
   "devicesKeyDurationDays": 90,
   "usersApprovalOn": false,
   "usersRoleAllowedToJoinExternalTailnets": "admin",
   "networkFlowLoggingOn": true,
+  "postureIdentityCollectionOn": true,
+  "httpsEnabled": true,
   "regionalRoutingOn": false,
-  "postureIdentityCollectionOn": true
+  "routeSelection": "active-passive-failover"
 }

@@ -236,33 +236,49 @@ class TailscaleKey(DataClassORJSONMixin):
 @dataclass
 # pylint: disable-next=too-many-instance-attributes
 class TailnetSettings(DataClassORJSONMixin):
-    """Object holding tailnet-wide settings."""
+    """Object holding tailnet-wide settings.
 
-    devices_approval_on: bool = field(
-        default=False, metadata=field_options(alias="devicesApprovalOn")
+    The API allows every setting to be null, so a setting is None when the
+    API does not return a value for it.
+    """
+
+    acls_external_link: str | None = field(
+        default=None, metadata=field_options(alias="aclsExternalLink")
     )
-    devices_auto_updates_on: bool = field(
-        default=False, metadata=field_options(alias="devicesAutoUpdatesOn")
+    acls_externally_managed_on: bool | None = field(
+        default=None, metadata=field_options(alias="aclsExternallyManagedOn")
     )
-    devices_key_duration_days: int = field(
-        default=180, metadata=field_options(alias="devicesKeyDurationDays")
+    devices_approval_on: bool | None = field(
+        default=None, metadata=field_options(alias="devicesApprovalOn")
     )
-    users_approval_on: bool = field(
-        default=False, metadata=field_options(alias="usersApprovalOn")
+    devices_auto_updates_on: bool | None = field(
+        default=None, metadata=field_options(alias="devicesAutoUpdatesOn")
     )
-    users_role_allowed_to_join_external_tailnets: str = field(
-        default="none",
-        metadata=field_options(alias="usersRoleAllowedToJoinExternalTailnets"),
+    devices_key_duration_days: int | None = field(
+        default=None, metadata=field_options(alias="devicesKeyDurationDays")
     )
-    network_flow_logging_on: bool = field(
-        default=False, metadata=field_options(alias="networkFlowLoggingOn")
+    https_enabled: bool | None = field(
+        default=None, metadata=field_options(alias="httpsEnabled")
     )
-    regional_routing_on: bool = field(
-        default=False, metadata=field_options(alias="regionalRoutingOn")
+    network_flow_logging_on: bool | None = field(
+        default=None, metadata=field_options(alias="networkFlowLoggingOn")
     )
-    posture_identity_collection_on: bool = field(
-        default=False,
+    posture_identity_collection_on: bool | None = field(
+        default=None,
         metadata=field_options(alias="postureIdentityCollectionOn"),
+    )
+    regional_routing_on: bool | None = field(
+        default=None, metadata=field_options(alias="regionalRoutingOn")
+    )
+    route_selection: str | None = field(
+        default=None, metadata=field_options(alias="routeSelection")
+    )
+    users_approval_on: bool | None = field(
+        default=None, metadata=field_options(alias="usersApprovalOn")
+    )
+    users_role_allowed_to_join_external_tailnets: str | None = field(
+        default=None,
+        metadata=field_options(alias="usersRoleAllowedToJoinExternalTailnets"),
     )
 
 

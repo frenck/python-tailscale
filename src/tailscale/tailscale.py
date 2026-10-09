@@ -624,6 +624,10 @@ class Tailscale:
         network_flow_logging_on: bool | None = None,
         regional_routing_on: bool | None = None,
         posture_identity_collection_on: bool | None = None,
+        https_enabled: bool | None = None,
+        route_selection: str | None = None,
+        acls_externally_managed_on: bool | None = None,
+        acls_external_link: str | None = None,
     ) -> None:
         """Update the settings for the tailnet.
 
@@ -642,6 +646,12 @@ class Tailscale:
             regional_routing_on: Whether regional routing is on.
             posture_identity_collection_on: Whether posture identity
                 collection is on.
+            https_enabled: Whether HTTPS certificates are enabled.
+            route_selection: How routes are selected ("active-passive-failover",
+                "regional-routing", "regional-routing-failover").
+            acls_externally_managed_on: Whether the policy file is managed
+                outside of the admin console, like with GitOps.
+            acls_external_link: Link to where the policy file is managed.
 
         """
         payload: dict[str, Any] = {}
@@ -663,6 +673,14 @@ class Tailscale:
             payload["regionalRoutingOn"] = regional_routing_on
         if posture_identity_collection_on is not None:
             payload["postureIdentityCollectionOn"] = posture_identity_collection_on
+        if https_enabled is not None:
+            payload["httpsEnabled"] = https_enabled
+        if route_selection is not None:
+            payload["routeSelection"] = route_selection
+        if acls_externally_managed_on is not None:
+            payload["aclsExternallyManagedOn"] = acls_externally_managed_on
+        if acls_external_link is not None:
+            payload["aclsExternalLink"] = acls_external_link
         await self._request(
             f"tailnet/{self.tailnet}/settings",
             method=METH_PATCH,
