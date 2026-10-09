@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, TypeAlias
 
 from mashumaro import field_options
 from mashumaro.config import BaseConfig
@@ -78,6 +78,29 @@ class DevicePostureStatus(DataClassORJSONMixin):
     )
     impacting: bool | None = None
     passing: bool | None = None
+
+
+PostureAttributeValue: TypeAlias = bool | int | float | str
+
+
+@dataclass
+class DevicePostureAttributes(DataClassORJSONMixin):
+    """Object holding the posture attributes of a device.
+
+    Attributes in the "custom:" namespace are managed by users; the others,
+    like "node:os", are set by Tailscale.
+    """
+
+    attributes: dict[str, PostureAttributeValue] = field(default_factory=dict)
+    expiries: dict[str, datetime] = field(default_factory=dict)
+
+
+@dataclass
+class DevicePostureAttributeUpdate:
+    """Object holding a new value of a posture attribute, for a batch update."""
+
+    value: PostureAttributeValue
+    expiry: datetime | None = None
 
 
 @dataclass
