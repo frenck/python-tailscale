@@ -742,9 +742,26 @@ async def test_users(
     assert users[0].status == "active"
     assert users[0].device_count == 3
     assert users[0].currently_connected is True
+    assert users[0].profile_pic_url == "https://profiles.example.com/alice.jpg"
+    assert users[0].tailnet_id == "T1234CNTRL"
     assert users[1].user_id == "u67890"
     assert users[1].display_name == "Bob Ops"
     assert users[1].currently_connected is False
+
+
+async def test_users_filtered(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test filtering users by type and role."""
+    responses.get(
+        f"{URL}/tailnet/frenck/users?type=all&role=admin",
+        status=200,
+        body=load_fixture("users.json"),
+        content_type="application/json",
+    )
+    users = await tailscale_client.users(user_type="all", role="admin")
+    assert len(users) == 2
 
 
 async def test_users_snapshot(
