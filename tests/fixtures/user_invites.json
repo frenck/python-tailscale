@@ -1,0 +1,11 @@
+[
+  {
+    "id": "29214",
+    "role": "admin",
+    "tailnetId": 59954,
+    "inviterId": 22012,
+    "email": "dave@example.com",
+    "lastEmailSentAt": "2026-05-03T09:00:00Z",
+    "inviteUrl": "https://login.tailscale.com/uinv/mnopqr"
+  }
+]

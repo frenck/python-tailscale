@@ -7,10 +7,12 @@ from .exceptions import (
     TailscaleNotFoundError,
 )
 from .models import (
+    AcceptedDeviceInvite,
     ClientConnectivity,
     ClientSupports,
     Device,
     DeviceDistro,
+    DeviceInvite,
     DevicePostureAttributes,
     DevicePostureAttributeUpdate,
     DevicePostureIdentity,
@@ -23,6 +25,7 @@ from .models import (
     DNSPreferences,
     DNSResolver,
     DNSSearchPaths,
+    InviteUser,
     KeyCapabilities,
     KeyCapabilitiesCreate,
     KeyCapabilitiesDevices,
@@ -35,16 +38,19 @@ from .models import (
     PostureAttributeValue,
     ServiceApproval,
     ServiceHost,
+    SharedDevice,
     TailnetSettings,
     TailscaleKey,
     TailscaleService,
     TailscaleUser,
     TailscaleWebhook,
+    UserInvite,
 )
 from .storage import TokenStorage
 from .tailscale import Tailscale
 
 __all__ = [
+    "AcceptedDeviceInvite",
     "ClientConnectivity",
     "ClientSupports",
     "DNSConfiguration",
@@ -55,12 +61,14 @@ __all__ = [
     "DNSSearchPaths",
     "Device",
     "DeviceDistro",
+    "DeviceInvite",
     "DevicePostureAttributeUpdate",
     "DevicePostureAttributes",
     "DevicePostureIdentity",
     "DevicePostureStatus",
     "DeviceRoutes",
     "Devices",
+    "InviteUser",
     "KeyCapabilities",
     "KeyCapabilitiesCreate",
     "KeyCapabilitiesDevices",
@@ -73,6 +81,7 @@ __all__ = [
     "PostureAttributeValue",
     "ServiceApproval",
     "ServiceHost",
+    "SharedDevice",
     "TailnetSettings",
     "Tailscale",
     "TailscaleAuthenticationError",
@@ -84,4 +93,5 @@ __all__ = [
     "TailscaleUser",
     "TailscaleWebhook",
     "TokenStorage",
+    "UserInvite",
 ]
