@@ -910,6 +910,61 @@ class Tailscale:
         data = await self._request(f"users/{user_id}")
         return TailscaleUser.from_json(data)
 
+    async def set_user_role(self, user_id: str, *, role: str) -> None:
+        """Set the role of a user.
+
+        Args:
+        ----
+            user_id: The ID of the user.
+            role: The new role, like "member", "admin", or "auditor".
+
+        """
+        await self._request(
+            f"users/{user_id}/role",
+            method=METH_POST,
+            data={"role": role},
+        )
+
+    async def approve_user(self, user_id: str) -> None:
+        """Approve a user that is waiting for approval to join the tailnet.
+
+        Args:
+        ----
+            user_id: The ID of the user to approve.
+
+        """
+        await self._request(f"users/{user_id}/approve", method=METH_POST)
+
+    async def suspend_user(self, user_id: str) -> None:
+        """Suspend a user from the tailnet.
+
+        Args:
+        ----
+            user_id: The ID of the user to suspend.
+
+        """
+        await self._request(f"users/{user_id}/suspend", method=METH_POST)
+
+    async def restore_user(self, user_id: str) -> None:
+        """Restore the access of a suspended user to the tailnet.
+
+        Args:
+        ----
+            user_id: The ID of the user to restore.
+
+        """
+        await self._request(f"users/{user_id}/restore", method=METH_POST)
+
+    async def delete_user(self, user_id: str) -> None:
+        """Delete a user from the tailnet.
+
+        Args:
+        ----
+            user_id: The ID of the user to delete.
+
+        """
+        await self._request(f"users/{user_id}/delete", method=METH_POST)
+
     async def tailnet_settings(self) -> TailnetSettings:
         """Get the settings for the tailnet.
 
