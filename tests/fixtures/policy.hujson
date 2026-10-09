@@ -1,0 +1,6 @@
+// Example policy file for the tests.
+{
+  // Everyone can reach everything.
+  "acls": [{ "action": "accept", "src": ["*"], "dst": ["*:*"] }],
+  "tests": [{ "src": "alice@example.com", "accept": ["100.64.0.1:22"] }],
+}
