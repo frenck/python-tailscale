@@ -140,3 +140,9 @@ repos:
         types: [yaml]
         files: ^\.github/workflows/
         entry: poetry run zizmor
+      - id: actionlint
+        name: 🎬 Check GitHub Actions workflows with actionlint
+        language: system
+        types: [yaml]
+        files: ^\.github/workflows/
+        entry: poetry run actionlint
