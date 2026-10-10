@@ -9,8 +9,8 @@ from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import click
 import pytest
+from typer.core import TyperGroup
 from typer.main import get_command
 from typer.testing import CliRunner
 
@@ -135,10 +135,10 @@ def routes_data() -> DeviceRoutes:
 def test_cli_structure(snapshot: SnapshotAssertion) -> None:
     """The CLI exposes the expected commands and options."""
     group = get_command(cli)
-    assert isinstance(group, click.Group)
+    assert isinstance(group, TyperGroup)
     structure = {}
     for name, subcommand in sorted(group.commands.items()):
-        if isinstance(subcommand, click.Group):
+        if isinstance(subcommand, TyperGroup):
             structure[name] = {
                 sub_name: sorted(param.name for param in sub_cmd.params)
                 for sub_name, sub_cmd in sorted(subcommand.commands.items())
