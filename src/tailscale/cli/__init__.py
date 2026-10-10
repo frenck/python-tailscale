@@ -658,7 +658,7 @@ async def dns_split_command(
     table.add_column("Nameservers")
 
     for domain, nameservers in result.items():
-        table.add_row(domain, ", ".join(nameservers))
+        table.add_row(domain, ", ".join(nameservers or []) or "[dim]-[/dim]")
 
     console.print(table)
 

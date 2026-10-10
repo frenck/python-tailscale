@@ -1020,6 +1020,24 @@ class AuditLog(_LenientModel):
     old: Any = None
     origin: str | None = None
 
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out empty values, but keep the old and new values as they are.
+
+        An empty string there is what the property was set to, or from.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The adjusted data ready for deserialization.
+
+        """
+        values = {key: d[key] for key in ("old", "new") if key in d}
+        return {**super().__pre_deserialize__(d), **values}
+
 
 @dataclass
 class NetworkTraffic(_LenientModel):

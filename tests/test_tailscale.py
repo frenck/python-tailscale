@@ -3567,3 +3567,85 @@ async def test_malformed_oauth_token_response(body: str, reason: str) -> None:
             assert "tskey-secret" not in str(excinfo.value)
             assert tailscale.api_key is None
             await tailscale.close()
+
+
+# --- Correctness tests ---
+
+
+@pytest.mark.parametrize("method", ["validate_policy_file", "test_policy_file"])
+async def test_policy_validation_empty_body(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    method: str,
+) -> None:
+    """Test an empty body, which the API sends when all passes, is valid."""
+    responses.post(
+        f"{URL}/tailnet/frenck/acl/validate",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    argument: Any = [] if method == "test_policy_file" else "{}"
+    validation = await getattr(tailscale_client, method)(argument)
+
+    assert validation.valid is True
+    assert validation.data == []
+
+
+async def test_split_dns_domain_without_nameservers(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test a domain without nameservers comes back as None."""
+    responses.get(
+        f"{URL}/tailnet/frenck/dns/split-dns",
+        status=200,
+        body='{"corp.example.com": ["10.0.0.53"], "old.example.com": null}',
+        content_type="application/json",
+    )
+    assert await tailscale_client.split_dns() == {
+        "corp.example.com": ["10.0.0.53"],
+        "old.example.com": None,
+    }
+
+
+async def test_update_split_dns_removes_domain(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test a domain set to None is sent as null, which removes it."""
+    responses.patch(
+        f"{URL}/tailnet/frenck/dns/split-dns",
+        status=200,
+        body='{"corp.example.com": ["10.0.0.53"]}',
+        content_type="application/json",
+    )
+    await tailscale_client.update_split_dns(split_dns={"old.example.com": None})
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"old.example.com": None}
+
+
+async def test_audit_log_keeps_empty_old_and_new(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test an empty old or new value is kept, as it is what it was set to."""
+    responses.get(
+        f"{URL}/tailnet/frenck/logging/configuration"
+        "?start=2026-10-09T00:00:00%2B00:00&end=2026-10-10T00:00:00%2B00:00",
+        status=200,
+        body='{"logs": [{"action": "UPDATE", "actor": {"id": "u1"},'
+        '"eventTime": "2026-10-09T20:00:00Z", "eventGroupID": "",'
+        '"target": {"id": "n1", "property": "MACHINE_NAME"},'
+        '"old": "server", "new": ""}]}',
+        content_type="application/json",
+    )
+    (log,) = await tailscale_client.configuration_audit_logs(
+        start=datetime(2026, 10, 9, tzinfo=UTC),
+        end=datetime(2026, 10, 10, tzinfo=UTC),
+    )
+
+    assert (log.old, log.new) == ("server", "")
+    assert log.event_group_id is None
