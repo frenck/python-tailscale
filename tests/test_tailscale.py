@@ -12,6 +12,7 @@ from aioresponses import aioresponses
 from syrupy.assertion import SnapshotAssertion
 
 from tailscale import (
+    AuditLogActor,
     AwsExternalId,
     CreatedTailnetOAuthClient,
     DeviceInvite,
@@ -21,6 +22,7 @@ from tailscale import (
     DNSResolver,
     InviteUser,
     LogStreamConfiguration,
+    NetworkTraffic,
     OAuthApp,
     OrganizationTailnet,
     ServiceApproval,
@@ -2690,6 +2692,106 @@ async def test_validate_aws_trust_policy_invalid(
 
     assert excinfo.value.status == 422
     assert excinfo.value.reason == "unable to assume role"
+
+
+# --- Logging tests ---
+
+
+async def test_configuration_audit_logs(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the configuration audit logs."""
+    responses.get(
+        f"{URL}/tailnet/frenck/logging/configuration"
+        "?start=2026-10-09T00:00:00%2B00:00&end=2026-10-10T00:00:00%2B00:00",
+        status=200,
+        body=load_fixture("configuration_audit_logs.json"),
+        content_type="application/json",
+    )
+    created, renamed = await tailscale_client.configuration_audit_logs(
+        start=datetime(2026, 10, 9, tzinfo=UTC),
+        end=datetime(2026, 10, 10, tzinfo=UTC),
+    )
+
+    assert created.action == "CREATE"
+    assert created.origin == "CONFIG_API"
+    assert created.event_group_id == "6a3b9c0d1e2f"
+    assert created.actor == AuditLogActor(
+        actor_id="u12345",
+        actor_type="USER",
+        display_name="Alice Engineer",
+        login_name="alice@example.com",
+    )
+    assert created.target.target_type == "WEBHOOK_ENDPOINT"
+    assert created.new == {"events": ["nodeCreated"]}
+    assert created.old is None
+
+    assert renamed.event_group_id is None
+    assert renamed.deferred_at is not None
+    assert renamed.actor.login_name is None
+    assert renamed.actor.tags == ["tag:server"]
+    assert renamed.target.property == "MACHINE_NAME"
+    assert renamed.target.is_ephemeral is False
+    assert (renamed.old, renamed.new) == ("server", "server-new")
+
+
+async def test_configuration_audit_logs_filtered(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test filtering the configuration audit logs."""
+    responses.get(
+        f"{URL}/tailnet/frenck/logging/configuration"
+        "?start=2026-10-09T00:00:00%2B00:00&end=2026-10-10T00:00:00%2B00:00"
+        "&actor=u12345&actor=~bob&target=server&event=NODE.CREATE",
+        status=200,
+        body='{"logs": null}',
+        content_type="application/json",
+    )
+    logs = await tailscale_client.configuration_audit_logs(
+        start=datetime(2026, 10, 9, tzinfo=UTC),
+        end=datetime(2026, 10, 10, tzinfo=UTC),
+        actors=["u12345", "~bob"],
+        targets=["server"],
+        events=["NODE.CREATE"],
+    )
+    assert logs == []
+
+
+async def test_network_flow_logs(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the network flow logs."""
+    responses.get(
+        f"{URL}/tailnet/frenck/logging/network"
+        "?start=2026-10-09T00:00:00%2B00:00&end=2026-10-10T00:00:00%2B00:00",
+        status=200,
+        body=load_fixture("network_flow_logs.json"),
+        content_type="application/json",
+    )
+    (flow,) = await tailscale_client.network_flow_logs(
+        start=datetime(2026, 10, 9, tzinfo=UTC),
+        end=datetime(2026, 10, 10, tzinfo=UTC),
+    )
+
+    assert flow.node_id == "nDEVICE123"
+    assert flow.virtual_traffic == [
+        NetworkTraffic(
+            dst="100.64.0.2:443",
+            proto="tcp",
+            src="100.64.0.1:51234",
+            rx_bytes=6400,
+            rx_pkts=8,
+            tx_bytes=1200,
+            tx_pkts=10,
+        )
+    ]
+    assert flow.physical_traffic[0].tx_pkts == 10
+    assert flow.physical_traffic[0].rx_bytes == 0
+    assert flow.subnet_traffic == []
+    assert flow.exit_traffic == []
 
 
 # --- OAuth tests ---

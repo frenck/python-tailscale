@@ -11,6 +11,9 @@ from .exceptions import (
 )
 from .models import (
     AcceptedDeviceInvite,
+    AuditLog,
+    AuditLogActor,
+    AuditLogTarget,
     AwsExternalId,
     ClientConnectivity,
     ClientSupports,
@@ -38,6 +41,8 @@ from .models import (
     Latency,
     LogStreamConfiguration,
     LogStreamStatus,
+    NetworkFlowLog,
+    NetworkTraffic,
     OAuthApp,
     OrganizationTailnet,
     OrganizationTailnets,
@@ -64,6 +69,9 @@ from .tailscale import Tailscale
 
 __all__ = [
     "AcceptedDeviceInvite",
+    "AuditLog",
+    "AuditLogActor",
+    "AuditLogTarget",
     "AwsExternalId",
     "ClientConnectivity",
     "ClientSupports",
@@ -91,6 +99,8 @@ __all__ = [
     "Latency",
     "LogStreamConfiguration",
     "LogStreamStatus",
+    "NetworkFlowLog",
+    "NetworkTraffic",
     "OAuthApp",
     "OrganizationTailnet",
     "OrganizationTailnets",
