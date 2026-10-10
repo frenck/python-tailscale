@@ -23,6 +23,7 @@ from .exceptions import (
 )
 from .models import (
     AcceptedDeviceInvite,
+    CreatedTailnet,
     Device,
     DeviceInvite,
     DevicePostureAttributes,
@@ -32,11 +33,13 @@ from .models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    OrganizationTailnets,
     PolicyFile,
     PolicyFileValidation,
     PolicyRulePreview,
     ServiceApproval,
     ServiceHost,
+    TailnetContacts,
     TailnetSettings,
     TailscaleKey,
     TailscaleService,
@@ -1656,6 +1659,110 @@ class Tailscale:
 
         """
         await self._request(f"user-invites/{invite_id}/resend", method=METH_POST)
+
+    async def contacts(self) -> TailnetContacts:
+        """Get the contacts of the tailnet.
+
+        Returns
+        -------
+            The account, support, and security contacts.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/contacts")
+        return TailnetContacts.from_json(data)
+
+    async def set_contact(self, contact_type: str, *, email: str) -> None:
+        """Set the email address of a contact of the tailnet.
+
+        The API emails the new address, to verify it.
+
+        Args:
+        ----
+            contact_type: The contact, "account", "support", or "security".
+            email: The new email address.
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/contacts/{contact_type}",
+            method=METH_PATCH,
+            data={"email": email},
+        )
+
+    async def resend_contact_verification(self, contact_type: str) -> None:
+        """Email the verification of a contact of the tailnet again.
+
+        Args:
+        ----
+            contact_type: The contact, "account", "support", or "security".
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/contacts/{contact_type}/resend-verification-email",
+            method=METH_POST,
+        )
+
+    async def organization_tailnets(
+        self,
+        organization: str = "-",
+        *,
+        limit: int | None = None,
+        cursor: str | None = None,
+    ) -> OrganizationTailnets:
+        """Get a page of the tailnets of an organization.
+
+        Args:
+        ----
+            organization: The ID of the organization; "-" is the organization
+                of the credentials in use.
+            limit: The maximum number of tailnets on the page.
+            cursor: The cursor of a previous page, to get the next page.
+
+        Returns:
+        -------
+            The page of tailnets, with the cursor of the next page.
+
+        """
+        params: dict[str, str] = {}
+        if limit is not None:
+            params["limit"] = str(limit)
+        if cursor is not None:
+            params["cursor"] = cursor
+
+        data = await self._request(
+            f"organizations/{organization}/tailnets", params=params
+        )
+        return OrganizationTailnets.from_json(data)
+
+    async def create_organization_tailnet(
+        self, display_name: str, *, organization: str = "-"
+    ) -> CreatedTailnet:
+        """Create an API-only tailnet in an organization.
+
+        Args:
+        ----
+            display_name: The name of the new tailnet.
+            organization: The ID of the organization; "-" is the organization
+                of the credentials in use.
+
+        Returns:
+        -------
+            The new tailnet, with the OAuth client for it.
+
+        """
+        data = await self._request(
+            f"organizations/{organization}/tailnets",
+            method=METH_POST,
+            data={"displayName": display_name},
+        )
+        return CreatedTailnet.from_json(data)
+
+    async def delete_tailnet(self) -> None:
+        """Delete the tailnet, with all of its users, devices, and settings.
+
+        This cannot be undone. It is meant for API-only tailnets, using
+        credentials for the tailnet that is deleted.
+        """
+        await self._request(f"tailnet/{self.tailnet}", method=METH_DELETE)
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""

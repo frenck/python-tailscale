@@ -12,15 +12,18 @@ from aioresponses import aioresponses
 from syrupy.assertion import SnapshotAssertion
 
 from tailscale import (
+    CreatedTailnetOAuthClient,
     DeviceInvite,
     DevicePostureAttributeUpdate,
     DNSConfiguration,
     DNSConfigurationPreferences,
     DNSResolver,
     InviteUser,
+    OrganizationTailnet,
     ServiceApproval,
     ServiceHost,
     SharedDevice,
+    TailnetContact,
     Tailscale,
     TailscaleService,
     UserInvite,
@@ -2233,6 +2236,158 @@ async def test_user_invite(
     assert invite == UserInvite(
         invite_id="29214", role="member", inviter_id=22012, tailnet_id=59954
     )
+
+
+# --- Contact tests ---
+
+
+async def test_contacts(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the contacts of the tailnet."""
+    responses.get(
+        f"{URL}/tailnet/frenck/contacts",
+        status=200,
+        body='{"account": {"email": "alice@example.com",'
+        '"needsVerification": false},'
+        '"support": {"email": "new@example.com",'
+        '"fallbackEmail": "alice@example.com", "needsVerification": true},'
+        '"security": {"email": "", "needsVerification": false}}',
+        content_type="application/json",
+    )
+    contacts = await tailscale_client.contacts()
+
+    assert contacts.account == TailnetContact(email="alice@example.com")
+    assert contacts.support == TailnetContact(
+        email="new@example.com",
+        fallback_email="alice@example.com",
+        needs_verification=True,
+    )
+    assert contacts.security == TailnetContact()
+
+
+async def test_set_contact(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting the email address of a contact."""
+    responses.patch(
+        f"{URL}/tailnet/frenck/contacts/security",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.set_contact("security", email="security@example.com")
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"email": "security@example.com"}
+
+
+async def test_resend_contact_verification(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test resending the verification of a contact."""
+    responses.post(
+        f"{URL}/tailnet/frenck/contacts/support/resend-verification-email",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.resend_contact_verification("support")
+
+
+# --- Organization tests ---
+
+
+async def test_organization_tailnets(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting a page of the tailnets of an organization."""
+    responses.get(
+        f"{URL}/organizations/-/tailnets",
+        status=200,
+        body='{"totalCount": 3, "cursor": "next-page", "tailnets": [{'
+        '"id": "T1234CNTRL", "displayName": "example.github",'
+        '"orgId": "o1234CNTRL", "createdAt": "2021-08-19T08:36:50Z"}]}',
+        content_type="application/json",
+    )
+    page = await tailscale_client.organization_tailnets()
+
+    assert page.total_count == 3
+    assert page.cursor == "next-page"
+    assert page.tailnets == [
+        OrganizationTailnet(
+            tailnet_id="T1234CNTRL",
+            created_at=datetime(2021, 8, 19, 8, 36, 50, tzinfo=UTC),
+            display_name="example.github",
+            org_id="o1234CNTRL",
+        )
+    ]
+
+
+async def test_organization_tailnets_next_page(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the next page of the tailnets of an organization."""
+    responses.get(
+        f"{URL}/organizations/o1234CNTRL/tailnets?limit=1&cursor=next-page",
+        status=200,
+        body='{"totalCount": 3, "tailnets": []}',
+        content_type="application/json",
+    )
+    page = await tailscale_client.organization_tailnets(
+        "o1234CNTRL", limit=1, cursor="next-page"
+    )
+    assert page.cursor is None
+    assert page.tailnets == []
+
+
+async def test_create_organization_tailnet(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating an API-only tailnet."""
+    responses.post(
+        f"{URL}/organizations/-/tailnets",
+        status=200,
+        body='{"id": "T5678CNTRL", "displayName": "Robots",'
+        '"orgId": "o1234CNTRL", "dnsName": "tail1234.ts.net",'
+        '"createdAt": "2026-10-10T09:00:00Z", "alreadyExists": false,'
+        '"oauthClient": {"id": "kclient5678", "secret": "tskey-client-secret"}}',
+        content_type="application/json",
+    )
+    tailnet = await tailscale_client.create_organization_tailnet("Robots")
+
+    assert tailnet.tailnet_id == "T5678CNTRL"
+    assert tailnet.dns_name == "tail1234.ts.net"
+    assert tailnet.already_exists is False
+    assert tailnet.oauth_client == CreatedTailnetOAuthClient(
+        client_id="kclient5678",
+        secret="tskey-client-secret",  # noqa: S106
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"displayName": "Robots"}
+
+
+async def test_delete_tailnet(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting the tailnet."""
+    responses.delete(
+        f"{URL}/tailnet/frenck",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_tailnet()
 
 
 # --- OAuth tests ---
