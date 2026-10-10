@@ -1307,3 +1307,24 @@ def test_dump_log_commands(
 def test_tracebacks_leave_out_locals() -> None:
     """Tracebacks of the CLI do not show the locals, which hold credentials."""
     assert cli.pretty_exceptions_show_locals is False
+
+
+def _command_paths() -> list[list[str]]:
+    """Return the path to every command of the CLI, like ["dns", "split"]."""
+    group = get_command(cli)
+    assert isinstance(group, TyperGroup)
+    paths: list[list[str]] = []
+    for name, command in sorted(group.commands.items()):
+        if isinstance(command, TyperGroup):
+            paths.extend([name, sub_name] for sub_name in sorted(command.commands))
+        else:
+            paths.append([name])
+    return paths
+
+
+@pytest.mark.parametrize("path", _command_paths(), ids=" ".join)
+def test_command_help(runner: CliRunner, path: list[str]) -> None:
+    """Every command shows its help, which breaks with mismatched Typer and Click."""
+    result = runner.invoke(cli, [*path, "--help"])
+    assert result.exit_code == 0, result.output
+    assert "Usage:" in result.output

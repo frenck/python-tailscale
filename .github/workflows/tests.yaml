@@ -49,8 +49,11 @@ jobs:
           path: .coverage
 
   pytest-lowest:
-    name: Lowest dependencies
+    name: Lowest dependencies on Python ${{ matrix.python }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: ⤵️ Check out code from GitHub
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -60,11 +63,11 @@ jobs:
         run: pipx install poetry
       - name: 🏗 Set up uv
         run: pipx install uv
-      - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
+      - name: 🏗 Set up Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
+          python-version: ${{ matrix.python }}
           cache: "poetry"
       - name: 🏗 Install workflow dependencies
         run: |
@@ -76,7 +79,8 @@ jobs:
       # dependencies move down to the lowest versions pyproject.toml allows.
       # Without --upgrade, uv keeps the newer versions already installed.
       # Only wheels (except for this project itself), so a version that only
-      # installs with a compiler at hand does not pass as supported.
+      # installs with a compiler at hand does not pass as supported. On newer
+      # Python versions, those are the first versions with wheels for them.
       - name: 🏗 Downgrade to the lowest allowed dependencies
         run: >-
           uv pip install --python "$(poetry env info --executable)"
