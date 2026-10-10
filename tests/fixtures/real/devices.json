@@ -1,0 +1,1044 @@
+{
+  "devices": [
+    {
+      "addresses": ["100.64.0.1", "fd7a:115c:a1e0::1"],
+      "id": "a6c89dbf97fd0e967",
+      "nodeId": "nbbabe54da8CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device2.example.ts.net",
+      "hostname": "hostname-29",
+      "clientVersion": "1.20.4-t8c6cb1cea-g2accf24a5",
+      "updateAvailable": true,
+      "os": "macOS",
+      "created": "2018-12-03T18:49:02Z",
+      "connectedToControl": false,
+      "lastSeen": "2019-06-19T17:07:49Z",
+      "expires": "2019-06-01T18:50:29Z",
+      "keyExpiryDisabled": true,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:cff66fbaacd1fee27fbc2ffc01840e9423a5a131e73b0ec3067465861bbaccb1",
+      "nodeKey": "nodekey:693bc4faa6ce734e652f07722ac935fdd4d15645174249078c30771b40924d90",
+      "tailnetLockKey": "",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": ["203.0.113.2:41641"],
+        "mappingVariesByDestIP": null,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": false,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {},
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.3", "fd7a:115c:a1e0::2"],
+      "id": "c73a045af8599628",
+      "nodeId": "naa549706afCNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device3.example.ts.net",
+      "hostname": "hostname-30",
+      "clientVersion": "1.58.2-1-t20ce749c6",
+      "updateAvailable": false,
+      "os": "linux",
+      "created": "2023-08-04T23:46:31Z",
+      "connectedToControl": true,
+      "lastSeen": "2024-01-14T11:37:18Z",
+      "expires": "2024-01-31T23:46:31Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:15a38add93d4c928fcdecd91cfa6c78f90898032de9cc152e086333e1e887392",
+      "nodeKey": "nodekey:50ec24cb55727da9f79ade8d9ff4e2a06c113754dda9ff2cbaf3798beb5924c5",
+      "tailnetLockKey": "nlpub:c648f34e3b542d8eb962f6ae285dc874bfd7035e6f9494c28c689d884b8417a6",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": ["203.0.113.4:41641", "203.0.113.5:41641"],
+        "mappingVariesByDestIP": false,
+        "latency": {
+          "Amsterdam": {
+            "preferred": true,
+            "latencyMs": 10.674395
+          },
+          "Ashburn": {
+            "latencyMs": 106.092226
+          },
+          "Bengaluru": {
+            "latencyMs": 156.800318
+          },
+          "Chicago": {
+            "latencyMs": 105.642511
+          },
+          "Dallas": {
+            "latencyMs": 136.79982500000003
+          },
+          "Denver": {
+            "latencyMs": 117.663107
+          },
+          "Dubai": {
+            "latencyMs": 124.379605
+          },
+          "Frankfurt": {
+            "latencyMs": 14.456165
+          },
+          "Helsinki": {
+            "latencyMs": 39.161374
+          },
+          "Hong Kong": {
+            "latencyMs": 189.62484700000002
+          },
+          "Honolulu": {
+            "latencyMs": 197.433141
+          },
+          "Johannesburg": {
+            "latencyMs": 172.46703699999998
+          },
+          "London": {
+            "latencyMs": 15.072118000000001
+          },
+          "Los Angeles": {
+            "latencyMs": 159.51590800000002
+          },
+          "Madrid": {
+            "latencyMs": 32.011971
+          },
+          "Miami": {
+            "latencyMs": 119.351382
+          },
+          "Nairobi": {
+            "latencyMs": 146.189492
+          },
+          "New York City": {
+            "latencyMs": 85.028081
+          },
+          "Nuremberg": {
+            "latencyMs": 18.34752
+          },
+          "Paris": {
+            "latencyMs": 17.042077
+          },
+          "San Francisco": {
+            "latencyMs": 157.212435
+          },
+          "Seattle": {
+            "latencyMs": 147.870506
+          },
+          "S\u00e3o Paulo": {
+            "latencyMs": 237.13240399999998
+          },
+          "Toronto": {
+            "latencyMs": 95.53684899999999
+          },
+          "Warsaw": {
+            "latencyMs": 28.959104999999997
+          }
+        },
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "synology",
+        "version": "7.3.2"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.6", "fd7a:115c:a1e0::3"],
+      "id": "58ede8883def182a",
+      "nodeId": "n532599bedeCNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device4.example.ts.net",
+      "hostname": "hostname-31",
+      "clientVersion": "1.76.6-t1edcf9d46-gd0a6cd8b2",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2022-03-11T10:45:37Z",
+      "connectedToControl": false,
+      "lastSeen": "2022-03-21T13:39:19Z",
+      "expires": "2022-09-07T10:45:37Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:70a9e3c071ed75b572b861d6ad0562fb6506dfb0981b85b74022153f847bac16",
+      "nodeKey": "nodekey:64a298465c503a4b88b85988413517df8f251f117638869071b44b801c5cafc5",
+      "tailnetLockKey": "nlpub:8c156b512e52f59271dfde076557d52506677e3232c4ec028454003061686cb9",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": ["203.0.113.7:41641", "203.0.113.8:41641"],
+        "mappingVariesByDestIP": null,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": false,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "debian",
+        "version": "12.8",
+        "codeName": "bookworm"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.9", "fd7a:115c:a1e0::4"],
+      "id": "f44a64855a203eee",
+      "nodeId": "n264eb4d876CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device5.example.ts.net",
+      "hostname": "hostname-32",
+      "clientVersion": "1.96.2-td916d8651-gd905b0868",
+      "updateAvailable": true,
+      "os": "macOS",
+      "created": "2020-08-14T09:13:34Z",
+      "connectedToControl": false,
+      "lastSeen": "2023-07-10T10:55:37Z",
+      "expires": "2024-01-06T10:43:57Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:bb1b0eea3d8e28c04fd0f31e1b585705ddee00a0d71c440e3afcd7525753ea69",
+      "nodeKey": "nodekey:22c36fd982eee50b50f656b314600b703023556add5f5e1d7c67f72172da5096",
+      "tailnetLockKey": "nlpub:d6c2fc56ef80f1bbdfa7fd41ac854b000b5da687f27dcf8c38435acb1bd62e75",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.10:41641",
+          "203.0.113.11:51142",
+          "203.0.113.5:41641"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {},
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.12", "fd7a:115c:a1e0::5"],
+      "id": "123568ebec505c75",
+      "nodeId": "neb09401767CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device6.example.ts.net",
+      "hostname": "hostname-33",
+      "clientVersion": "1.78.1-t8903926f7-gc4163954e",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2022-03-20T21:56:04Z",
+      "connectedToControl": false,
+      "lastSeen": "2023-03-20T09:58:34Z",
+      "expires": "2022-09-16T21:56:04Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:351a5fd34909d65db40df5b22e6f3f6302ce734e0d197bf2e08535f633bd0d0b",
+      "nodeKey": "nodekey:c03a753ec90cb0aa0feef20c63b277330b72ff804e34ca884b9d970957bec51d",
+      "tailnetLockKey": "nlpub:be06ab9f2896213f5d3fd314f3ee5048c58971eff604ebeaf2506ab6610f9b0d",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": ["203.0.113.13:41641", "203.0.113.14:41641"],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "debian",
+        "version": "12.8",
+        "codeName": "bookworm"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.15", "fd7a:115c:a1e0::6"],
+      "id": "16cdd2da4da5e6d4",
+      "nodeId": "nb62f7186deCNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device7.example.ts.net",
+      "hostname": "hostname-34",
+      "clientVersion": "1.38.4-tc439a3a9c-g9275ff8bd",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2020-07-03T17:39:02Z",
+      "connectedToControl": false,
+      "lastSeen": "2021-02-23T10:48:43Z",
+      "expires": "2020-12-30T17:39:02Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:c90b7d4a0c49a0ef3346769b7d16b3386b81c4f09391b0ad78175d14374c0413",
+      "nodeKey": "nodekey:6c2e24f7b798e1b15a9831bdc7ef19fdaae9849e7f5261b69a0d435d8c4846ef",
+      "tailnetLockKey": "nlpub:39bcae99b3d24e7a87c10ff37e7de3b59ae914eb5fdef0d397b78f68c28f1735",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": ["10.1.0.0/24"],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.16:55778",
+          "203.0.113.17:55778",
+          "203.0.113.8:55778",
+          "203.0.113.18:55778"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "alpine",
+        "version": "3.17.3"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.19", "fd7a:115c:a1e0::7"],
+      "id": "0ac5063298f82f5b",
+      "nodeId": "n2940f12ed0CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device8.example.ts.net",
+      "hostname": "hostname-34",
+      "clientVersion": "1.38.3-ta972b8565-g55f6b9a5f",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2020-07-03T17:31:07Z",
+      "connectedToControl": false,
+      "lastSeen": "2020-07-03T17:37:45Z",
+      "expires": "2020-12-30T17:31:07Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:79736ed721953bb2d0e20c4829e6ac8a4239fe133410ca10b56a1b24060a7e3a",
+      "nodeKey": "nodekey:990d434e4e50974d1aa4c127606c4f14822a17be251fa1dc649800f28ddce949",
+      "tailnetLockKey": "nlpub:61851da68d794dd3c6f9493c854bc6b65b29848ebe92c7409767c9bff54d04d2",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": ["0.0.0.0/0", "10.1.0.0/24", "::/0"],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.16:57945",
+          "203.0.113.17:57945",
+          "203.0.113.8:57945",
+          "203.0.113.18:57945"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "alpine",
+        "version": "3.17.3"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.20", "fd7a:115c:a1e0::8"],
+      "id": "beb9913f7bc4be0c",
+      "nodeId": "n26547d1dc2CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device9.example.ts.net",
+      "hostname": "hostname-35",
+      "clientVersion": "1.54.1-t0a01efc8f-g3d0598425",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2020-11-29T14:01:30Z",
+      "connectedToControl": false,
+      "lastSeen": "2023-03-14T12:08:59Z",
+      "expires": "2021-05-28T14:01:30Z",
+      "keyExpiryDisabled": true,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:518742fc5c63b6e6682ee57749b35319fef86eee7e06464fca7f508e5c60679f",
+      "nodeKey": "nodekey:bdb40654103b911c868a905f64c24ada4b8d63bbb2b5c5fadd7a5e602204dd79",
+      "tailnetLockKey": "nlpub:932356ebfbfe5a1200e9fd5a436408bd2a3dd2b481f5a6440e55ccd39075c4d2",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": ["0.0.0.0/0", "::/0"],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.21:41641",
+          "203.0.113.8:41641",
+          "203.0.113.22:41641",
+          "203.0.113.14:41641"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "debian",
+        "version": "11.7",
+        "codeName": "bullseye"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.23", "fd7a:115c:a1e0::9"],
+      "id": "49391f389c8ef27d",
+      "nodeId": "ndf6a4fa6faCNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device10.example.ts.net",
+      "hostname": "hostname-36",
+      "clientVersion": "1.74.2-t3332ccd0a-g17dddba9b",
+      "updateAvailable": true,
+      "os": "iOS",
+      "created": "2018-11-23T09:25:23Z",
+      "connectedToControl": false,
+      "lastSeen": "2022-01-16T16:38:49Z",
+      "expires": "2022-05-21T17:48:49Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:086a85b7ac5714e62110598265706e334cd438a8ab600e3e9595261f7cebbbd7",
+      "nodeKey": "nodekey:10606daf13d94486564efe954b79b511c743659e0f639e644465f69abaab3a33",
+      "tailnetLockKey": "nlpub:36b371aec144b8f53a38cf2894424b674c527e551fae1b7cc500148837959db3",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.24:41641",
+          "203.0.113.25:41641",
+          "203.0.113.26:41641"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {},
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.27", "fd7a:115c:a1e0::a"],
+      "id": "ba63e4cfe0925fa85",
+      "nodeId": "nd98ae7fcd9CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device11.example.ts.net",
+      "hostname": "hostname-37",
+      "clientVersion": "1.38.4-tc439a3a9c-g9275ff8bd",
+      "updateAvailable": true,
+      "os": "macOS",
+      "created": "2018-11-23T20:52:30Z",
+      "connectedToControl": false,
+      "lastSeen": "2020-08-05T10:56:02Z",
+      "expires": "2021-01-25T18:15:36Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:fe360d8199677b9ff87e7f56064f03a8641fca5512b41acf5fc79b6303d740c6",
+      "nodeKey": "nodekey:b67e9b4a9b51b660436fcc3a8855bee67b0d50f7af97f851cddb134fcbbe87c8",
+      "tailnetLockKey": "nlpub:47d396cb50f4141a47ee09b6b75c7ef8249a4986d9a5363bc2a488d309db6f1e",
+      "sshEnabled": false,
+      "blocksIncomingConnections": true,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": ["203.0.113.28:41641", "203.0.113.17:41641"],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {},
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.29", "fd7a:115c:a1e0::b"],
+      "id": "53bbf118580a195e8",
+      "nodeId": "n9283b5cb98CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device12.example.ts.net",
+      "hostname": "hostname-38",
+      "clientVersion": "1.88.3-tf453b350e-g6ebb4c936",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2019-02-15T12:23:08Z",
+      "connectedToControl": false,
+      "lastSeen": "2023-01-09T17:06:54Z",
+      "expires": "2021-08-27T08:51:25Z",
+      "keyExpiryDisabled": true,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:7a2728851a50ae7fa53ebc4f30819de1fb25ab6ba360fe4afae49a6de970db93",
+      "nodeKey": "nodekey:7f11dd81183f952925c547d586a7bcf15630d23b82da725603059d08e8329105",
+      "tailnetLockKey": "nlpub:335cc3de708a3746e04426234df77feb64ec3ff15de921126337f719092aeadf",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": ["0.0.0.0/0", "10.1.0.0/24", "::/0"],
+      "advertisedRoutes": [
+        "0.0.0.0/0",
+        "10.1.0.0/24",
+        "::/0",
+        "2001:db8:2::/64"
+      ],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.30:59781",
+          "203.0.113.18:59781",
+          "203.0.113.31:59781",
+          "203.0.113.14:59781"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "alpine",
+        "version": "3.22.1"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.32", "fd7a:115c:a1e0::c"],
+      "id": "4949e061453e2bc88",
+      "nodeId": "nce0d4c3821CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device13.example.ts.net",
+      "hostname": "hostname-39",
+      "clientVersion": "1.76.6-t1edcf9d46-gd0a6cd8b2",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2019-11-30T14:09:14Z",
+      "connectedToControl": false,
+      "lastSeen": "2022-05-14T12:42:13Z",
+      "expires": "2020-05-28T14:09:14Z",
+      "keyExpiryDisabled": true,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:5c31a97e7b5bcd465de6755b042894fab28a6abd65bebfae38e8752c5fa09702",
+      "nodeKey": "nodekey:df3aaed1a39c7d406ab44d004fe88d1e63018fec3419f61b1d0e60ca98704516",
+      "tailnetLockKey": "nlpub:525d3f2dc38d4c33574a9d88268a855c96b1b78acd5ae9707b5d240d51c0775c",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": ["0.0.0.0/0", "10.1.0.0/24", "::/0"],
+      "advertisedRoutes": ["0.0.0.0/0", "10.1.0.0/24", "::/0"],
+      "clientConnectivity": {
+        "endpoints": ["203.0.113.33:41641", "203.0.113.34:1057"],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "debian",
+        "version": "11.11",
+        "codeName": "bullseye"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.35", "fd7a:115c:a1e0::d"],
+      "id": "75ce07529eec7d3a",
+      "nodeId": "ne152d403e4CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device14.example.ts.net",
+      "hostname": "hostname-40",
+      "clientVersion": "1.86.2-tc47caa10d-gf5d087d04",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2019-08-22T17:15:21Z",
+      "connectedToControl": true,
+      "lastSeen": "2024-01-14T11:37:18Z",
+      "expires": "2020-02-18T17:15:21Z",
+      "keyExpiryDisabled": true,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:91a967bfd2ed0309b3baf3f319efb50e072bad5f76fa9b7d0dabb86a2b662b64",
+      "nodeKey": "nodekey:2d5d58814905f2f6ffb739d11d63368f227abd7cfc418d43e32f75474a2675e2",
+      "tailnetLockKey": "nlpub:cd4d7ec85c162b6eb3b44d5ef4c4a345a4e0e2408f4e4a4987c4da62155d17f6",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": ["0.0.0.0/0", "10.3.0.0/24", "::/0"],
+      "advertisedRoutes": [
+        "0.0.0.0/0",
+        "10.4.0.0/24",
+        "::/0",
+        "2001:db8:5::/64"
+      ],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.36:37068",
+          "203.0.113.18:37068",
+          "203.0.113.31:37068",
+          "203.0.113.37:37068"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {
+          "Amsterdam": {
+            "preferred": true,
+            "latencyMs": 7.014431
+          },
+          "Ashburn": {
+            "latencyMs": 102.317572
+          },
+          "Bengaluru": {
+            "latencyMs": 151.062006
+          },
+          "Chicago": {
+            "latencyMs": 103.665459
+          },
+          "Dallas": {
+            "latencyMs": 127.17435599999999
+          },
+          "Denver": {
+            "latencyMs": 121.539102
+          },
+          "Dubai": {
+            "latencyMs": 146.840056
+          },
+          "Frankfurt": {
+            "latencyMs": 16.174296000000002
+          },
+          "Helsinki": {
+            "latencyMs": 42.718176
+          },
+          "Hong Kong": {
+            "latencyMs": 246.04627000000002
+          },
+          "Honolulu": {
+            "latencyMs": 242.283322
+          },
+          "Johannesburg": {
+            "latencyMs": 173.412102
+          },
+          "London": {
+            "latencyMs": 16.807135000000002
+          },
+          "Los Angeles": {
+            "latencyMs": 145.939507
+          },
+          "Madrid": {
+            "latencyMs": 31.070292
+          },
+          "Miami": {
+            "latencyMs": 114.18396
+          },
+          "Nairobi": {
+            "latencyMs": 160.010786
+          },
+          "New York City": {
+            "latencyMs": 91.79553
+          },
+          "Nuremberg": {
+            "latencyMs": 20.354747
+          },
+          "Paris": {
+            "latencyMs": 15.593875
+          },
+          "San Francisco": {
+            "latencyMs": 147.88410599999997
+          },
+          "Seattle": {
+            "latencyMs": 149.401701
+          },
+          "Singapore": {
+            "latencyMs": 243.453957
+          },
+          "S\u00e3o Paulo": {
+            "latencyMs": 237.106989
+          },
+          "Toronto": {
+            "latencyMs": 100.996812
+          },
+          "Warsaw": {
+            "latencyMs": 29.329819
+          }
+        },
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": true,
+          "pmp": true,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "alpine",
+        "version": "3.22.1"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.38", "fd7a:115c:a1e0::e"],
+      "id": "4a38160578d6947",
+      "nodeId": "n490e6c39b5CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device15.example.ts.net",
+      "hostname": "hostname-36",
+      "clientVersion": "1.98.5-t8f8fe6a2e-gc1619fb10",
+      "updateAvailable": true,
+      "os": "iOS",
+      "created": "2022-05-08T18:37:20Z",
+      "connectedToControl": false,
+      "lastSeen": "2023-09-25T10:51:48Z",
+      "expires": "2024-03-23T10:43:44Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:32a293f866bd3871b3d5cbc6abce716cb2132da003563196e1944cc5a010f776",
+      "nodeKey": "nodekey:1ec62b9cf6a757ed7e244b341a36fa9a2b2dadc0facadac55a850436fce69fc4",
+      "tailnetLockKey": "nlpub:01780435b60f59626e55bb039ae8b1f64b0ac09882e442375c6f539476c46c9e",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.39:33483",
+          "203.0.113.26:41641",
+          "[2001:db8::f]:41641",
+          "[2001:db8::10]:41641"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {},
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.40", "fd7a:115c:a1e0::11"],
+      "id": "89734eeb5f0a6808",
+      "nodeId": "n6e325b671cCNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device16.example.ts.net",
+      "hostname": "hostname-41",
+      "clientVersion": "1.104.1-t7f4efe814-g8da26756c",
+      "updateAvailable": false,
+      "os": "linux",
+      "created": "2021-05-29T17:30:55Z",
+      "connectedToControl": true,
+      "lastSeen": "2024-01-14T11:37:18Z",
+      "expires": "2021-11-25T17:30:55Z",
+      "keyExpiryDisabled": true,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:cdd41438c04939cb0df648e8a80b554215e8414a8c7933b9a85f098b8a1aae68",
+      "nodeKey": "nodekey:7eee09e66144d82abcbb769ad84489e8017791a2976109e0a1b42c684478945e",
+      "tailnetLockKey": "nlpub:7d169d972a376b5023fbfb0937277b915f471b888333fdb5d6544316eb69276a",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [
+        "0.0.0.0/0",
+        "10.1.0.0/24",
+        "::/0",
+        "2001:db8:2::/64",
+        "2001:db8:6::/64"
+      ],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.41:48469",
+          "203.0.113.42:48469",
+          "203.0.113.18:48469",
+          "203.0.113.31:48469",
+          "203.0.113.5:48469"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {
+          "Amsterdam": {
+            "preferred": true,
+            "latencyMs": 9.355424
+          },
+          "Helsinki": {
+            "latencyMs": 40.347946
+          }
+        },
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "alpine",
+        "version": "3.24.2"
+      },
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.43", "fd7a:115c:a1e0::12"],
+      "id": "51f30f8a0dc2c1cc2",
+      "nodeId": "n738cff9bd1CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device17.example.ts.net",
+      "hostname": "hostname-42",
+      "clientVersion": "1.28.0-t80313cdee-gd26dd4a68",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2019-11-30T14:05:45Z",
+      "connectedToControl": false,
+      "lastSeen": "2019-12-29T17:06:27Z",
+      "expires": "2020-05-28T14:05:45Z",
+      "keyExpiryDisabled": true,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:cda2c743ff1b4e463b4873e020dc2dbf33d59a758348c8a22637ffa20683d9a7",
+      "nodeKey": "nodekey:5221c1d18b721c910dd81b2fd9edb1caafefe753d9e3f8d35b82df22aca2f376",
+      "tailnetLockKey": "",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": ["0.0.0.0/0", "10.1.0.0/24", "::/0"],
+      "advertisedRoutes": ["0.0.0.0/0", "10.1.0.0/24", "::/0"],
+      "clientConnectivity": {
+        "endpoints": ["203.0.113.44:41641", "203.0.113.17:41641"],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {},
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.45", "fd7a:115c:a1e0::13"],
+      "id": "661de827c684ad485",
+      "nodeId": "nf161c49faaCNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device18.example.ts.net",
+      "hostname": "hostname-43",
+      "clientVersion": "1.28.0-taabca3a4c-gd900a87f4b4",
+      "updateAvailable": true,
+      "os": "android",
+      "created": "2019-11-30T14:22:34Z",
+      "connectedToControl": false,
+      "lastSeen": "2019-12-02T16:04:19Z",
+      "expires": "2020-05-28T14:22:34Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:be22d35d0cbedd0efbf2236011a15f8c816876ce2bb55ab6e008e5123847d647",
+      "nodeKey": "nodekey:ee2e2824dc8f8af72c4709016a9ce0436e0530ca0b658783d824281393805704",
+      "tailnetLockKey": "",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.46:10249",
+          "203.0.113.47:35867",
+          "[2001:db8::14]:35867",
+          "[2001:db8::14]:60167",
+          "[2001:db8::15]:35867"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {},
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": true,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {},
+      "postureStatus": {}
+    },
+    {
+      "addresses": ["100.64.0.48", "fd7a:115c:a1e0::16"],
+      "id": "458013940d8e672",
+      "nodeId": "n9b89c60896CNTRL",
+      "user": "user1@example.com",
+      "oauthClientId": "",
+      "name": "device19.example.ts.net",
+      "hostname": "hostname-44",
+      "clientVersion": "1.102.3-t9329c3677-ga522f65e9",
+      "updateAvailable": true,
+      "os": "linux",
+      "created": "2020-07-18T18:17:40Z",
+      "connectedToControl": true,
+      "lastSeen": "2024-01-14T11:37:18Z",
+      "expires": "2024-01-05T14:00:15Z",
+      "keyExpiryDisabled": false,
+      "authorized": true,
+      "isExternal": false,
+      "machineKey": "mkey:a4833b41e717d13221df2e26c828044ca860d56d94760fea12b8a67674fc6d86",
+      "nodeKey": "nodekey:759ac3720392bc5063d1974cf2864f8090e49b5037f0bdafc5cba43afbc3f404",
+      "tailnetLockKey": "nlpub:43db4315f91307e695bca4022dadfc245d1775c14ab4337d2040ce7e525aa875",
+      "sshEnabled": false,
+      "blocksIncomingConnections": false,
+      "enabledRoutes": [],
+      "advertisedRoutes": [],
+      "clientConnectivity": {
+        "endpoints": [
+          "203.0.113.49:41686",
+          "203.0.113.18:41686",
+          "203.0.113.31:41686",
+          "203.0.113.5:41686"
+        ],
+        "mappingVariesByDestIP": false,
+        "latency": {
+          "Amsterdam": {
+            "preferred": true,
+            "latencyMs": 9.643955
+          },
+          "London": {
+            "latencyMs": 15.431286
+          },
+          "Paris": {
+            "latencyMs": 16.421162
+          }
+        },
+        "clientSupports": {
+          "hairPinning": null,
+          "ipv6": false,
+          "pcp": false,
+          "pmp": false,
+          "udp": true,
+          "upnp": false
+        }
+      },
+      "tailnetLockError": "",
+      "distro": {
+        "name": "alpine",
+        "version": "3.24.1"
+      },
+      "postureStatus": {}
+    }
+  ]
+}

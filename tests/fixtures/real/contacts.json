@@ -1,0 +1,14 @@
+{
+  "account": {
+    "email": "",
+    "needsVerification": false
+  },
+  "support": {
+    "email": "",
+    "needsVerification": false
+  },
+  "security": {
+    "email": "",
+    "needsVerification": false
+  }
+}

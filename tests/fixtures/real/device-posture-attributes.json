@@ -1,0 +1,9 @@
+{
+  "attributes": {
+    "node:os": "macos",
+    "node:osVersion": "11.5.2",
+    "node:tsAutoUpdate": false,
+    "node:tsReleaseTrack": "stable",
+    "node:tsVersion": "1.20.4"
+  }
+}

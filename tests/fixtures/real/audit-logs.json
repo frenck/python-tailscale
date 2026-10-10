@@ -1,0 +1,620 @@
+{
+  "version": "1.1",
+  "tailnetId": "d93eb95ab7b86",
+  "logs": [
+    {
+      "eventTime": "2024-01-13T18:39:35.41644049Z",
+      "type": "CONFIG",
+      "eventGroupID": "",
+      "origin": "ADMIN_CONSOLE",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "c44506135e915",
+        "name": "name-2",
+        "type": "ADMIN_CONSOLE"
+      },
+      "action": "LOGIN"
+    },
+    {
+      "eventTime": "2024-01-13T18:39:49.28630138Z",
+      "type": "CONFIG",
+      "eventGroupID": "e3cb510804c81e81f4f42caa21e52c4e",
+      "origin": "ADMIN_CONSOLE",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "k5cc77116bbCNTRL",
+        "name": "name-3",
+        "type": "API_KEY"
+      },
+      "action": "CREATE",
+      "new": {
+        "capabilities": ["capabilities-4", "capabilities-5"],
+        "description": "description-6",
+        "expires": "2027-01-07 18:39:49.28622485 +0000 UTC"
+      }
+    },
+    {
+      "eventTime": "2024-01-13T19:25:07.509799764Z",
+      "type": "CONFIG",
+      "eventGroupID": "a4be9c3a1427e1d43da445f256dd66c9",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "w9906b857e3CNTRL",
+        "name": "https://example.com/1",
+        "type": "WEBHOOK_ENDPOINT"
+      },
+      "action": "CREATE",
+      "new": {
+        "events": ["03cee6ae3d0"]
+      }
+    },
+    {
+      "eventTime": "2024-01-13T19:25:07.509934709Z",
+      "type": "CONFIG",
+      "eventGroupID": "a4be9c3a1427e1d43da445f256dd66c9",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "w9906b857e3CNTRL",
+        "name": "https://example.com/1",
+        "type": "WEBHOOK_ENDPOINT",
+        "property": "SECRET"
+      },
+      "action": "UPDATE"
+    },
+    {
+      "eventTime": "2024-01-13T19:25:07.592456505Z",
+      "type": "CONFIG",
+      "eventGroupID": "f6ee4a573a591397b0cb8afb2b8d6361",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "w9906b857e3CNTRL",
+        "name": "https://example.com/1",
+        "type": "WEBHOOK_ENDPOINT",
+        "property": "SUBSCRIBED_EVENTS"
+      },
+      "action": "UPDATE",
+      "old": {
+        "events": ["03cee6ae3d0"]
+      },
+      "new": {
+        "events": ["03cee6ae3d0", "bf4f2165dad"]
+      }
+    },
+    {
+      "eventTime": "2024-01-13T19:25:07.608375805Z",
+      "type": "CONFIG",
+      "eventGroupID": "2d8b5b6fab12d0a25152771ab37bba1a",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "w9906b857e3CNTRL",
+        "name": "https://example.com/1",
+        "type": "WEBHOOK_ENDPOINT",
+        "property": "SECRET"
+      },
+      "action": "UPDATE"
+    },
+    {
+      "eventTime": "2024-01-13T19:25:07.640913339Z",
+      "type": "CONFIG",
+      "eventGroupID": "82e8ac716bf91cbc80f487297dd2209b",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "w9906b857e3CNTRL",
+        "name": "https://example.com/1",
+        "type": "WEBHOOK_ENDPOINT"
+      },
+      "action": "DELETE"
+    },
+    {
+      "eventTime": "2024-01-13T19:33:09.787754165Z",
+      "type": "CONFIG",
+      "eventGroupID": "a93162d95931553665289c8e9108b57a",
+      "origin": "CONTROL",
+      "actor": {
+        "id": "1aae72865dd53f54181c798",
+        "type": "AUTOMATED_WORKER",
+        "loginName": "",
+        "displayName": "displayName-7"
+      },
+      "target": {
+        "id": "kbde48a1304CNTRL",
+        "name": "name-8",
+        "type": "API_KEY"
+      },
+      "action": "EXPIRED"
+    },
+    {
+      "eventTime": "2024-01-13T19:33:09.813668938Z",
+      "type": "CONFIG",
+      "eventGroupID": "a93162d95931553665289c8e9108b57a",
+      "origin": "CONTROL",
+      "actor": {
+        "id": "1aae72865dd53f54181c798",
+        "type": "AUTOMATED_WORKER",
+        "loginName": "",
+        "displayName": "displayName-7"
+      },
+      "target": {
+        "id": "k17d0e3eb1dCNTRL",
+        "name": "name-8",
+        "type": "API_KEY"
+      },
+      "action": "EXPIRED"
+    },
+    {
+      "eventTime": "2024-01-13T20:05:23.761305722Z",
+      "type": "CONFIG",
+      "eventGroupID": "",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "c72c7922d48af1ca2fa002673f9424a814062a22bf38c9f9eaea2acb7aa381c2",
+        "name": "name-9",
+        "type": "FAILED_REQUEST"
+      },
+      "action": "UPDATE",
+      "new": {
+        "message": "message-10",
+        "statusCode": 403
+      },
+      "error": "message-10"
+    },
+    {
+      "eventTime": "2024-01-13T20:05:25.758437096Z",
+      "type": "CONFIG",
+      "deferredAt": "2024-01-13T20:05:23.778041622Z",
+      "eventGroupID": "",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "c243d9869b7ad854d48c0688a2d48708f7ed4ba3aec74760c48f2a7a55f772f1",
+        "name": "name-11",
+        "type": "FAILED_REQUEST"
+      },
+      "action": "UPDATE",
+      "new": {
+        "message": "message-10",
+        "statusCode": 403
+      },
+      "error": "message-10"
+    },
+    {
+      "eventTime": "2024-01-13T20:05:31.049121917Z",
+      "type": "CONFIG",
+      "eventGroupID": "",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "c72c7922d48af1ca2fa002673f9424a814062a22bf38c9f9eaea2acb7aa381c2",
+        "name": "name-9",
+        "type": "FAILED_REQUEST"
+      },
+      "action": "UPDATE",
+      "new": {
+        "message": "message-10",
+        "statusCode": 403
+      },
+      "error": "message-10"
+    },
+    {
+      "eventTime": "2024-01-13T20:05:32.758201643Z",
+      "type": "CONFIG",
+      "deferredAt": "2024-01-13T20:05:31.125973609Z",
+      "eventGroupID": "",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "537fc6fc3839c41d8f56b10281d93d8001cc0d0cc",
+        "name": "name-12",
+        "type": "FAILED_REQUEST"
+      },
+      "action": "UPDATE",
+      "new": {
+        "message": "message-10",
+        "statusCode": 403
+      },
+      "error": "message-10"
+    },
+    {
+      "eventTime": "2024-01-13T20:09:04.707513056Z",
+      "type": "CONFIG",
+      "eventGroupID": "",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "1330f456635624e45bd9477b05f2112be21cff4c82f224e387cc",
+        "name": "name-13",
+        "type": "FAILED_REQUEST"
+      },
+      "action": "UPDATE",
+      "new": {
+        "message": "message-10",
+        "statusCode": 403
+      },
+      "error": "message-10"
+    },
+    {
+      "eventTime": "2024-01-13T20:25:20.881841098Z",
+      "type": "CONFIG",
+      "eventGroupID": "f42cacffa91fa570e0cb242c393dddf2",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "vcdb2236732CNTRL",
+        "name": "svc:service1",
+        "type": "SERVICE"
+      },
+      "action": "CREATE"
+    },
+    {
+      "eventTime": "2024-01-13T20:25:20.952258693Z",
+      "type": "CONFIG",
+      "eventGroupID": "29d2f4ef7cc30cb8bf0bc4562f90d4ab",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "vcdb2236732CNTRL",
+        "name": "svc:service1",
+        "type": "SERVICE",
+        "property": "COMMENT"
+      },
+      "action": "UPDATE",
+      "old": "old-14",
+      "new": ""
+    },
+    {
+      "eventTime": "2024-01-13T20:25:20.952334793Z",
+      "type": "CONFIG",
+      "eventGroupID": "29d2f4ef7cc30cb8bf0bc4562f90d4ab",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "vcdb2236732CNTRL",
+        "name": "svc:service1",
+        "type": "SERVICE",
+        "property": "SERVICE_PORTS"
+      },
+      "action": "UPDATE",
+      "old": {
+        "ports": ["ports-15"]
+      },
+      "new": {
+        "ports": ["ports-15", "ports-16"]
+      }
+    },
+    {
+      "eventTime": "2024-01-13T20:25:20.95245823Z",
+      "type": "CONFIG",
+      "eventGroupID": "29d2f4ef7cc30cb8bf0bc4562f90d4ab",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "vcdb2236732CNTRL",
+        "name": "svc:service1",
+        "type": "SERVICE",
+        "property": "SERVICE_DISPLAY_NAME"
+      },
+      "action": "UPDATE",
+      "old": "",
+      "new": "new-17"
+    },
+    {
+      "eventTime": "2024-01-13T20:25:20.968664804Z",
+      "type": "CONFIG",
+      "eventGroupID": "a6fa4183f6b12b4ede073465ff65bda0",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "vcdb2236732CNTRL",
+        "name": "svc:service1",
+        "type": "SERVICE"
+      },
+      "action": "DELETE"
+    },
+    {
+      "eventTime": "2024-01-13T20:46:52.138328361Z",
+      "type": "CONFIG",
+      "eventGroupID": "77b8a6521730691d81e23964db315b62",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "4481586b3ca08a2eeb844e",
+        "name": "name-18",
+        "type": "INVITE",
+        "property": "NODE_SHARE"
+      },
+      "action": "CREATE"
+    },
+    {
+      "eventTime": "2024-01-13T20:46:52.2005903Z",
+      "type": "CONFIG",
+      "eventGroupID": "d5984b3a0430471c98a1ceeed67c5154",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "4481586b3ca08a2eeb844e",
+        "name": "name-18",
+        "type": "INVITE",
+        "property": "NODE_SHARE"
+      },
+      "action": "DELETE"
+    },
+    {
+      "eventTime": "2024-01-13T20:46:52.237086383Z",
+      "type": "CONFIG",
+      "eventGroupID": "0de3b8998b39486f41a9d4142d5557fb",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "b14d42d77cb6303cb81dca123d6fa",
+        "name": "name-19",
+        "type": "INVITE",
+        "property": "TAILNET_INVITE"
+      },
+      "action": "CREATE"
+    },
+    {
+      "eventTime": "2024-01-13T20:46:52.3516873Z",
+      "type": "CONFIG",
+      "eventGroupID": "db5bdae2adae20d4313f18c73c1f67bc",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "b14d42d77cb6303cb81dca123d6fa",
+        "name": "name-19",
+        "type": "INVITE",
+        "property": "TAILNET_INVITE"
+      },
+      "action": "DELETE"
+    },
+    {
+      "eventTime": "2024-01-14T08:44:38.207861386Z",
+      "type": "CONFIG",
+      "eventGroupID": "",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "01253b5b41d867ef88337c0eba6a7d6a4",
+        "name": "name-20",
+        "type": "FAILED_REQUEST"
+      },
+      "action": "UPDATE",
+      "new": {
+        "message": "message-21",
+        "statusCode": 403
+      },
+      "error": "message-21"
+    },
+    {
+      "eventTime": "2024-01-14T10:28:16.503749512Z",
+      "type": "CONFIG",
+      "eventGroupID": "67fbd6f3783c5519145d14dc9cbf737c",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "k6e6c9be176CNTRL",
+        "name": "name-22",
+        "type": "API_KEY"
+      },
+      "action": "CREATE",
+      "new": {
+        "capabilities": ["capabilities-23", "capabilities-24"],
+        "description": "old-14",
+        "domainLevel": true,
+        "expires": "never"
+      }
+    },
+    {
+      "eventTime": "2024-01-14T10:28:16.536711686Z",
+      "type": "CONFIG",
+      "eventGroupID": "dd53d895d014cda33fcd4e1eb8f35959",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "k6e6c9be176CNTRL",
+        "name": "name-22",
+        "type": "API_KEY"
+      },
+      "action": "UPDATE",
+      "old": {
+        "capabilities": ["capabilities-23", "capabilities-24"],
+        "description": "old-14",
+        "domainLevel": true,
+        "expires": "never"
+      },
+      "new": {
+        "capabilities": [
+          "capabilities-23",
+          "capabilities-24",
+          "capabilities-25"
+        ],
+        "description": "description-26",
+        "domainLevel": true,
+        "expires": "never"
+      }
+    },
+    {
+      "eventTime": "2024-01-14T10:28:16.591330784Z",
+      "type": "CONFIG",
+      "eventGroupID": "d5e0c9c49670a27b36d00d259221d39f",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "k6e6c9be176CNTRL",
+        "type": "OAUTH_CLIENT",
+        "loginName": "",
+        "displayName": "name-22"
+      },
+      "target": {
+        "id": "d4c447b1fce5dcdb0b247bcc95a088b9",
+        "name": "name-27",
+        "type": "OAUTH_ACCESS_TOKEN"
+      },
+      "action": "CREATE",
+      "actionDetails": "actionDetails-28"
+    },
+    {
+      "eventTime": "2024-01-14T10:28:16.654727284Z",
+      "type": "CONFIG",
+      "eventGroupID": "f472d1bb5cba224c2ba181863fdcca8c",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "k6e6c9be176CNTRL",
+        "name": "name-22",
+        "type": "API_KEY"
+      },
+      "action": "REVOKE"
+    },
+    {
+      "eventTime": "2024-01-14T10:28:52.45207714Z",
+      "type": "CONFIG",
+      "eventGroupID": "7f9efde71f52abb5f0695f504854a457",
+      "origin": "CONFIG_API",
+      "actor": {
+        "id": "u1fd9945c13CNTRL",
+        "type": "USER",
+        "loginName": "user1@example.com",
+        "displayName": "displayName-1"
+      },
+      "target": {
+        "id": "d93eb95ab7b86",
+        "name": "example1.com",
+        "type": "TAILNET",
+        "property": "ROUTE_SELECTION"
+      },
+      "action": "UPDATE",
+      "old": 0,
+      "new": 0
+    }
+  ]
+}
