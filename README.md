@@ -208,7 +208,8 @@ Tailscale(
 
 To keep the access token of an OAuth client across restarts, pass a
 `token_storage`: an implementation of `TokenStorage`, with a `get_token()`
-and a `set_token()` method.
+and a `set_token()` method. The expiry it stores and returns must be a
+timezone-aware `datetime`.
 
 The `tailnet` defaults to `"-"`, the tailnet of the credentials. Pass the
 tailnet ID to use another tailnet the credentials have access to.
@@ -223,6 +224,8 @@ returns them as a dictionary keyed by device ID.
 Only the identifiers (`device_id`, `node_id`, `hostname`, and `name`) are
 always set. The API leaves out many fields for devices shared in from another
 tailnet, so the other fields are `None` when the API does not return them.
+The exceptions are the lists, like `addresses` and `tags`, which are empty
+then, and `is_external`, which is `False`.
 
 ```python
 async with Tailscale(api_key="tskey-api-...") as tailscale:
@@ -293,7 +296,8 @@ paths, and split DNS have their own methods too.
 
 The policy file is kept as HuJSON, so its comments and formatting survive a
 round trip. Pass along its ETag when setting it, so it is not set when someone
-else changed it in the meantime.
+else changed it in the meantime. Without an ETag, which is the case when the
+API returns none, it is set whatever changed.
 
 ```python
 async with Tailscale(api_key="tskey-api-...") as tailscale:
@@ -335,7 +339,7 @@ apps, the contacts of the tailnet, and the tailnets of an organization.
 
 ### Error handling
 
-All errors are a `TailscaleError`:
+Errors of requests to the API are a `TailscaleError`:
 
 - `TailscaleConnectionError`: the API could not be reached, or did not answer
   in time.
@@ -346,6 +350,9 @@ All errors are a `TailscaleError`:
 - `TailscaleNotFoundError`: the device, user, or other resource does not
   exist.
 - `TailscaleResponseError`: the API responded with another error.
+
+A response the client cannot make sense of raises the error of the JSON or
+model parsing instead.
 
 The response errors have the HTTP `status`, and the `reason` the API gave:
 
@@ -371,7 +378,8 @@ Tailscale(
 ```
 
 You may also pass your own `aiohttp.ClientSession` via `session=...` to
-share a connection pool across multiple clients.
+share a connection pool across multiple clients. A session you pass stays
+yours: the client does not close it.
 
 ## Changelog & Releases
 
