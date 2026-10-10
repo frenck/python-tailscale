@@ -1711,4 +1711,4 @@ cli = ["rich", "typer"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "b849c2456b193a080f175c35eb4b57c1b58b2b24f7b7cdbb42d555930fb8dd83"
+content-hash = "e5d7df414fabcf6dd354a0983fd79c8833d3b48a99847aded4fadce89937b702"

@@ -34,7 +34,7 @@ classifiers = [
 dynamic = ["dependencies"]
 packages = [{ include = "tailscale", from = "src" }]
 dependencies = [
-  'aiohttp (>=3.8.2)',
+  'aiohttp (>=3.8.3)',
   'mashumaro (>=3.10)',
   'orjson (>=3.9.8)',
   'yarl (>=1.8.2)',
