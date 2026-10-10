@@ -107,6 +107,19 @@
       ]),
     }),
     'dump': dict({
+      'audit-logs': list([
+        'api_key',
+        'hours',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'contacts': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
       'device': list([
         'api_key',
         'device_id',
@@ -114,7 +127,27 @@
         'oauth_client_secret',
         'tailnet',
       ]),
+      'device-invites': list([
+        'api_key',
+        'device_id',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'device-posture-attributes': list([
+        'api_key',
+        'device_id',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
       'devices': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'dns-configuration': list([
         'api_key',
         'oauth_client_id',
         'oauth_client_secret',
@@ -157,9 +190,74 @@
         'oauth_client_secret',
         'tailnet',
       ]),
+      'log-stream': list([
+        'api_key',
+        'log_type',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'log-stream-status': list([
+        'api_key',
+        'log_type',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'network-logs': list([
+        'api_key',
+        'hours',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'oauth-apps': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'organization-tailnets': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'policy': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'posture-integrations': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
       'routes': list([
         'api_key',
         'device_id',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'service': list([
+        'api_key',
+        'name',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'service-hosts': list([
+        'api_key',
+        'name',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'services': list([
+        'api_key',
         'oauth_client_id',
         'oauth_client_secret',
         'tailnet',
@@ -177,7 +275,19 @@
         'tailnet',
         'user_id',
       ]),
+      'user-invites': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
       'users': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'webhooks': list([
         'api_key',
         'oauth_client_id',
         'oauth_client_secret',
@@ -535,6 +645,14 @@
   Authentication required.
   Provide --api-key (or TAILSCALE_API_KEY),
   or --oauth-client-id and --oauth-client-secret.
+  
+  '''
+# ---
+# name: test_permission_error_handler
+  '''
+  ╭───────────────────────────────── Permission denied ──────────────────────────────────╮
+  │ The Tailscale API refused the request: feature not available on current billing plan │
+  ╰──────────────────────────────────────────────────────────────────────────────────────╯
   
   '''
 # ---
