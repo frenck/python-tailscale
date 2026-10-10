@@ -12,6 +12,7 @@ from aioresponses import aioresponses
 from syrupy.assertion import SnapshotAssertion
 
 from tailscale import (
+    AwsExternalId,
     CreatedTailnetOAuthClient,
     DeviceInvite,
     DevicePostureAttributeUpdate,
@@ -19,6 +20,7 @@ from tailscale import (
     DNSConfigurationPreferences,
     DNSResolver,
     InviteUser,
+    LogStreamConfiguration,
     OAuthApp,
     OrganizationTailnet,
     ServiceApproval,
@@ -2520,6 +2522,174 @@ async def test_delete_oauth_app(
         content_type="application/json",
     )
     await tailscale_client.delete_oauth_app("a1234CNTRL")
+
+
+# --- Log streaming tests ---
+
+
+async def test_log_stream_configuration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the log streaming configuration."""
+    responses.get(
+        f"{URL}/tailnet/frenck/logging/network/stream",
+        status=200,
+        body='{"logType": "network", "destinationType": "s3", "url": "",'
+        '"uploadPeriodMinutes": 5, "compressionFormat": "zstd",'
+        '"s3Bucket": "tailnet-logs", "s3Region": "eu-west-1",'
+        '"s3AuthenticationType": "rolearn",'
+        '"s3RoleArn": "arn:aws:iam::123456789012:role/tailscale",'
+        '"s3ExternalId": "ext-1234", "gcsScopes": null}',
+        content_type="application/json",
+    )
+    configuration = await tailscale_client.log_stream_configuration("network")
+
+    assert configuration == LogStreamConfiguration(
+        destination_type="s3",
+        compression_format="zstd",
+        log_type="network",
+        s3_authentication_type="rolearn",
+        s3_bucket="tailnet-logs",
+        s3_external_id="ext-1234",
+        s3_region="eu-west-1",
+        s3_role_arn="arn:aws:iam::123456789012:role/tailscale",
+        upload_period_minutes=5,
+    )
+
+
+async def test_set_log_stream_configuration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting the log streaming configuration."""
+    responses.put(
+        f"{URL}/tailnet/frenck/logging/configuration/stream",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.set_log_stream_configuration(
+        "configuration",
+        LogStreamConfiguration(
+            destination_type="splunk",
+            url="https://splunk.example.com:8088",
+            user="tailscale",
+            token="s3cr3t",  # noqa: S106
+        ),
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "destinationType": "splunk",
+        "token": "s3cr3t",
+        "url": "https://splunk.example.com:8088",
+        "user": "tailscale",
+    }
+
+
+async def test_disable_log_streaming(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test disabling log streaming."""
+    responses.delete(
+        f"{URL}/tailnet/frenck/logging/network/stream",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.disable_log_streaming("network")
+
+
+async def test_log_stream_status(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting the log streaming status."""
+    responses.get(
+        f"{URL}/tailnet/frenck/logging/configuration/stream/status",
+        status=200,
+        body='{"lastActivity": "2026-10-09T20:00:00Z", "lastError": "",'
+        '"maxBodySize": 4096, "numBytesSent": 123456, "numEntriesSent": 42,'
+        '"numSpoofedEntries": 0, "numTotalRequests": 10,'
+        '"numFailedRequests": 1, "rateBytesSent": 12.5,'
+        '"rateEntriesSent": 0.25, "rateTotalRequests": 0.1,'
+        '"rateFailedRequests": 0}',
+        content_type="application/json",
+    )
+    status = await tailscale_client.log_stream_status("configuration")
+
+    assert status.last_activity == datetime(2026, 10, 9, 20, tzinfo=UTC)
+    assert status.last_error is None
+    assert status.num_entries_sent == 42
+    assert status.num_failed_requests == 1
+    assert status.rate_bytes_sent == 12.5
+    assert status.rate_failed_requests == 0
+
+
+async def test_aws_external_id(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting an AWS external ID."""
+    responses.post(
+        f"{URL}/tailnet/frenck/aws-external-id",
+        status=200,
+        body='{"externalId": "ext-1234", "tailscaleAwsAccountId": "123456789012"}',
+        content_type="application/json",
+    )
+    external_id = await tailscale_client.aws_external_id(reusable=True)
+    assert external_id == AwsExternalId(
+        external_id="ext-1234", tailscale_aws_account_id="123456789012"
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"reusable": True}
+
+
+async def test_validate_aws_trust_policy(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test validating an AWS trust policy."""
+    responses.post(
+        f"{URL}/tailnet/frenck/aws-external-id/ext-1234/validate-aws-trust-policy",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.validate_aws_trust_policy(
+        "ext-1234", role_arn="arn:aws:iam::123456789012:role/tailscale"
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "roleArn": "arn:aws:iam::123456789012:role/tailscale"
+    }
+
+
+async def test_validate_aws_trust_policy_invalid(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test an AWS trust policy Tailscale cannot assume the role with."""
+    responses.post(
+        f"{URL}/tailnet/frenck/aws-external-id/ext-1234/validate-aws-trust-policy",
+        status=422,
+        body='{"message": "unable to assume role"}',
+        content_type="application/json",
+    )
+    with pytest.raises(TailscaleResponseError) as excinfo:
+        await tailscale_client.validate_aws_trust_policy(
+            "ext-1234", role_arn="arn:aws:iam::123456789012:role/tailscale"
+        )
+
+    assert excinfo.value.status == 422
+    assert excinfo.value.reason == "unable to assume role"
 
 
 # --- OAuth tests ---
