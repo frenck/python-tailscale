@@ -28,8 +28,10 @@ from tailscale import (
 from tailscale.exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
-    TailscaleError,
     TailscaleNotFoundError,
+    TailscalePermissionError,
+    TailscaleResponseError,
+    TailscaleUnauthorizedError,
 )
 
 from .conftest import URL, load_fixture
@@ -130,8 +132,11 @@ async def test_http_error404(
         body="OMG PUPPIES!",
         content_type="text/plain",
     )
-    with pytest.raises(TailscaleNotFoundError):
+    with pytest.raises(TailscaleNotFoundError) as excinfo:
         await tailscale_client._request("test")
+
+    assert excinfo.value.status == 404
+    assert excinfo.value.reason == "Not Found"
 
 
 async def test_http_error500(
@@ -142,13 +147,17 @@ async def test_http_error500(
     responses.get(
         f"{URL}/test",
         status=500,
-        body="Kaboom!",
-        content_type="text/plain",
+        body='{"message": "something broke"}',
+        content_type="application/json",
     )
-    with pytest.raises(TailscaleError) as excinfo:
+    with pytest.raises(TailscaleResponseError) as excinfo:
         await tailscale_client._request("test")
 
-    assert not isinstance(excinfo.value, TailscaleNotFoundError)
+    assert not isinstance(
+        excinfo.value, (TailscaleAuthenticationError, TailscaleNotFoundError)
+    )
+    assert excinfo.value.status == 500
+    assert str(excinfo.value) == "something broke"
 
 
 async def test_http_error401(
@@ -159,11 +168,56 @@ async def test_http_error401(
     responses.get(
         f"{URL}/test",
         status=401,
-        body="Access denied!",
-        content_type="text/plain",
+        body='{"message": "API token invalid"}',
+        content_type="application/json",
     )
-    with pytest.raises(TailscaleAuthenticationError):
+    with pytest.raises(TailscaleUnauthorizedError) as excinfo:
         await tailscale_client._request("test")
+
+    assert isinstance(excinfo.value, TailscaleAuthenticationError)
+    assert excinfo.value.status == 401
+    assert excinfo.value.reason == "API token invalid"
+
+
+async def test_http_error403(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test HTTP 403 response handling."""
+    responses.get(
+        f"{URL}/test",
+        status=403,
+        body='{"message": "feature not available on current billing plan"}',
+        content_type="application/json",
+    )
+    with pytest.raises(TailscalePermissionError) as excinfo:
+        await tailscale_client._request("test")
+
+    assert isinstance(excinfo.value, TailscaleAuthenticationError)
+    assert excinfo.value.status == 403
+    assert excinfo.value.reason == "feature not available on current billing plan"
+
+
+@pytest.mark.parametrize(
+    "body",
+    ["", "[]", '{"message": ""}', '{"message": 42}', "not json"],
+)
+async def test_http_error_without_message(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    body: str,
+) -> None:
+    """Test the HTTP reason is used when the API gives no message."""
+    responses.get(
+        f"{URL}/test",
+        status=502,
+        body=body,
+        content_type="application/json",
+    )
+    with pytest.raises(TailscaleResponseError) as excinfo:
+        await tailscale_client._request("test")
+
+    assert excinfo.value.reason == "Bad Gateway"
 
 
 async def test_connection_error(

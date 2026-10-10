@@ -5,6 +5,9 @@ from .exceptions import (
     TailscaleConnectionError,
     TailscaleError,
     TailscaleNotFoundError,
+    TailscalePermissionError,
+    TailscaleResponseError,
+    TailscaleUnauthorizedError,
 )
 from .models import (
     AcceptedDeviceInvite,
@@ -89,7 +92,10 @@ __all__ = [
     "TailscaleError",
     "TailscaleKey",
     "TailscaleNotFoundError",
+    "TailscalePermissionError",
+    "TailscaleResponseError",
     "TailscaleService",
+    "TailscaleUnauthorizedError",
     "TailscaleUser",
     "TailscaleWebhook",
     "TokenStorage",
