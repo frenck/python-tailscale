@@ -962,3 +962,95 @@ class AwsExternalId(DataClassORJSONMixin):
     tailscale_aws_account_id: str = field(
         metadata=field_options(alias="tailscaleAwsAccountId")
     )
+
+
+@dataclass
+class AuditLogActor(_LenientModel):
+    """Object holding who caused a configuration change."""
+
+    actor_id: str = field(metadata=field_options(alias="id"))
+    actor_type: str | None = field(default=None, metadata=field_options(alias="type"))
+    display_name: str | None = field(
+        default=None, metadata=field_options(alias="displayName")
+    )
+    login_name: str | None = field(
+        default=None, metadata=field_options(alias="loginName")
+    )
+    tags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class AuditLogTarget(_LenientModel):
+    """Object holding what a configuration change was made to."""
+
+    target_id: str | None = field(default=None, metadata=field_options(alias="id"))
+    is_ephemeral: bool | None = field(
+        default=None, metadata=field_options(alias="isEphemeral")
+    )
+    name: str | None = None
+    property: str | None = None
+    target_type: str | None = field(default=None, metadata=field_options(alias="type"))
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class AuditLog(_LenientModel):
+    """Object holding a configuration change of the tailnet.
+
+    The old and new values are whatever the API logged for the changed
+    property, like a string or an object.
+    """
+
+    actor: AuditLogActor
+    event_time: datetime = field(metadata=field_options(alias="eventTime"))
+    target: AuditLogTarget
+    action: str | None = None
+    action_details: str | None = field(
+        default=None, metadata=field_options(alias="actionDetails")
+    )
+    deferred_at: datetime | None = field(
+        default=None, metadata=field_options(alias="deferredAt")
+    )
+    error: str | None = None
+    event_group_id: str | None = field(
+        default=None, metadata=field_options(alias="eventGroupID")
+    )
+    log_type: str | None = field(default=None, metadata=field_options(alias="type"))
+    new: Any = None
+    old: Any = None
+    origin: str | None = None
+
+
+@dataclass
+class NetworkTraffic(_LenientModel):
+    """Object holding the traffic of a network flow."""
+
+    dst: str
+    proto: str
+    src: str
+    rx_bytes: int = field(default=0, metadata=field_options(alias="rxBytes"))
+    rx_pkts: int = field(default=0, metadata=field_options(alias="rxPkts"))
+    tx_bytes: int = field(default=0, metadata=field_options(alias="txBytes"))
+    tx_pkts: int = field(default=0, metadata=field_options(alias="txPkts"))
+
+
+@dataclass
+class NetworkFlowLog(_LenientModel):
+    """Object holding the network flows of a device over a period of time."""
+
+    logged: datetime
+    node_id: str = field(metadata=field_options(alias="nodeId"))
+    start: datetime
+    end: datetime
+    exit_traffic: list[NetworkTraffic] = field(
+        default_factory=list, metadata=field_options(alias="exitTraffic")
+    )
+    physical_traffic: list[NetworkTraffic] = field(
+        default_factory=list, metadata=field_options(alias="physicalTraffic")
+    )
+    subnet_traffic: list[NetworkTraffic] = field(
+        default_factory=list, metadata=field_options(alias="subnetTraffic")
+    )
+    virtual_traffic: list[NetworkTraffic] = field(
+        default_factory=list, metadata=field_options(alias="virtualTraffic")
+    )

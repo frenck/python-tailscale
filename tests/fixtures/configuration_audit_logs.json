@@ -1,0 +1,48 @@
+{
+  "version": "1.1",
+  "tailnetId": "T1234CNTRL",
+  "logs": [
+    {
+      "action": "CREATE",
+      "actor": {
+        "displayName": "Alice Engineer",
+        "id": "u12345",
+        "loginName": "alice@example.com",
+        "type": "USER"
+      },
+      "eventGroupID": "6a3b9c0d1e2f",
+      "eventTime": "2026-10-09T20:00:00.123456Z",
+      "new": { "events": ["nodeCreated"] },
+      "origin": "CONFIG_API",
+      "target": {
+        "id": "e1234CNTRL",
+        "name": "https://example.com/tailscale",
+        "type": "WEBHOOK_ENDPOINT"
+      },
+      "type": "CONFIG"
+    },
+    {
+      "action": "UPDATE",
+      "actor": {
+        "id": "nDEVICE123",
+        "loginName": "",
+        "tags": ["tag:server"],
+        "type": "NODE"
+      },
+      "deferredAt": "2026-10-09T20:05:00Z",
+      "eventGroupID": "",
+      "eventTime": "2026-10-09T20:04:59Z",
+      "new": "server-new",
+      "old": "server",
+      "origin": "CONTROL",
+      "target": {
+        "id": "nDEVICE123",
+        "isEphemeral": false,
+        "name": "server",
+        "property": "MACHINE_NAME",
+        "type": "NODE"
+      },
+      "type": "CONFIG"
+    }
+  ]
+}

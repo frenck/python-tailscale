@@ -23,6 +23,7 @@ from .exceptions import (
 )
 from .models import (
     AcceptedDeviceInvite,
+    AuditLog,
     AwsExternalId,
     CreatedTailnet,
     Device,
@@ -36,6 +37,7 @@ from .models import (
     DNSSearchPaths,
     LogStreamConfiguration,
     LogStreamStatus,
+    NetworkFlowLog,
     OAuthApp,
     OrganizationTailnets,
     PolicyFile,
@@ -53,7 +55,7 @@ from .models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from .models import DevicePostureAttributeUpdate, PostureAttributeValue
     from .storage import TokenStorage
@@ -182,7 +184,7 @@ class Tailscale:
         *,
         method: str = METH_GET,
         data: dict[str, Any] | list[Any] | None = None,
-        params: dict[str, str] | None = None,
+        params: Mapping[str, str | Sequence[str]] | None = None,
         _use_authentication: bool = True,
         _use_form_encoding: bool = False,
     ) -> str:
@@ -218,7 +220,7 @@ class Tailscale:
         *,
         method: str = METH_GET,
         data: dict[str, Any] | list[Any] | None = None,
-        params: dict[str, str] | None = None,
+        params: Mapping[str, str | Sequence[str]] | None = None,
         content: str | None = None,
         headers: dict[str, str] | None = None,
         _use_authentication: bool = True,
@@ -1992,6 +1994,72 @@ class Tailscale:
             method=METH_POST,
             data={"roleArn": role_arn},
         )
+
+    async def configuration_audit_logs(  # pylint: disable=too-many-arguments
+        self,
+        *,
+        start: datetime,
+        end: datetime,
+        actors: list[str] | None = None,
+        targets: list[str] | None = None,
+        events: list[str] | None = None,
+    ) -> list[AuditLog]:
+        """Get the configuration changes of the tailnet in a period of time.
+
+        Args:
+        ----
+            start: The start of the period.
+            end: The end of the period.
+            actors: Only return changes by these actors, by ID, or by a part
+                of their login or display name prefixed with "~", like "~bob".
+            targets: Only return changes to targets that match any part of
+                these strings.
+            events: Only return these events, like "NODE.CREATE" or
+                "TAILNET.UPDATE.ACL".
+
+        Returns:
+        -------
+            The configuration changes, oldest first.
+
+        """
+        params: dict[str, str | list[str]] = {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+        }
+        if actors is not None:
+            params["actor"] = actors
+        if targets is not None:
+            params["target"] = targets
+        if events is not None:
+            params["event"] = events
+
+        data = await self._request(
+            f"tailnet/{self.tailnet}/logging/configuration", params=params
+        )
+        raw: list[dict[str, Any]] = json.loads(data).get("logs") or []
+        return [AuditLog.from_dict(log) for log in raw]
+
+    async def network_flow_logs(
+        self, *, start: datetime, end: datetime
+    ) -> list[NetworkFlowLog]:
+        """Get the network flows of the tailnet in a period of time.
+
+        Args:
+        ----
+            start: The start of the period.
+            end: The end of the period.
+
+        Returns:
+        -------
+            The network flows, oldest first.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/logging/network",
+            params={"start": start.isoformat(), "end": end.isoformat()},
+        )
+        raw: list[dict[str, Any]] = json.loads(data).get("logs") or []
+        return [NetworkFlowLog.from_dict(log) for log in raw]
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""

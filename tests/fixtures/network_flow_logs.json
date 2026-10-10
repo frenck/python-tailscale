@@ -1,0 +1,30 @@
+{
+  "logs": [
+    {
+      "logged": "2026-10-09T20:00:05Z",
+      "nodeId": "nDEVICE123",
+      "start": "2026-10-09T19:59:55Z",
+      "end": "2026-10-09T20:00:00Z",
+      "virtualTraffic": [
+        {
+          "proto": "tcp",
+          "src": "100.64.0.1:51234",
+          "dst": "100.64.0.2:443",
+          "txPkts": 10,
+          "txBytes": 1200,
+          "rxPkts": 8,
+          "rxBytes": 6400
+        }
+      ],
+      "physicalTraffic": [
+        {
+          "proto": "udp",
+          "src": "100.64.0.1:0",
+          "dst": "203.0.113.45:41641",
+          "txPkts": 10
+        }
+      ],
+      "subnetTraffic": null
+    }
+  ]
+}
