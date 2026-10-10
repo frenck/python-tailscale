@@ -1,0 +1,33 @@
+{
+  "integrations": [
+    {
+      "id": "p56wQiqrn7mfDEVEL",
+      "provider": "intune",
+      "cloudId": "global",
+      "clientId": "93013672-b00c-4344-80ca-7ecf74f9dce1",
+      "tenantId": "d1ae389b-5207-43a2-afca-2de6b03ac7e3",
+      "configUpdated": "2026-06-18T13:44:28.250168Z",
+      "status": {
+        "error": "Invalid Tenant ID.",
+        "lastSync": "2026-06-18T08:44:33.872282-05:00",
+        "matchedCount": 0,
+        "possibleMatchedCount": 0,
+        "providerHostCount": 0
+      }
+    },
+    {
+      "id": "pKANDJI1234DEVEL",
+      "provider": "kandji",
+      "cloudId": "",
+      "clientId": "",
+      "tenantId": "",
+      "configUpdated": "2026-07-01T09:00:00Z",
+      "status": {
+        "lastSync": "2026-07-01T09:05:00Z",
+        "matchedCount": 12,
+        "possibleMatchedCount": 14,
+        "providerHostCount": 15
+      }
+    }
+  ]
+}

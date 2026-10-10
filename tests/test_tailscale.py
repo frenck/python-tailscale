@@ -25,6 +25,7 @@ from tailscale import (
     NetworkTraffic,
     OAuthApp,
     OrganizationTailnet,
+    PostureIntegration,
     ServiceApproval,
     ServiceHost,
     SharedDevice,
@@ -2792,6 +2793,138 @@ async def test_network_flow_logs(
     assert flow.physical_traffic[0].rx_bytes == 0
     assert flow.subnet_traffic == []
     assert flow.exit_traffic == []
+
+
+# --- Posture integration tests ---
+
+
+async def test_posture_integrations(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the posture integrations."""
+    responses.get(
+        f"{URL}/tailnet/frenck/posture/integrations",
+        status=200,
+        body=load_fixture("posture_integrations.json"),
+        content_type="application/json",
+    )
+    intune, kandji = await tailscale_client.posture_integrations()
+
+    assert intune.integration_id == "p56wQiqrn7mfDEVEL"
+    assert intune.provider == "intune"
+    assert intune.tenant_id == "d1ae389b-5207-43a2-afca-2de6b03ac7e3"
+    assert intune.config_updated is not None
+    assert intune.status is not None
+    assert intune.status.error == "Invalid Tenant ID."
+    assert intune.status.matched_count == 0
+
+    assert kandji.cloud_id is None
+    assert kandji.client_id is None
+    assert kandji.tenant_id is None
+    assert kandji.status is not None
+    assert kandji.status.error is None
+    assert kandji.status.matched_count == 12
+    assert kandji.status.possible_matched_count == 14
+    assert kandji.status.provider_host_count == 15
+
+
+async def test_posture_integrations_none(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the posture integrations when there are none."""
+    responses.get(
+        f"{URL}/tailnet/frenck/posture/integrations",
+        status=200,
+        body='{"integrations": []}',
+        content_type="application/json",
+    )
+    assert await tailscale_client.posture_integrations() == []
+
+
+async def test_posture_integration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting a single posture integration."""
+    responses.get(
+        f"{URL}/posture/integrations/pKANDJI1234DEVEL",
+        status=200,
+        body='{"id": "pKANDJI1234DEVEL", "provider": "kandji"}',
+        content_type="application/json",
+    )
+    integration = await tailscale_client.posture_integration("pKANDJI1234DEVEL")
+    assert integration == PostureIntegration(
+        integration_id="pKANDJI1234DEVEL", provider="kandji"
+    )
+
+
+async def test_create_posture_integration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating a posture integration."""
+    responses.post(
+        f"{URL}/tailnet/frenck/posture/integrations",
+        status=200,
+        body='{"id": "p56wQiqrn7mfDEVEL", "provider": "intune"}',
+        content_type="application/json",
+    )
+    integration = await tailscale_client.create_posture_integration(
+        provider="intune",
+        client_secret="s3cr3t",  # noqa: S106
+        client_id="93013672-b00c-4344-80ca-7ecf74f9dce1",
+        cloud_id="global",
+        tenant_id="d1ae389b-5207-43a2-afca-2de6b03ac7e3",
+    )
+    assert integration.integration_id == "p56wQiqrn7mfDEVEL"
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "provider": "intune",
+        "clientSecret": "s3cr3t",
+        "clientId": "93013672-b00c-4344-80ca-7ecf74f9dce1",
+        "cloudId": "global",
+        "tenantId": "d1ae389b-5207-43a2-afca-2de6b03ac7e3",
+    }
+
+
+async def test_update_posture_integration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test updating a posture integration, keeping its client secret."""
+    responses.patch(
+        f"{URL}/posture/integrations/p56wQiqrn7mfDEVEL",
+        status=200,
+        body='{"id": "p56wQiqrn7mfDEVEL", "provider": "intune"}',
+        content_type="application/json",
+    )
+    await tailscale_client.update_posture_integration(
+        "p56wQiqrn7mfDEVEL", tenant_id="0f2a7c51-3c6d-4a8b-9e1f-5b7d2c4e6a80"
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "tenantId": "0f2a7c51-3c6d-4a8b-9e1f-5b7d2c4e6a80"
+    }
+
+
+async def test_delete_posture_integration(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting a posture integration."""
+    responses.delete(
+        f"{URL}/posture/integrations/p56wQiqrn7mfDEVEL",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_posture_integration("p56wQiqrn7mfDEVEL")
 
 
 # --- OAuth tests ---
