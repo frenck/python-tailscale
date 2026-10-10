@@ -44,7 +44,7 @@ dependencies = [
 cli = ["rich>=14.0.0", "typer>=0.15.1"]
 
 [project.scripts]
-tailscale = "tailscale._cli:main"
+tailscale-api = "tailscale._cli:main"
 
 [tool.poetry]
 requires-poetry = '>=2.0'
