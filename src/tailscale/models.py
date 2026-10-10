@@ -824,3 +824,29 @@ class CreatedTailnet(_LenientModel):
         default=None, metadata=field_options(alias="oauthClient")
     )
     org_id: str | None = field(default=None, metadata=field_options(alias="orgId"))
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class OAuthApp(_LenientModel):
+    """Object holding an OAuth app of the tailnet.
+
+    The client secret is only there right after creating the app; the API
+    does not return it later.
+    """
+
+    app_id: str = field(metadata=field_options(alias="id"))
+    name: str
+    allowed_node_attributes: list[str] = field(
+        default_factory=list, metadata=field_options(alias="allowedNodeAttributes")
+    )
+    client_secret: str | None = field(
+        default=None, metadata=field_options(alias="clientSecret")
+    )
+    created: datetime | None = None
+    description: str | None = None
+    redirect_uris: list[str] = field(
+        default_factory=list, metadata=field_options(alias="redirectURIs")
+    )
+    scopes: list[str] = field(default_factory=list)
+    updated: datetime | None = None
