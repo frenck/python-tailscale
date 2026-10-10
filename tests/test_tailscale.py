@@ -12,14 +12,18 @@ from aioresponses import aioresponses
 from syrupy.assertion import SnapshotAssertion
 
 from tailscale import (
+    DeviceInvite,
     DevicePostureAttributeUpdate,
     DNSConfiguration,
     DNSConfigurationPreferences,
     DNSResolver,
+    InviteUser,
     ServiceApproval,
     ServiceHost,
+    SharedDevice,
     Tailscale,
     TailscaleService,
+    UserInvite,
 )
 from tailscale.exceptions import (
     TailscaleAuthenticationError,
@@ -1894,6 +1898,239 @@ async def test_set_service_approval(
     assert responses.requests
     (request,) = next(iter(responses.requests.values()))
     assert request.kwargs["json"] == {"approved": False}
+
+
+# --- Invite tests ---
+
+
+async def test_device_invites(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the invites to share a device."""
+    responses.get(
+        f"{URL}/device/nDEVICE123/device-invites",
+        status=200,
+        body=load_fixture("device_invites.json"),
+        content_type="application/json",
+    )
+    invites = await tailscale_client.device_invites("nDEVICE123")
+
+    accepted, pending = invites
+    assert accepted.invite_id == "12346"
+    assert accepted.device_id == 11055
+    assert accepted.tailnet_id == 59954
+    assert accepted.multi_use is True
+    assert accepted.allow_exit_node is True
+    assert accepted.email is None
+    assert accepted.last_email_sent_at is None
+    assert accepted.accepted_by == InviteUser(
+        user_id=33223, login_name="bob@example.com"
+    )
+    assert pending.email == "carol@example.com"
+    assert pending.last_email_sent_at is not None
+    assert pending.accepted is False
+    assert pending.accepted_by is None
+
+
+async def test_device_invites_none(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the invites to share a device when there are none."""
+    responses.get(
+        f"{URL}/device/nDEVICE123/device-invites",
+        status=200,
+        body="null",
+        content_type="application/json",
+    )
+    assert await tailscale_client.device_invites("nDEVICE123") == []
+
+
+async def test_create_device_invite(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating an invite to share a device."""
+    responses.post(
+        f"{URL}/device/nDEVICE123/device-invites",
+        status=200,
+        body=load_fixture("device_invites.json"),
+        content_type="application/json",
+    )
+    invite = await tailscale_client.create_device_invite(
+        "nDEVICE123", email="carol@example.com", multi_use=True
+    )
+    assert invite.invite_id == "12346"
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == [
+        {"multiUse": True, "allowExitNode": False, "email": "carol@example.com"}
+    ]
+
+
+async def test_device_invite(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting a single invite to share a device."""
+    responses.get(
+        f"{URL}/device-invites/12347",
+        status=200,
+        body='{"id": "12347", "accepted": false}',
+        content_type="application/json",
+    )
+    invite = await tailscale_client.device_invite("12347")
+    assert invite == DeviceInvite(invite_id="12347")
+
+
+@pytest.mark.parametrize(
+    ("method", "http_method", "path"),
+    [
+        ("delete_device_invite", "DELETE", "device-invites/12347"),
+        ("resend_device_invite", "POST", "device-invites/12347/resend"),
+        ("delete_user_invite", "DELETE", "user-invites/12347"),
+        ("resend_user_invite", "POST", "user-invites/12347/resend"),
+    ],
+)
+async def test_invite_actions(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    method: str,
+    http_method: str,
+    path: str,
+) -> None:
+    """Test deleting and resending invites."""
+    responses.add(
+        f"{URL}/{path}",
+        method=http_method,
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await getattr(tailscale_client, method)("12347")
+
+    assert responses.requests
+    ((request_method, request_url),) = responses.requests
+    assert request_method == http_method
+    assert str(request_url) == f"{URL}/{path}"
+
+
+async def test_accept_device_invite(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test accepting an invite to share a device."""
+    responses.post(
+        f"{URL}/device-invites/-/accept",
+        status=200,
+        body='{"device": {"id": "nDEVICE123", "os": "linux", "name": "server",'
+        '"fqdn": "server.example.ts.net", "ipv4": "100.64.0.1",'
+        '"ipv6": "fd7a:115c:a1e0::1", "includeExitNode": true},'
+        '"sharer": {"id": "u1", "displayName": "Alice",'
+        '"loginName": "alice@example.com",'
+        '"profilePicURL": "https://example.com/alice.png"},'
+        '"acceptedBy": {"id": "u2", "displayName": "Bob",'
+        '"loginName": "bob@example.com", "profilePicURL": ""}}',
+        content_type="application/json",
+    )
+    accepted = await tailscale_client.accept_device_invite("abcdef")
+
+    assert accepted.device == SharedDevice(
+        device_id="nDEVICE123",
+        fqdn="server.example.ts.net",
+        include_exit_node=True,
+        ipv4="100.64.0.1",
+        ipv6="fd7a:115c:a1e0::1",
+        name="server",
+        os="linux",
+    )
+    assert accepted.sharer == InviteUser(
+        user_id="u1",
+        display_name="Alice",
+        login_name="alice@example.com",
+        profile_pic_url="https://example.com/alice.png",
+    )
+    assert accepted.accepted_by == InviteUser(
+        user_id="u2", display_name="Bob", login_name="bob@example.com"
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"invite": "abcdef"}
+
+
+async def test_user_invites(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the open invites for users."""
+    responses.get(
+        f"{URL}/tailnet/frenck/user-invites",
+        status=200,
+        body=load_fixture("user_invites.json"),
+        content_type="application/json",
+    )
+    (invite,) = await tailscale_client.user_invites()
+
+    assert invite.invite_id == "29214"
+    assert invite.role == "admin"
+    assert invite.inviter_id == 22012
+    assert invite.email == "dave@example.com"
+    assert invite.invite_url == "https://login.tailscale.com/uinv/mnopqr"
+
+
+async def test_user_invites_none(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the invites for users when there are none."""
+    responses.get(
+        f"{URL}/tailnet/frenck/user-invites",
+        status=200,
+        body="null",
+        content_type="application/json",
+    )
+    assert await tailscale_client.user_invites() == []
+
+
+async def test_create_user_invite(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating an invite for a user."""
+    responses.post(
+        f"{URL}/tailnet/frenck/user-invites",
+        status=200,
+        body=load_fixture("user_invites.json"),
+        content_type="application/json",
+    )
+    invite = await tailscale_client.create_user_invite(
+        role="admin", email="dave@example.com"
+    )
+    assert invite.invite_id == "29214"
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == [{"role": "admin", "email": "dave@example.com"}]
+
+
+async def test_user_invite(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting a single invite for a user."""
+    responses.get(
+        f"{URL}/user-invites/29214",
+        status=200,
+        body='{"id": "29214", "role": "member", "tailnetId": 59954,"inviterId": 22012}',
+        content_type="application/json",
+    )
+    invite = await tailscale_client.user_invite("29214")
+    assert invite == UserInvite(
+        invite_id="29214", role="member", inviter_id=22012, tailnet_id=59954
+    )
 
 
 # --- OAuth tests ---

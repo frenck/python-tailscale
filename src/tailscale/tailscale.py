@@ -20,7 +20,9 @@ from .exceptions import (
     TailscaleNotFoundError,
 )
 from .models import (
+    AcceptedDeviceInvite,
     Device,
+    DeviceInvite,
     DevicePostureAttributes,
     DeviceRoutes,
     Devices,
@@ -38,6 +40,7 @@ from .models import (
     TailscaleService,
     TailscaleUser,
     TailscaleWebhook,
+    UserInvite,
 )
 
 if TYPE_CHECKING:
@@ -169,7 +172,7 @@ class Tailscale:
         uri: str,
         *,
         method: str = METH_GET,
-        data: dict[str, Any] | None = None,
+        data: dict[str, Any] | list[Any] | None = None,
         params: dict[str, str] | None = None,
         _use_authentication: bool = True,
         _use_form_encoding: bool = False,
@@ -180,7 +183,7 @@ class Tailscale:
         ----
             uri: Request URI, without '/api/v2/'.
             method: HTTP method to use.
-            data: Dictionary of data to send to the Tailscale API.
+            data: JSON data to send to the Tailscale API.
             params: Query string parameters to add to the request URI.
             _use_authentication: Whether to include authentication headers.
             _use_form_encoding: Whether to use form encoding instead of JSON.
@@ -205,7 +208,7 @@ class Tailscale:
         uri: str,
         *,
         method: str = METH_GET,
-        data: dict[str, Any] | None = None,
+        data: dict[str, Any] | list[Any] | None = None,
         params: dict[str, str] | None = None,
         content: str | None = None,
         headers: dict[str, str] | None = None,
@@ -221,7 +224,7 @@ class Tailscale:
         ----
             uri: Request URI, without '/api/v2/'.
             method: HTTP method to use.
-            data: Dictionary of data to send to the Tailscale API.
+            data: JSON data to send to the Tailscale API.
             params: Query string parameters to add to the request URI.
             content: Raw body to send to the Tailscale API, instead of data.
             headers: Extra headers to send, like a different Accept header.
@@ -1412,6 +1415,189 @@ class Tailscale:
             data={"approved": approved},
         )
         return ServiceApproval.from_json(data)
+
+    async def device_invites(self, device_id: str) -> list[DeviceInvite]:
+        """Get the invites to share a device.
+
+        Args:
+        ----
+            device_id: The ID of the device.
+
+        Returns:
+        -------
+            A list of invites to share the device.
+
+        """
+        data = await self._request(f"device/{device_id}/device-invites")
+        return [DeviceInvite.from_dict(invite) for invite in json.loads(data) or []]
+
+    async def create_device_invite(
+        self,
+        device_id: str,
+        *,
+        email: str | None = None,
+        multi_use: bool = False,
+        allow_exit_node: bool = False,
+    ) -> DeviceInvite:
+        """Create an invite to share a device.
+
+        Args:
+        ----
+            device_id: The ID of the device to share.
+            email: Who to email the invite to. Without it, share the invite
+                URL of the returned invite yourself.
+            multi_use: Whether the invite can be accepted more than once.
+            allow_exit_node: Whether the invited user can use the device as
+                an exit node.
+
+        Returns:
+        -------
+            The created invite.
+
+        """
+        invite: dict[str, Any] = {
+            "multiUse": multi_use,
+            "allowExitNode": allow_exit_node,
+        }
+        if email is not None:
+            invite["email"] = email
+
+        data = await self._request(
+            f"device/{device_id}/device-invites",
+            method=METH_POST,
+            data=[invite],
+        )
+        return DeviceInvite.from_dict(json.loads(data)[0])
+
+    async def device_invite(self, invite_id: str) -> DeviceInvite:
+        """Get a single invite to share a device.
+
+        Args:
+        ----
+            invite_id: The ID of the invite.
+
+        Returns:
+        -------
+            The invite.
+
+        """
+        data = await self._request(f"device-invites/{invite_id}")
+        return DeviceInvite.from_json(data)
+
+    async def delete_device_invite(self, invite_id: str) -> None:
+        """Delete an invite to share a device.
+
+        Args:
+        ----
+            invite_id: The ID of the invite to delete.
+
+        """
+        await self._request(f"device-invites/{invite_id}", method=METH_DELETE)
+
+    async def resend_device_invite(self, invite_id: str) -> None:
+        """Email an invite to share a device again.
+
+        Args:
+        ----
+            invite_id: The ID of an invite that was created with an email.
+
+        """
+        await self._request(f"device-invites/{invite_id}/resend", method=METH_POST)
+
+    async def accept_device_invite(self, invite: str) -> AcceptedDeviceInvite:
+        """Accept an invite to share a device into the tailnet.
+
+        Args:
+        ----
+            invite: The URL of the invite, or the code at the end of it.
+
+        Returns:
+        -------
+            The shared device, and who shared and accepted it.
+
+        """
+        data = await self._request(
+            "device-invites/-/accept",
+            method=METH_POST,
+            data={"invite": invite},
+        )
+        return AcceptedDeviceInvite.from_json(data)
+
+    async def user_invites(self) -> list[UserInvite]:
+        """Get the open invites for users to join the tailnet.
+
+        Returns
+        -------
+            A list of invites that have not been accepted yet.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/user-invites")
+        # The API returns null instead of an empty list when there are none.
+        return [UserInvite.from_dict(invite) for invite in json.loads(data) or []]
+
+    async def create_user_invite(
+        self, *, role: str | None = None, email: str | None = None
+    ) -> UserInvite:
+        """Create an invite for a user to join the tailnet.
+
+        Args:
+        ----
+            role: The role the user gets, like "member" or "admin".
+            email: Who to email the invite to. Without it, share the invite
+                URL of the returned invite yourself.
+
+        Returns:
+        -------
+            The created invite.
+
+        """
+        invite: dict[str, Any] = {}
+        if role is not None:
+            invite["role"] = role
+        if email is not None:
+            invite["email"] = email
+
+        data = await self._request(
+            f"tailnet/{self.tailnet}/user-invites",
+            method=METH_POST,
+            data=[invite],
+        )
+        return UserInvite.from_dict(json.loads(data)[0])
+
+    async def user_invite(self, invite_id: str) -> UserInvite:
+        """Get a single invite for a user to join the tailnet.
+
+        Args:
+        ----
+            invite_id: The ID of the invite.
+
+        Returns:
+        -------
+            The invite.
+
+        """
+        data = await self._request(f"user-invites/{invite_id}")
+        return UserInvite.from_json(data)
+
+    async def delete_user_invite(self, invite_id: str) -> None:
+        """Delete an invite for a user to join the tailnet.
+
+        Args:
+        ----
+            invite_id: The ID of the invite to delete.
+
+        """
+        await self._request(f"user-invites/{invite_id}", method=METH_DELETE)
+
+    async def resend_user_invite(self, invite_id: str) -> None:
+        """Email an invite for a user to join the tailnet again.
+
+        Args:
+        ----
+            invite_id: The ID of an invite that was created with an email.
+
+        """
+        await self._request(f"user-invites/{invite_id}/resend", method=METH_POST)
 
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""

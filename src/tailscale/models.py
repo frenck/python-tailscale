@@ -11,6 +11,29 @@ from mashumaro.config import BaseConfig
 from mashumaro.mixins.orjson import DataClassORJSONMixin
 
 
+class _LenientModel(DataClassORJSONMixin):
+    """Base for models of responses that use null or "" for unset values.
+
+    Those values are left out before parsing, so the defaults of the model
+    apply instead of failing on, or keeping, the null or empty value.
+    """
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out null and empty values, so the defaults apply.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The data without null and empty values.
+
+        """
+        return {key: value for key, value in d.items() if value not in (None, "")}
+
+
 @dataclass
 class ClientSupports(DataClassORJSONMixin):
     """Object holding Tailscale client support capabilities."""
@@ -502,50 +525,20 @@ class PolicyFile:
 
 
 @dataclass
-class PolicyTestResult(DataClassORJSONMixin):
+class PolicyTestResult(_LenientModel):
     """Object holding the result of a failing policy file test."""
 
     user: str = ""
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
-    @classmethod
-    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Leave out null values, so the defaults apply.
-
-        Args:
-        ----
-            d: The raw API response data.
-
-        Returns:
-        -------
-            The data without null values.
-
-        """
-        return {key: value for key, value in d.items() if value is not None}
-
 
 @dataclass
-class PolicyFileValidation(DataClassORJSONMixin):
+class PolicyFileValidation(_LenientModel):
     """Object holding the result of validating or testing a policy file."""
 
     message: str | None = None
     data: list[PolicyTestResult] = field(default_factory=list)
-
-    @classmethod
-    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Leave out null values, so the defaults apply.
-
-        Args:
-        ----
-            d: The raw API response data.
-
-        Returns:
-        -------
-            The data without null values.
-
-        """
-        return {key: value for key, value in d.items() if value is not None}
 
     @property
     def valid(self) -> bool:
@@ -554,7 +547,7 @@ class PolicyFileValidation(DataClassORJSONMixin):
 
 
 @dataclass
-class PolicyRuleMatch(DataClassORJSONMixin):
+class PolicyRuleMatch(_LenientModel):
     """Object holding a policy file rule that applies to a resource."""
 
     users: list[str] = field(default_factory=list)
@@ -564,49 +557,19 @@ class PolicyRuleMatch(DataClassORJSONMixin):
         default=None, metadata=field_options(alias="lineNumber")
     )
 
-    @classmethod
-    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Leave out null values, so the defaults apply.
-
-        Args:
-        ----
-            d: The raw API response data.
-
-        Returns:
-        -------
-            The data without null values.
-
-        """
-        return {key: value for key, value in d.items() if value is not None}
-
 
 @dataclass
-class PolicyRulePreview(DataClassORJSONMixin):
+class PolicyRulePreview(_LenientModel):
     """Object holding the policy file rules that apply to a resource."""
 
     preview_type: str = field(metadata=field_options(alias="type"))
     preview_for: str = field(metadata=field_options(alias="previewFor"))
     matches: list[PolicyRuleMatch] = field(default_factory=list)
 
-    @classmethod
-    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Leave out null values, so the defaults apply.
-
-        Args:
-        ----
-            d: The raw API response data.
-
-        Returns:
-        -------
-            The data without null values.
-
-        """
-        return {key: value for key, value in d.items() if value is not None}
-
 
 @dataclass
 # pylint: disable-next=too-many-instance-attributes
-class TailscaleWebhook(DataClassORJSONMixin):
+class TailscaleWebhook(_LenientModel):
     """Object holding a webhook of a tailnet."""
 
     endpoint_id: str = field(metadata=field_options(alias="endpointId"))
@@ -624,24 +587,9 @@ class TailscaleWebhook(DataClassORJSONMixin):
     secret: str | None = None
     subscriptions: list[str] = field(default_factory=list)
 
-    @classmethod
-    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Leave out null and empty values, so the defaults apply.
-
-        Args:
-        ----
-            d: The raw API response data.
-
-        Returns:
-        -------
-            The data without null and empty values.
-
-        """
-        return {key: value for key, value in d.items() if value not in (None, "")}
-
 
 @dataclass
-class TailscaleService(DataClassORJSONMixin):
+class TailscaleService(_LenientModel):
     """Object holding a Tailscale Service."""
 
     name: str
@@ -654,21 +602,6 @@ class TailscaleService(DataClassORJSONMixin):
     tags: list[str] = field(default_factory=list)
 
     Config = _RequestBodyConfig
-
-    @classmethod
-    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-        """Leave out null and empty values, so the defaults apply.
-
-        Args:
-        ----
-            d: The raw API response data.
-
-        Returns:
-        -------
-            The data without null and empty values.
-
-        """
-        return {key: value for key, value in d.items() if value not in (None, "")}
 
 
 @dataclass
@@ -689,4 +622,122 @@ class ServiceApproval(DataClassORJSONMixin):
     approved: bool = False
     auto_approved: bool = field(
         default=False, metadata=field_options(alias="autoApproved")
+    )
+
+
+@dataclass
+class InviteUser(_LenientModel):
+    """Object holding a user involved in an invite."""
+
+    user_id: int | str = field(metadata=field_options(alias="id"))
+    display_name: str | None = field(
+        default=None, metadata=field_options(alias="displayName")
+    )
+    login_name: str | None = field(
+        default=None, metadata=field_options(alias="loginName")
+    )
+    profile_pic_url: str | None = field(
+        default=None,
+        metadata=field_options(alias="profilePicUrl"),
+    )
+
+    @classmethod
+    def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
+        """Leave out empty values, and accept both spellings of the picture.
+
+        The API spells it "profilePicUrl" on device invites, and
+        "profilePicURL" when accepting one.
+
+        Args:
+        ----
+            d: The raw API response data.
+
+        Returns:
+        -------
+            The adjusted data ready for deserialization.
+
+        """
+        d = super().__pre_deserialize__(d)
+        if "profilePicURL" in d:
+            d.setdefault("profilePicUrl", d.pop("profilePicURL"))
+        return d
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class DeviceInvite(_LenientModel):
+    """Object holding an invite to share a device."""
+
+    invite_id: str = field(metadata=field_options(alias="id"))
+    accepted: bool = False
+    accepted_by: InviteUser | None = field(
+        default=None, metadata=field_options(alias="acceptedBy")
+    )
+    allow_exit_node: bool = field(
+        default=False, metadata=field_options(alias="allowExitNode")
+    )
+    created: datetime | None = None
+    device_id: int | None = field(
+        default=None, metadata=field_options(alias="deviceId")
+    )
+    email: str | None = None
+    invite_url: str | None = field(
+        default=None, metadata=field_options(alias="inviteUrl")
+    )
+    last_email_sent_at: datetime | None = field(
+        default=None, metadata=field_options(alias="lastEmailSentAt")
+    )
+    multi_use: bool = field(default=False, metadata=field_options(alias="multiUse"))
+    sharer_id: int | None = field(
+        default=None, metadata=field_options(alias="sharerId")
+    )
+    tailnet_id: int | None = field(
+        default=None, metadata=field_options(alias="tailnetId")
+    )
+
+
+@dataclass
+class SharedDevice(_LenientModel):
+    """Object holding a device shared through an accepted invite."""
+
+    device_id: str = field(metadata=field_options(alias="id"))
+    fqdn: str | None = None
+    include_exit_node: bool = field(
+        default=False, metadata=field_options(alias="includeExitNode")
+    )
+    ipv4: str | None = None
+    ipv6: str | None = None
+    name: str | None = None
+    os: str | None = None
+
+
+@dataclass
+class AcceptedDeviceInvite(_LenientModel):
+    """Object holding the result of accepting an invite to share a device."""
+
+    device: SharedDevice
+    accepted_by: InviteUser | None = field(
+        default=None, metadata=field_options(alias="acceptedBy")
+    )
+    sharer: InviteUser | None = None
+
+
+@dataclass
+class UserInvite(_LenientModel):
+    """Object holding an invite for a user to join the tailnet."""
+
+    invite_id: str = field(metadata=field_options(alias="id"))
+    role: str
+    email: str | None = None
+    invite_url: str | None = field(
+        default=None, metadata=field_options(alias="inviteUrl")
+    )
+    inviter_id: int | None = field(
+        default=None, metadata=field_options(alias="inviterId")
+    )
+    last_email_sent_at: datetime | None = field(
+        default=None, metadata=field_options(alias="lastEmailSentAt")
+    )
+    tailnet_id: int | None = field(
+        default=None, metadata=field_options(alias="tailnetId")
     )

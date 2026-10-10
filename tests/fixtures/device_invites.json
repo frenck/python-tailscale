@@ -1,0 +1,33 @@
+[
+  {
+    "id": "12346",
+    "created": "2026-05-01T09:00:00Z",
+    "tailnetId": 59954,
+    "deviceId": 11055,
+    "sharerId": 22011,
+    "multiUse": true,
+    "allowExitNode": true,
+    "email": "",
+    "lastEmailSentAt": null,
+    "inviteUrl": "https://login.tailscale.com/admin/invite/abcdef",
+    "accepted": true,
+    "acceptedBy": {
+      "id": 33223,
+      "loginName": "bob@example.com",
+      "profilePicUrl": ""
+    }
+  },
+  {
+    "id": "12347",
+    "created": "2026-05-02T09:00:00Z",
+    "tailnetId": 59954,
+    "deviceId": 11055,
+    "sharerId": 22011,
+    "multiUse": false,
+    "allowExitNode": false,
+    "email": "carol@example.com",
+    "lastEmailSentAt": "2026-05-02T09:00:01Z",
+    "inviteUrl": "https://login.tailscale.com/admin/invite/ghijkl",
+    "accepted": false
+  }
+]
