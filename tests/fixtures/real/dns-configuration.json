@@ -1,0 +1,12 @@
+{
+  "nameservers": [
+    {
+      "address": "203.0.113.50"
+    }
+  ],
+  "searchPaths": ["example20.com"],
+  "preferences": {
+    "overrideLocalDNS": true,
+    "magicDNS": true
+  }
+}

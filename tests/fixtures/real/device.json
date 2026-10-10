@@ -1,0 +1,42 @@
+{
+  "addresses": ["100.64.0.1", "fd7a:115c:a1e0::1"],
+  "id": "a6c89dbf97fd0e967",
+  "nodeId": "nbbabe54da8CNTRL",
+  "user": "user1@example.com",
+  "oauthClientId": "",
+  "name": "device2.example.ts.net",
+  "hostname": "hostname-29",
+  "clientVersion": "1.20.4-t8c6cb1cea-g2accf24a5",
+  "updateAvailable": true,
+  "os": "macOS",
+  "created": "2018-12-03T18:49:02Z",
+  "connectedToControl": false,
+  "lastSeen": "2019-06-19T17:07:49Z",
+  "expires": "2019-06-01T18:50:29Z",
+  "keyExpiryDisabled": true,
+  "authorized": true,
+  "isExternal": false,
+  "machineKey": "mkey:cff66fbaacd1fee27fbc2ffc01840e9423a5a131e73b0ec3067465861bbaccb1",
+  "nodeKey": "nodekey:693bc4faa6ce734e652f07722ac935fdd4d15645174249078c30771b40924d90",
+  "tailnetLockKey": "",
+  "sshEnabled": false,
+  "blocksIncomingConnections": false,
+  "enabledRoutes": [],
+  "advertisedRoutes": [],
+  "clientConnectivity": {
+    "endpoints": ["203.0.113.2:41641"],
+    "mappingVariesByDestIP": null,
+    "latency": {},
+    "clientSupports": {
+      "hairPinning": null,
+      "ipv6": false,
+      "pcp": false,
+      "pmp": false,
+      "udp": false,
+      "upnp": false
+    }
+  },
+  "tailnetLockError": "",
+  "distro": {},
+  "postureStatus": {}
+}

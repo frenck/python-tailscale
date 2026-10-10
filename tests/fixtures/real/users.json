@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": "u1fd9945c13CNTRL",
+      "displayName": "displayName-1",
+      "loginName": "user1@example.com",
+      "profilePicUrl": "https://example.com/2",
+      "tailnetId": "8ad9ac03131579a80",
+      "created": "2018-11-23T08:36:50.562154543Z",
+      "type": "member",
+      "role": "owner",
+      "status": "active",
+      "deviceCount": 18,
+      "lastSeen": "2024-01-14T11:37:18.63518212Z",
+      "currentlyConnected": true
+    }
+  ]
+}

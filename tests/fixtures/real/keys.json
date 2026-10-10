@@ -1,0 +1,14 @@
+{
+  "keys": [
+    {
+      "id": "k5cc77116bbCNTRL",
+      "keyType": "api",
+      "expirySeconds": 7776000,
+      "created": "2024-01-13T18:39:49Z",
+      "expires": "2024-04-12T18:39:49Z",
+      "scopes": ["all", "all:read"],
+      "description": "description-6",
+      "userId": "u1fd9945c13CNTRL"
+    }
+  ]
+}
