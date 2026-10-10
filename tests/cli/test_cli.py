@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -22,19 +22,29 @@ from tailscale.exceptions import (
     TailscalePermissionError,
 )
 from tailscale.models import (
+    AuditLog,
+    AuditLogActor,
+    AuditLogTarget,
     Device,
     DeviceRoutes,
     Devices,
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    PolicyFile,
+    PolicyFileValidation,
+    PolicyTestResult,
     TailnetSettings,
     TailscaleKey,
+    TailscaleService,
     TailscaleUser,
+    TailscaleWebhook,
 )
 from tests.conftest import FIXTURES_DIR
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from syrupy.assertion import SnapshotAssertion
 
 
@@ -556,6 +566,194 @@ def test_settings_route_selection_command(
     mock_client.update_tailnet_settings.assert_called_once_with(
         route_selection="regional-routing",
     )
+
+
+# --- policy, webhook, Service, and audit log commands ---
+
+
+def test_policy_show_command(runner: CliRunner) -> None:
+    """Policy show command prints the policy file as HuJSON."""
+    mock_client = _mock_tailscale()
+    mock_client.policy_file.return_value = PolicyFile(
+        policy='// Comment\n{"acls": []}\n', etag='"e1234"'
+    )
+    exit_code, output = _invoke(
+        runner, ["policy", "show", "--api-key", "tskey-api-test"], mock_client
+    )
+    assert exit_code == 0
+    assert output == '// Comment\n{"acls": []}\n\n'
+
+
+def test_policy_show_etag_command(runner: CliRunner) -> None:
+    """Policy show command prints the ETag with --etag."""
+    mock_client = _mock_tailscale()
+    mock_client.policy_file.return_value = PolicyFile(policy="{}", etag='"e1234"')
+    exit_code, output = _invoke(
+        runner,
+        ["policy", "show", "--etag", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == '"e1234"\n'
+
+
+def test_policy_validate_command(
+    runner: CliRunner,
+    tmp_path: Path,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Policy validate command says when the policy file is valid."""
+    policy_path = tmp_path / "policy.hujson"
+    policy_path.write_text('{"acls": []}')
+    mock_client = _mock_tailscale()
+    mock_client.validate_policy_file.return_value = PolicyFileValidation()
+    exit_code, output = _invoke(
+        runner,
+        ["policy", "validate", str(policy_path), "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.validate_policy_file.assert_called_once_with('{"acls": []}')
+
+
+def test_policy_validate_command_invalid(
+    runner: CliRunner,
+    tmp_path: Path,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Policy validate command shows why the policy file is not valid."""
+    policy_path = tmp_path / "policy.hujson"
+    policy_path.write_text('{"acls": []}')
+    mock_client = _mock_tailscale()
+    mock_client.validate_policy_file.return_value = PolicyFileValidation(
+        message="test(s) failed",
+        data=[
+            PolicyTestResult(
+                user="alice@example.com",
+                errors=['address "100.64.0.1:22": want: Drop, got: Accept'],
+            )
+        ],
+    )
+    exit_code, output = _invoke(
+        runner,
+        ["policy", "validate", str(policy_path), "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 1
+    assert output == snapshot
+
+
+def test_policy_set_command(
+    runner: CliRunner,
+    tmp_path: Path,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Policy set command sets the policy file, guarded by the ETag."""
+    policy_path = tmp_path / "policy.hujson"
+    policy_path.write_text('{"acls": []}')
+    mock_client = _mock_tailscale()
+    mock_client.set_policy_file.return_value = PolicyFile(
+        policy='{"acls": []}', etag='"e5678"'
+    )
+    exit_code, output = _invoke(
+        runner,
+        [
+            "policy",
+            "set",
+            str(policy_path),
+            "--etag",
+            '"e1234"',
+            "--api-key",
+            "tskey-api-test",
+        ],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+    mock_client.set_policy_file.assert_called_once_with('{"acls": []}', etag='"e1234"')
+
+
+def test_webhooks_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Webhooks command renders a table of all webhooks."""
+    mock_client = _mock_tailscale()
+    mock_client.webhooks.return_value = [
+        TailscaleWebhook(
+            endpoint_id="e1234CNTRL",
+            endpoint_url="https://example.com/tailscale",
+            subscriptions=["nodeCreated", "nodeDeleted"],
+        ),
+        TailscaleWebhook(
+            endpoint_id="e5678CNTRL",
+            endpoint_url="https://hooks.slack.com/services/T000",
+            provider_type="slack",
+            subscriptions=["userNeedsApproval"],
+        ),
+    ]
+    exit_code, output = _invoke(
+        runner, ["webhooks", "--api-key", "tskey-api-test"], mock_client
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_services_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Services command renders a table of all Services."""
+    mock_client = _mock_tailscale()
+    mock_client.services.return_value = [
+        TailscaleService(
+            name="svc:web",
+            addrs=["100.100.100.100"],
+            ports=["tcp:443"],
+            tags=["tag:web"],
+            comment="The website",
+        ),
+        TailscaleService(name="svc:bare"),
+    ]
+    exit_code, output = _invoke(
+        runner, ["services", "--api-key", "tskey-api-test"], mock_client
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
+def test_audit_logs_command(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Audit logs command renders a table of the configuration changes."""
+    mock_client = _mock_tailscale()
+    mock_client.configuration_audit_logs.return_value = [
+        AuditLog(
+            actor=AuditLogActor(actor_id="u1", login_name="alice@example.com"),
+            event_time=datetime(2026, 10, 9, 18, 39, 35, tzinfo=UTC),
+            target=AuditLogTarget(
+                target_type="NODE", name="server", property="MACHINE_NAME"
+            ),
+            action="UPDATE",
+        ),
+        AuditLog(
+            actor=AuditLogActor(actor_id="nDEVICE123"),
+            event_time=datetime(2026, 10, 9, 19, 0, tzinfo=UTC),
+            target=AuditLogTarget(target_type="ADMIN_CONSOLE"),
+        ),
+    ]
+    exit_code, output = _invoke(
+        runner,
+        ["audit-logs", "--hours", "2", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+    call = mock_client.configuration_audit_logs.call_args
+    assert call.kwargs["end"] - call.kwargs["start"] == timedelta(hours=2)
 
 
 # --- action commands ---

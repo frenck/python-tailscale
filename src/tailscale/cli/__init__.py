@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -1069,16 +1070,201 @@ async def settings_posture_identity_command(
     console.print(f"[green]Posture identity collection {state}.[/green]")
 
 
+LogHours = Annotated[
+    int,
+    typer.Option("--hours", help="How many hours of logs to show", min=1),
+]
+
+policy = AsyncTyper(
+    help="Show, validate, and set the policy file of the tailnet.",
+    no_args_is_help=True,
+)
+cli.add_typer(policy, name="policy")
+
+PolicyPath = Annotated[
+    Path,
+    typer.Argument(
+        help="Path to a policy file, as HuJSON or JSON",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+    ),
+]
+
+
+@policy.command("show")
+async def policy_show_command(
+    etag: Annotated[
+        bool,
+        typer.Option("--etag", help="Show the ETag instead of the policy file"),
+    ] = False,
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Show the policy file, with its comments, as HuJSON."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        policy_file = await client.policy_file()
+    typer.echo(policy_file.etag if etag else policy_file.policy)
+
+
+@policy.command("validate")
+async def policy_validate_command(
+    path: PolicyPath,
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Validate a policy file, and run its tests, without setting it."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        validation = await client.validate_policy_file(path.read_text(encoding="utf-8"))
+
+    if validation.valid:
+        console.print("[green]The policy file is valid.[/green]")
+        return
+
+    console.print(f"[red]The policy file is not valid: {validation.message}[/red]")
+    for result in validation.data:
+        for error in result.errors:
+            console.print(f"  [bold]{result.user}[/bold]: {error}")
+    sys.exit(1)
+
+
+@policy.command("set")
+async def policy_set_command(
+    path: PolicyPath,
+    etag: Annotated[
+        str | None,
+        typer.Option(
+            "--etag",
+            help=(
+                "Only set it when the policy file is still at this ETag, "
+                "from policy show --etag"
+            ),
+        ),
+    ] = None,
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Set the policy file of the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        policy_file = await client.set_policy_file(
+            path.read_text(encoding="utf-8"), etag=etag
+        )
+    console.print(f"[green]Policy file set (ETag {policy_file.etag}).[/green]")
+
+
+@cli.command("webhooks")
+async def webhooks_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """List all webhooks in the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        webhooks = await client.webhooks()
+
+    table = Table(title="Webhooks", show_header=True, border_style="dim")
+    table.add_column("Endpoint ID", style="cyan")
+    table.add_column("URL", style="bold")
+    table.add_column("Provider")
+    table.add_column("Events")
+
+    for webhook in webhooks:
+        table.add_row(
+            webhook.endpoint_id,
+            webhook.endpoint_url,
+            webhook.provider_type or "[dim]-[/dim]",
+            ", ".join(webhook.subscriptions),
+        )
+
+    console.print(table)
+
+
+@cli.command("services")
+async def services_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """List all Services in the tailnet."""
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        services = await client.services()
+
+    table = Table(title="Services", show_header=True, border_style="dim")
+    table.add_column("Name", style="cyan")
+    table.add_column("Addresses")
+    table.add_column("Ports")
+    table.add_column("Tags")
+    table.add_column("Comment")
+
+    for service in services:
+        table.add_row(
+            service.name,
+            ", ".join(service.addrs) or "[dim]-[/dim]",
+            ", ".join(service.ports) or "[dim]-[/dim]",
+            ", ".join(service.tags) or "[dim]-[/dim]",
+            service.comment or "",
+        )
+
+    console.print(table)
+
+
+@cli.command("audit-logs")
+async def audit_logs_command(
+    hours: LogHours = 24,
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """List the configuration changes of the last hours."""
+    end = datetime.now(UTC)
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        logs = await client.configuration_audit_logs(
+            start=end - timedelta(hours=hours), end=end
+        )
+
+    table = Table(title="Audit logs", show_header=True, border_style="dim")
+    table.add_column("Time", style="cyan")
+    table.add_column("Actor", style="bold")
+    table.add_column("Action")
+    table.add_column("Target")
+    table.add_column("Property")
+
+    for log in logs:
+        actor = log.actor.login_name or log.actor.display_name or log.actor.actor_id
+        target = " ".join(
+            part for part in (log.target.target_type, log.target.name) if part
+        )
+        table.add_row(
+            log.event_time.isoformat(timespec="seconds"),
+            actor,
+            log.action or "",
+            target,
+            log.target.property or "",
+        )
+
+    console.print(table)
+
+
 dump = AsyncTyper(
     help="Dump raw API responses as JSON (useful for debugging/fixtures).",
     no_args_is_help=True,
 )
 cli.add_typer(dump, name="dump")
-
-LogHours = Annotated[
-    int,
-    typer.Option("--hours", help="How many hours of logs to dump", min=1),
-]
 
 
 async def _dump(  # pylint: disable=too-many-arguments

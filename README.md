@@ -107,6 +107,18 @@ tailscale-api settings external-tailnets admin
 tailscale-api settings https --enable
 tailscale-api settings route-selection regional-routing
 
+# Edit the policy file (HuJSON, comments included). The ETag makes sure it is
+# not set when someone else changed it in the meantime.
+ETAG="$(tailscale-api policy show --etag)"
+tailscale-api policy show > policy.hujson
+tailscale-api policy validate policy.hujson
+tailscale-api policy set policy.hujson --etag "$ETAG"
+
+# List webhooks and Services, and the configuration changes of the last day
+tailscale-api webhooks
+tailscale-api services
+tailscale-api audit-logs --hours 24
+
 # List and manage auth keys
 tailscale-api keys
 tailscale-api delete-key k1234567890abcdef
