@@ -28,7 +28,6 @@ from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    ParamSpec,
     TypeVar,
 )
 
@@ -36,12 +35,10 @@ from typer import Exit
 from typer import Typer as SyncTyper
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine
-
     from typer.core import TyperCommand, TyperGroup
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
+# A callback or command, which can be a coroutine function or a plain one.
+_F = TypeVar("_F", bound=Callable[..., Any])
 
 HandleErrorFunc = Callable[[Any], None]
 
@@ -71,10 +68,7 @@ class AsyncTyper(SyncTyper):
         hidden: bool = False,
         deprecated: bool = False,
         rich_help_panel: str | None = None,
-    ) -> Callable[
-        [Callable[_P, Coroutine[Any, Any, _R]]],
-        Callable[_P, Coroutine[Any, Any, _R]],
-    ]:
+    ) -> Callable[[_F], _F]:
         """Create a new typer callback."""
         super_callback = super().callback(
             cls=cls,
@@ -95,12 +89,12 @@ class AsyncTyper(SyncTyper):
         )
 
         def decorator(
-            func: Callable[_P, Coroutine[Any, Any, _R]],
-        ) -> Callable[_P, Coroutine[Any, Any, _R]]:
+            func: _F,
+        ) -> _F:
             if inspect.iscoroutinefunction(func):
 
                 @wraps(func)
-                def sync_func(*_args: _P.args, **_kwargs: _P.kwargs) -> _R:
+                def sync_func(*_args: Any, **_kwargs: Any) -> Any:
                     return asyncio.run(func(*_args, **_kwargs))
 
                 super_callback(sync_func)
@@ -129,10 +123,7 @@ class AsyncTyper(SyncTyper):
         deprecated: bool = False,
         # Rich settings
         rich_help_panel: str | None = None,
-    ) -> Callable[
-        [Callable[_P, Coroutine[Any, Any, _R]]],
-        Callable[_P, Coroutine[Any, Any, _R]],
-    ]:
+    ) -> Callable[[_F], _F]:
         """Create a new typer command."""
         super_command = super().command(
             name,
@@ -150,12 +141,12 @@ class AsyncTyper(SyncTyper):
         )
 
         def decorator(
-            func: Callable[_P, Coroutine[Any, Any, _R]],
-        ) -> Callable[_P, Coroutine[Any, Any, _R]]:
+            func: _F,
+        ) -> _F:
             if inspect.iscoroutinefunction(func):
 
                 @wraps(func)
-                def sync_func(*_args: _P.args, **_kwargs: _P.kwargs) -> _R:
+                def sync_func(*_args: Any, **_kwargs: Any) -> Any:
                     return asyncio.run(func(*_args, **_kwargs))
 
                 super_command(sync_func)

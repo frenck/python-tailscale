@@ -75,7 +75,7 @@ class Tailscale:
     oauth_client_id: str | None = None
     oauth_client_secret: str | None = field(default=None, repr=False)
 
-    request_timeout: int = 8
+    request_timeout: float = 8
     session: ClientSession | None = None
     token_storage: TokenStorage | None = field(default=None, repr=False)
 
