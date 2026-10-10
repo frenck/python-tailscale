@@ -43,6 +43,7 @@ from .models import (
     PolicyFile,
     PolicyFileValidation,
     PolicyRulePreview,
+    PostureIntegration,
     ServiceApproval,
     ServiceHost,
     TailnetContacts,
@@ -2061,6 +2062,123 @@ class Tailscale:
         raw: list[dict[str, Any]] = json.loads(data).get("logs") or []
         return [NetworkFlowLog.from_dict(log) for log in raw]
 
+    async def posture_integrations(self) -> list[PostureIntegration]:
+        """Get the integrations with device posture providers.
+
+        Returns
+        -------
+            A list of posture integrations.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/posture/integrations")
+        raw: list[dict[str, Any]] = json.loads(data).get("integrations") or []
+        return [PostureIntegration.from_dict(integration) for integration in raw]
+
+    async def posture_integration(self, integration_id: str) -> PostureIntegration:
+        """Get a single integration with a device posture provider.
+
+        Args:
+        ----
+            integration_id: The ID of the integration.
+
+        Returns:
+        -------
+            The posture integration.
+
+        """
+        data = await self._request(f"posture/integrations/{integration_id}")
+        return PostureIntegration.from_json(data)
+
+    async def create_posture_integration(  # pylint: disable=too-many-arguments
+        self,
+        *,
+        provider: str,
+        client_secret: str,
+        client_id: str | None = None,
+        cloud_id: str | None = None,
+        tenant_id: str | None = None,
+    ) -> PostureIntegration:
+        """Create an integration with a device posture provider.
+
+        Args:
+        ----
+            provider: The provider, like "falcon", "intune", or "kandji".
+            client_secret: The secret to authenticate with the provider.
+            client_id: The ID of the client at the provider.
+            cloud_id: Which cloud of the provider to integrate with.
+            tenant_id: The Microsoft Intune directory (tenant) ID.
+
+        Returns:
+        -------
+            The created posture integration.
+
+        """
+        payload = _posture_integration_payload(
+            client_secret=client_secret,
+            client_id=client_id,
+            cloud_id=cloud_id,
+            tenant_id=tenant_id,
+        )
+        payload["provider"] = provider
+
+        data = await self._request(
+            f"tailnet/{self.tailnet}/posture/integrations",
+            method=METH_POST,
+            data=payload,
+        )
+        return PostureIntegration.from_json(data)
+
+    async def update_posture_integration(  # pylint: disable=too-many-arguments
+        self,
+        integration_id: str,
+        *,
+        client_secret: str | None = None,
+        client_id: str | None = None,
+        cloud_id: str | None = None,
+        tenant_id: str | None = None,
+    ) -> PostureIntegration:
+        """Update an integration with a device posture provider.
+
+        Only the given values are updated; leave out the client secret to
+        keep the current one.
+
+        Args:
+        ----
+            integration_id: The ID of the integration.
+            client_secret: The new secret to authenticate with the provider.
+            client_id: The ID of the client at the provider.
+            cloud_id: Which cloud of the provider to integrate with.
+            tenant_id: The Microsoft Intune directory (tenant) ID.
+
+        Returns:
+        -------
+            The updated posture integration.
+
+        """
+        data = await self._request(
+            f"posture/integrations/{integration_id}",
+            method=METH_PATCH,
+            data=_posture_integration_payload(
+                client_secret=client_secret,
+                client_id=client_id,
+                cloud_id=cloud_id,
+                tenant_id=tenant_id,
+            ),
+        )
+        return PostureIntegration.from_json(data)
+
+    async def delete_posture_integration(self, integration_id: str) -> None:
+        """Delete an integration with a device posture provider.
+
+        Args:
+        ----
+            integration_id: The ID of the integration to delete.
+
+        """
+        await self._request(
+            f"posture/integrations/{integration_id}", method=METH_DELETE
+        )
+
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""
         if self.session and self._close_session:
@@ -2175,3 +2293,28 @@ def _oauth_app_payload(
     if allowed_node_attributes is not None:
         payload["allowedNodeAttributes"] = allowed_node_attributes
     return payload
+
+
+def _posture_integration_payload(
+    *,
+    client_secret: str | None,
+    client_id: str | None,
+    cloud_id: str | None,
+    tenant_id: str | None,
+) -> dict[str, Any]:
+    """Build the payload fields of a posture integration.
+
+    Fields that are None are left out, so the API keeps their current value.
+
+    Returns
+    -------
+        The payload fields.
+
+    """
+    fields: dict[str, Any] = {
+        "clientSecret": client_secret,
+        "clientId": client_id,
+        "cloudId": cloud_id,
+        "tenantId": tenant_id,
+    }
+    return {name: value for name, value in fields.items() if value is not None}

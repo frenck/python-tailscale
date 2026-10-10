@@ -1054,3 +1054,41 @@ class NetworkFlowLog(_LenientModel):
     virtual_traffic: list[NetworkTraffic] = field(
         default_factory=list, metadata=field_options(alias="virtualTraffic")
     )
+
+
+@dataclass
+class PostureIntegrationStatus(_LenientModel):
+    """Object holding the last synchronization of a posture integration."""
+
+    error: str | None = None
+    last_sync: datetime | None = field(
+        default=None, metadata=field_options(alias="lastSync")
+    )
+    matched_count: int | None = field(
+        default=None, metadata=field_options(alias="matchedCount")
+    )
+    possible_matched_count: int | None = field(
+        default=None, metadata=field_options(alias="possibleMatchedCount")
+    )
+    provider_host_count: int | None = field(
+        default=None, metadata=field_options(alias="providerHostCount")
+    )
+
+
+@dataclass
+class PostureIntegration(_LenientModel):
+    """Object holding an integration with a device posture provider."""
+
+    integration_id: str = field(metadata=field_options(alias="id"))
+    provider: str
+    client_id: str | None = field(
+        default=None, metadata=field_options(alias="clientId")
+    )
+    cloud_id: str | None = field(default=None, metadata=field_options(alias="cloudId"))
+    config_updated: datetime | None = field(
+        default=None, metadata=field_options(alias="configUpdated")
+    )
+    status: PostureIntegrationStatus | None = None
+    tenant_id: str | None = field(
+        default=None, metadata=field_options(alias="tenantId")
+    )
