@@ -134,6 +134,26 @@ async def test_timeout(
         await tailscale_client._request("test")
 
 
+async def test_timeout_stops_a_hanging_request(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test a request that does not finish in time is stopped."""
+
+    async def hang(*_args: Any, **_kwargs: Any) -> CallbackResult:
+        await asyncio.sleep(10)
+        return CallbackResult(status=200, body="{}")
+
+    responses.get(f"{URL}/test", callback=hang)
+    tailscale_client.request_timeout = 0.05
+
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    with pytest.raises(TailscaleConnectionError, match="Timeout"):
+        await tailscale_client._request("test")
+    assert loop.time() - started < 1
+
+
 async def test_http_error404(
     responses: aioresponses,
     tailscale_client: Tailscale,
@@ -606,20 +626,17 @@ async def test_set_device_routes(
     responses: aioresponses,
     tailscale_client: Tailscale,
 ) -> None:
-    """Test setting device routes."""
+    """Test setting device routes replaces the enabled routes."""
     responses.post(
         f"{URL}/device/12345/routes",
         status=200,
-        body=load_fixture("device_routes.json"),
+        body='{"advertisedRoutes": ["10.200.0.0/16", "192.168.50.0/24"],'
+        '"enabledRoutes": ["10.200.0.0/16"]}',
         content_type="application/json",
     )
     routes = await tailscale_client.set_device_routes("12345", routes=["10.200.0.0/16"])
-    assert routes.advertised_routes == [
-        "10.200.0.0/16",
-        "192.168.50.0/24",
-        "172.16.0.0/12",
-    ]
-    assert routes.enabled_routes == ["10.200.0.0/16", "192.168.50.0/24"]
+    assert routes.advertised_routes == ["10.200.0.0/16", "192.168.50.0/24"]
+    assert routes.enabled_routes == ["10.200.0.0/16"]
 
 
 async def test_set_device_ipv4_address(
@@ -634,6 +651,132 @@ async def test_set_device_ipv4_address(
         content_type="application/json",
     )
     await tailscale_client.set_device_ipv4_address("12345", ipv4_address="100.64.0.1")
+
+
+@pytest.mark.parametrize(
+    ("method", "args", "kwargs", "http_method", "path", "payload", "response"),
+    [
+        ("delete_device", ["n1"], {}, "DELETE", "device/n1", None, ""),
+        (
+            "authorize_device",
+            ["n1"],
+            {"authorized": True},
+            "POST",
+            "device/n1/authorized",
+            {"authorized": True},
+            "",
+        ),
+        (
+            "authorize_device",
+            ["n1"],
+            {"authorized": False},
+            "POST",
+            "device/n1/authorized",
+            {"authorized": False},
+            "",
+        ),
+        ("expire_device_key", ["n1"], {}, "POST", "device/n1/expire", None, ""),
+        (
+            "set_device_key_expiry",
+            ["n1"],
+            {"key_expiry_disabled": False},
+            "POST",
+            "device/n1/key",
+            {"keyExpiryDisabled": False},
+            "",
+        ),
+        (
+            "rename_device",
+            ["n1"],
+            {"name": "server"},
+            "POST",
+            "device/n1/name",
+            {"name": "server"},
+            "",
+        ),
+        (
+            "set_device_tags",
+            ["n1"],
+            {"tags": []},
+            "POST",
+            "device/n1/tags",
+            {"tags": []},
+            "",
+        ),
+        (
+            "set_device_routes",
+            ["n1"],
+            {"routes": []},
+            "POST",
+            "device/n1/routes",
+            {"routes": []},
+            '{"advertisedRoutes": [], "enabledRoutes": []}',
+        ),
+        (
+            "set_device_ipv4_address",
+            ["n1"],
+            {"ipv4_address": "100.64.0.1"},
+            "POST",
+            "device/n1/ip",
+            {"ipv4": "100.64.0.1"},
+            "",
+        ),
+        (
+            "set_dns_nameservers",
+            [],
+            {"dns": []},
+            "POST",
+            "tailnet/frenck/dns/nameservers",
+            {"dns": []},
+            '{"dns": []}',
+        ),
+        (
+            "set_dns_preferences",
+            [],
+            {"magic_dns": False},
+            "POST",
+            "tailnet/frenck/dns/preferences",
+            {"magicDNS": False},
+            '{"magicDNS": false}',
+        ),
+        (
+            "set_dns_search_paths",
+            [],
+            {"search_paths": ["corp.example.com"]},
+            "POST",
+            "tailnet/frenck/dns/searchpaths",
+            {"searchPaths": ["corp.example.com"]},
+            '{"searchPaths": ["corp.example.com"]}',
+        ),
+    ],
+)
+async def test_request_payloads(  # noqa: PLR0913  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    method: str,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    http_method: str,
+    path: str,
+    payload: Any,
+    response: str,
+) -> None:
+    """Test changes send exactly one request, with exactly the given payload."""
+    responses.add(
+        f"{URL}/{path}",
+        method=http_method,
+        status=200,
+        body=response,
+        content_type="application/json",
+    )
+    await getattr(tailscale_client, method)(*args, **kwargs)
+
+    assert responses.requests
+    ((request_method, request_url), requests), *other = responses.requests.items()
+    assert not other
+    assert (request_method, str(request_url)) == (http_method, f"{URL}/{path}")
+    (request,) = requests
+    assert request.kwargs["json"] == payload
 
 
 # --- DNS tests ---

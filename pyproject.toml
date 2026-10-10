@@ -82,10 +82,6 @@ source = ["tailscale"]
 [tool.coverage.report]
 show_missing = true
 fail_under = 95
-omit = [
-  "src/tailscale/_cli.py",
-  "src/tailscale/cli/*",
-]
 
 [tool.ty.environment]
 python-version = "3.11"

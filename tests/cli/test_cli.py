@@ -10,11 +10,14 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from typer import Exit
 from typer.core import TyperGroup
 from typer.main import get_command
 from typer.testing import CliRunner
 
+from tailscale._cli import main
 from tailscale.cli import cli
+from tailscale.cli.async_typer import AsyncTyper
 from tailscale.exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
@@ -1163,6 +1166,105 @@ def test_missing_auth(
 
 
 # --- error handlers ---
+
+
+@pytest.mark.parametrize(
+    ("error", "title"),
+    [
+        (TailscalePermissionError(403, "not on this plan"), "Permission denied"),
+        (TailscaleAuthenticationError("bad key"), "Authentication error"),
+        (TailscaleConnectionError("unreachable"), "Connection error"),
+        (TailscaleError("something broke"), "Tailscale API error"),
+    ],
+)
+def test_errors_through_the_entry_point(
+    capsys: pytest.CaptureFixture[str],
+    error: TailscaleError,
+    title: str,
+) -> None:
+    """Errors of a command end up at their handler, like when run for real."""
+    mock_client = _mock_tailscale()
+    mock_client._request.side_effect = error  # pylint: disable=protected-access
+    with (
+        patch("tailscale.cli._build_client", return_value=mock_client),
+        pytest.raises(SystemExit) as exc_info,
+    ):
+        cli(["dump", "settings", "--api-key", "tskey-api-test"])
+
+    assert exc_info.value.code == 1
+    assert title in capsys.readouterr().out
+
+
+def test_unhandled_errors_through_the_entry_point() -> None:
+    """Errors without a handler are raised as they are."""
+    mock_client = _mock_tailscale()
+    mock_client._request.side_effect = RuntimeError("boom")  # pylint: disable=protected-access
+    with (
+        patch("tailscale.cli._build_client", return_value=mock_client),
+        pytest.raises(RuntimeError, match="boom"),
+    ):
+        cli(["dump", "settings", "--api-key", "tskey-api-test"])
+
+
+def test_console_script_runs_the_cli() -> None:
+    """The console script runs the CLI."""
+    with patch("tailscale.cli.cli") as mock_cli:
+        main()
+    mock_cli.assert_called_once_with()
+
+
+def test_async_callback(runner: CliRunner) -> None:
+    """An async callback of an AsyncTyper app runs, like an async command."""
+    app = AsyncTyper()
+    called: list[str] = []
+
+    @app.callback(invoke_without_command=True)
+    async def callback() -> None:
+        called.append("callback")
+
+    @app.command()
+    async def hello() -> None:
+        called.append("hello")
+
+    result = runner.invoke(app, ["hello"])
+    assert result.exit_code == 0, result.output
+    assert called == ["callback", "hello"]
+
+
+def test_sync_callback_and_command(runner: CliRunner) -> None:
+    """Plain functions keep working as callback and command."""
+    app = AsyncTyper()
+    called: list[str] = []
+
+    @app.callback()
+    def callback() -> None:
+        called.append("callback")
+
+    @app.command()
+    def hello() -> None:
+        called.append("hello")
+
+    result = runner.invoke(app, ["hello"])
+    assert result.exit_code == 0, result.output
+    assert called == ["callback", "hello"]
+
+
+def test_exit_through_the_entry_point() -> None:
+    """A typer.Exit is not turned into an error."""
+    app = AsyncTyper()
+    app.error_handler(Exception)(lambda _: pytest.fail("handler called"))
+
+    @app.command()
+    def stop() -> None:
+        raise Exit(code=3)
+
+    @app.command()
+    def other() -> None:
+        """Make this a group, so commands are called by name."""
+
+    with pytest.raises(SystemExit) as exc_info:
+        app(["stop"])
+    assert exc_info.value.code == 3
 
 
 def test_authentication_error_handler(
