@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -18,6 +19,7 @@ from tailscale.exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
     TailscaleError,
+    TailscalePermissionError,
 )
 from tailscale.models import (
     Device,
@@ -960,6 +962,30 @@ def test_authentication_error_handler(
     assert capsys.readouterr().out == snapshot
 
 
+def test_permission_error_handler(
+    capsys: pytest.CaptureFixture[str],
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Permission error handler prints the reason of the API and exits with 1."""
+    handler = cli.error_handlers[TailscalePermissionError]
+    with pytest.raises(SystemExit) as exc_info:
+        handler(
+            TailscalePermissionError(
+                403, "feature not available on current billing plan"
+            )
+        )
+    assert exc_info.value.code == 1
+    assert capsys.readouterr().out == snapshot
+
+
+def test_permission_error_handler_is_used_first() -> None:
+    """A permission error does not get the authentication error handler."""
+    handlers = list(cli.error_handlers)
+    assert handlers.index(TailscalePermissionError) < handlers.index(
+        TailscaleAuthenticationError
+    )
+
+
 def test_connection_error_handler(
     capsys: pytest.CaptureFixture[str],
     snapshot: SnapshotAssertion,
@@ -992,3 +1018,89 @@ def test_console_script() -> None:
         if entry_point.value.startswith("tailscale.")
     }
     assert scripts == {"tailscale-api": "tailscale._cli:main"}
+
+
+@pytest.mark.parametrize(
+    ("args", "uri"),
+    [
+        (["devices"], "tailnet/-/devices?fields=all"),
+        (["device", "n1"], "device/n1?fields=all"),
+        (["routes", "n1"], "device/n1/routes"),
+        (["device-posture-attributes", "n1"], "device/n1/attributes"),
+        (["device-invites", "n1"], "device/n1/device-invites"),
+        (["dns-configuration"], "tailnet/-/dns/configuration"),
+        (["dns-nameservers"], "tailnet/-/dns/nameservers"),
+        (["dns-preferences"], "tailnet/-/dns/preferences"),
+        (["dns-search-paths"], "tailnet/-/dns/searchpaths"),
+        (["dns-split"], "tailnet/-/dns/split-dns"),
+        (["users"], "tailnet/-/users?type=all"),
+        (["user", "u1"], "users/u1"),
+        (["user-invites"], "tailnet/-/user-invites"),
+        (["keys"], "tailnet/-/keys?all=true"),
+        (["key", "k1"], "tailnet/-/keys/k1"),
+        (["settings"], "tailnet/-/settings"),
+        (["policy"], "tailnet/-/acl"),
+        (["webhooks"], "tailnet/-/webhooks"),
+        (["services"], "tailnet/-/services"),
+        (["service", "svc:web"], "tailnet/-/services/svc:web"),
+        (["service-hosts", "svc:web"], "tailnet/-/services/svc:web/devices"),
+        (["posture-integrations"], "tailnet/-/posture/integrations"),
+        (["oauth-apps"], "tailnet/-/oauth-apps"),
+        (["contacts"], "tailnet/-/contacts"),
+        (["organization-tailnets"], "organizations/-/tailnets"),
+        (["log-stream", "network"], "tailnet/-/logging/network/stream"),
+        (
+            ["log-stream-status", "configuration"],
+            "tailnet/-/logging/configuration/stream/status",
+        ),
+    ],
+)
+def test_dump_commands(
+    runner: CliRunner,
+    args: list[str],
+    uri: str,
+) -> None:
+    """Dump commands request their endpoint and print its raw JSON."""
+    mock_client = _mock_tailscale(raw_response='{"answer": [42]}')
+    exit_code, output = _invoke(
+        runner,
+        ["dump", *args, "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == {"answer": [42]}
+    mock_client._request.assert_called_once_with(  # pylint: disable=protected-access
+        uri, params=None
+    )
+
+
+@pytest.mark.parametrize(
+    ("command", "uri"),
+    [
+        ("audit-logs", "tailnet/-/logging/configuration"),
+        ("network-logs", "tailnet/-/logging/network"),
+    ],
+)
+def test_dump_log_commands(
+    runner: CliRunner,
+    command: str,
+    uri: str,
+) -> None:
+    """Dump log commands request the given hours of logs."""
+    mock_client = _mock_tailscale(raw_response='{"logs": null}')
+    exit_code, output = _invoke(
+        runner,
+        ["dump", command, "--hours", "2", "--api-key", "tskey-api-test"],
+        mock_client,
+    )
+    assert exit_code == 0
+    assert json.loads(output) == {"logs": None}
+
+    mock_client._request.assert_called_once()  # pylint: disable=protected-access
+    call = mock_client._request.call_args  # pylint: disable=protected-access
+    assert call.args == (uri,)
+    params = call.kwargs["params"]
+    start = datetime.fromisoformat(params["start"])
+    end = datetime.fromisoformat(params["end"])
+    assert end - start == timedelta(hours=2)
+    assert end.tzinfo is not None

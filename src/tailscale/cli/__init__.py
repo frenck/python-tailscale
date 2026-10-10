@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import typer
@@ -15,6 +16,7 @@ from tailscale.exceptions import (
     TailscaleAuthenticationError,
     TailscaleConnectionError,
     TailscaleError,
+    TailscalePermissionError,
 )
 from tailscale.tailscale import Tailscale
 
@@ -59,6 +61,21 @@ OAuthClientSecret = Annotated[
         envvar="TAILSCALE_OAUTH_CLIENT_SECRET",
     ),
 ]
+
+
+# Registered before the authentication error handler, as the first handler that
+# matches is used, and a permission error is an authentication error too.
+@cli.error_handler(TailscalePermissionError)
+def permission_error_handler(err: TailscalePermissionError) -> None:
+    """Handle the API refusing a request the credentials are not allowed."""
+    panel = Panel(
+        f"The Tailscale API refused the request: {err.reason}",
+        expand=False,
+        title="Permission denied",
+        border_style="red bold",
+    )
+    console.print(panel)
+    sys.exit(1)
 
 
 @cli.error_handler(TailscaleAuthenticationError)
@@ -1058,6 +1075,32 @@ dump = AsyncTyper(
 )
 cli.add_typer(dump, name="dump")
 
+LogHours = Annotated[
+    int,
+    typer.Option("--hours", help="How many hours of logs to dump", min=1),
+]
+
+
+async def _dump(  # pylint: disable=too-many-arguments
+    tailnet: str,
+    api_key: str | None,
+    oauth_client_id: str | None,
+    oauth_client_secret: str | None,
+    uri: str,
+    *,
+    params: dict[str, str] | None = None,
+) -> None:
+    """Print the raw JSON response of the Tailscale API for a URI.
+
+    A "{tailnet}" in the URI is replaced by the tailnet in use.
+    """
+    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
+    async with client:
+        data = await client._request(  # noqa: SLF001
+            uri.replace("{tailnet}", client.tailnet), params=params
+        )
+    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+
 
 @dump.command("devices")
 async def dump_devices_command(
@@ -1067,12 +1110,13 @@ async def dump_devices_command(
     oauth_client_secret: OAuthClientSecret = None,
 ) -> None:
     """Dump all devices as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/devices?fields=all"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/devices?fields=all",
+    )
 
 
 @dump.command("device")
@@ -1087,164 +1131,13 @@ async def dump_device_command(
     oauth_client_secret: OAuthClientSecret = None,
 ) -> None:
     """Dump a single device as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"device/{device_id}?fields=all"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("dns-nameservers")
-async def dump_dns_nameservers_command(
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump DNS nameservers as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/dns/nameservers"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("dns-preferences")
-async def dump_dns_preferences_command(
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump DNS preferences as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/dns/preferences"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("dns-search-paths")
-async def dump_dns_search_paths_command(
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump DNS search paths as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/dns/searchpaths"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("dns-split")
-async def dump_dns_split_command(
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump split DNS configuration as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/dns/split-dns"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("users")
-async def dump_users_command(
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump all users as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/users"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("user")
-async def dump_user_command(
-    user_id: Annotated[
-        str,
-        typer.Argument(help="User ID"),
-    ],
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump a single user as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"users/{user_id}"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("keys")
-async def dump_keys_command(
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump all keys as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/keys?all=true"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("key")
-async def dump_key_command(
-    key_id: Annotated[
-        str,
-        typer.Argument(help="Key ID"),
-    ],
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump a single key as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/keys/{key_id}"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
-
-
-@dump.command("settings")
-async def dump_settings_command(
-    tailnet: Tailnet = "-",
-    api_key: ApiKey = None,
-    oauth_client_id: OAuthClientId = None,
-    oauth_client_secret: OAuthClientSecret = None,
-) -> None:
-    """Dump tailnet settings as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"tailnet/{client.tailnet}/settings"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"device/{device_id}?fields=all",
+    )
 
 
 @dump.command("routes")
@@ -1259,9 +1152,492 @@ async def dump_routes_command(
     oauth_client_secret: OAuthClientSecret = None,
 ) -> None:
     """Dump device routes as raw JSON."""
-    client = _build_client(tailnet, api_key, oauth_client_id, oauth_client_secret)
-    async with client:
-        data = await client._request(  # noqa: SLF001
-            f"device/{device_id}/routes"
-        )
-    typer.echo(json.dumps(json.loads(data), indent=2, default=str))
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"device/{device_id}/routes",
+    )
+
+
+@dump.command("device-posture-attributes")
+async def dump_device_posture_attributes_command(
+    device_id: Annotated[
+        str,
+        typer.Argument(help="Device ID or node ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the posture attributes of a device as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"device/{device_id}/attributes",
+    )
+
+
+@dump.command("device-invites")
+async def dump_device_invites_command(
+    device_id: Annotated[
+        str,
+        typer.Argument(help="Device ID or node ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the invites to share a device as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"device/{device_id}/device-invites",
+    )
+
+
+@dump.command("dns-configuration")
+async def dump_dns_configuration_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the full DNS configuration as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/dns/configuration",
+    )
+
+
+@dump.command("dns-nameservers")
+async def dump_dns_nameservers_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump DNS nameservers as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/dns/nameservers",
+    )
+
+
+@dump.command("dns-preferences")
+async def dump_dns_preferences_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump DNS preferences as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/dns/preferences",
+    )
+
+
+@dump.command("dns-search-paths")
+async def dump_dns_search_paths_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump DNS search paths as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/dns/searchpaths",
+    )
+
+
+@dump.command("dns-split")
+async def dump_dns_split_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump split DNS configuration as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/dns/split-dns",
+    )
+
+
+@dump.command("users")
+async def dump_users_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump all users as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/users?type=all",
+    )
+
+
+@dump.command("user")
+async def dump_user_command(
+    user_id: Annotated[
+        str,
+        typer.Argument(help="User ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump a single user as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"users/{user_id}",
+    )
+
+
+@dump.command("user-invites")
+async def dump_user_invites_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the open invites for users as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/user-invites",
+    )
+
+
+@dump.command("keys")
+async def dump_keys_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump all keys as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/keys?all=true",
+    )
+
+
+@dump.command("key")
+async def dump_key_command(
+    key_id: Annotated[
+        str,
+        typer.Argument(help="Key ID"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump a single key as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"tailnet/{{tailnet}}/keys/{key_id}",
+    )
+
+
+@dump.command("settings")
+async def dump_settings_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump tailnet settings as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/settings",
+    )
+
+
+@dump.command("policy")
+async def dump_policy_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the policy file as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/acl",
+    )
+
+
+@dump.command("webhooks")
+async def dump_webhooks_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump all webhooks as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/webhooks",
+    )
+
+
+@dump.command("services")
+async def dump_services_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump all Services as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/services",
+    )
+
+
+@dump.command("service")
+async def dump_service_command(
+    name: Annotated[
+        str,
+        typer.Argument(help="Service name, like svc:example"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump a single Service as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"tailnet/{{tailnet}}/services/{name}",
+    )
+
+
+@dump.command("service-hosts")
+async def dump_service_hosts_command(
+    name: Annotated[
+        str,
+        typer.Argument(help="Service name, like svc:example"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the devices hosting a Service as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"tailnet/{{tailnet}}/services/{name}/devices",
+    )
+
+
+@dump.command("posture-integrations")
+async def dump_posture_integrations_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the posture integrations as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/posture/integrations",
+    )
+
+
+@dump.command("oauth-apps")
+async def dump_oauth_apps_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the OAuth apps as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/oauth-apps",
+    )
+
+
+@dump.command("contacts")
+async def dump_contacts_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the contacts of the tailnet as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/contacts",
+    )
+
+
+@dump.command("organization-tailnets")
+async def dump_organization_tailnets_command(
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the tailnets of the organization as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "organizations/-/tailnets",
+    )
+
+
+@dump.command("log-stream")
+async def dump_log_stream_command(
+    log_type: Annotated[
+        str,
+        typer.Argument(help="Log type (configuration/network)"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the log streaming configuration as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"tailnet/{{tailnet}}/logging/{log_type}/stream",
+    )
+
+
+@dump.command("log-stream-status")
+async def dump_log_stream_status_command(
+    log_type: Annotated[
+        str,
+        typer.Argument(help="Log type (configuration/network)"),
+    ],
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the log streaming status as raw JSON."""
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        f"tailnet/{{tailnet}}/logging/{log_type}/stream/status",
+    )
+
+
+@dump.command("audit-logs")
+async def dump_audit_logs_command(
+    hours: LogHours = 24,
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the configuration audit logs as raw JSON."""
+    end = datetime.now(UTC)
+    start = end - timedelta(hours=hours)
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/logging/configuration",
+        params={"start": start.isoformat(), "end": end.isoformat()},
+    )
+
+
+@dump.command("network-logs")
+async def dump_network_logs_command(
+    hours: LogHours = 24,
+    tailnet: Tailnet = "-",
+    api_key: ApiKey = None,
+    oauth_client_id: OAuthClientId = None,
+    oauth_client_secret: OAuthClientSecret = None,
+) -> None:
+    """Dump the network flow logs as raw JSON."""
+    end = datetime.now(UTC)
+    start = end - timedelta(hours=hours)
+    await _dump(
+        tailnet,
+        api_key,
+        oauth_client_id,
+        oauth_client_secret,
+        "tailnet/{tailnet}/logging/network",
+        params={"start": start.isoformat(), "end": end.isoformat()},
+    )

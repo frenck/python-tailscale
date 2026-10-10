@@ -115,15 +115,32 @@ tailscale-api delete-key k1234567890abcdef
 tailscale-api dump devices
 tailscale-api dump device nSRVBN3CNTRL
 tailscale-api dump routes nSRVBN3CNTRL
+tailscale-api dump device-posture-attributes nSRVBN3CNTRL
+tailscale-api dump device-invites nSRVBN3CNTRL
+tailscale-api dump dns-configuration
 tailscale-api dump dns-nameservers
 tailscale-api dump dns-preferences
 tailscale-api dump dns-search-paths
 tailscale-api dump dns-split
 tailscale-api dump users
 tailscale-api dump user u12345
-tailscale-api dump settings
+tailscale-api dump user-invites
 tailscale-api dump keys
 tailscale-api dump key k1234567890abcdef
+tailscale-api dump settings
+tailscale-api dump policy
+tailscale-api dump webhooks
+tailscale-api dump services
+tailscale-api dump service svc:example
+tailscale-api dump service-hosts svc:example
+tailscale-api dump posture-integrations
+tailscale-api dump oauth-apps
+tailscale-api dump contacts
+tailscale-api dump organization-tailnets
+tailscale-api dump audit-logs --hours 24
+tailscale-api dump network-logs --hours 1
+tailscale-api dump log-stream network
+tailscale-api dump log-stream-status configuration
 ```
 
 OAuth authentication is also supported via `--oauth-client-id` and
