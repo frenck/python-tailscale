@@ -5,11 +5,13 @@
 import asyncio
 import json
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import aiohttp
 import pytest
-from aioresponses import aioresponses
+from aioresponses import CallbackResult, aioresponses
 from syrupy.assertion import SnapshotAssertion
+from yarl import URL as URL_TYPE
 
 from tailscale import (
     AuditLogActor,
@@ -3192,9 +3194,8 @@ async def test_too_short_oauth_expiration() -> None:
             await tailscale.close()
 
 
-@pytest.mark.parametrize("status_code", [401, 403])
-async def test_http_auth_error_invalidates_oauth_token(status_code: int) -> None:
-    """Test HTTP 401/403 invalidates the OAuth token."""
+async def test_http_401_invalidates_oauth_token() -> None:
+    """Test a 401 invalidates the OAuth token."""
     with aioresponses() as mocked:
         mocked.post(
             OAUTH_URL,
@@ -3204,7 +3205,7 @@ async def test_http_auth_error_invalidates_oauth_token(status_code: int) -> None
         )
         mocked.get(
             f"{URL}/test",
-            status=status_code,
+            status=401,
             body="Access denied!",
             content_type="text/plain",
         )
@@ -3215,9 +3216,249 @@ async def test_http_auth_error_invalidates_oauth_token(status_code: int) -> None
                 oauth_client_secret="notsosecret",  # noqa: S106
                 session=session,
             )
-            with pytest.raises(TailscaleAuthenticationError):
+            with pytest.raises(TailscaleUnauthorizedError):
                 await tailscale._request("test")
             assert tailscale.api_key is None
             assert tailscale._get_oauth_token_task is None
             assert tailscale._expire_oauth_token_task is None
             await tailscale.close()
+
+
+async def test_http_403_keeps_oauth_token() -> None:
+    """Test a 403 keeps the OAuth token, as a new one would not help."""
+    with aioresponses() as mocked:
+        mocked.post(
+            OAUTH_URL,
+            status=200,
+            body='{"access_token": "short-lived-token", "expires_in": 3600}',
+            content_type="application/json",
+        )
+        mocked.get(
+            f"{URL}/test",
+            status=403,
+            body='{"message": "feature not available on current billing plan"}',
+            content_type="application/json",
+        )
+        async with aiohttp.ClientSession() as session:
+            tailscale = Tailscale(
+                tailnet="frenck",
+                oauth_client_id="client",
+                oauth_client_secret="notsosecret",  # noqa: S106
+                session=session,
+            )
+            with pytest.raises(TailscalePermissionError):
+                await tailscale._request("test")
+            assert tailscale.api_key == "short-lived-token"
+            assert tailscale._expire_oauth_token_task is not None
+            await tailscale.close()
+
+
+def _oauth_requests(mocked: aioresponses) -> list[Any]:
+    """Return the requests made for an OAuth token."""
+    assert mocked.requests is not None
+    return [
+        request
+        for (method, url), requests in mocked.requests.items()
+        if method == "POST" and str(url) == OAUTH_URL
+        for request in requests
+    ]
+
+
+async def test_oauth_recovers_after_failed_token_request() -> None:
+    """Test a failed token request does not keep the client from recovering."""
+    with aioresponses() as mocked:
+        mocked.post(OAUTH_URL, status=500, body="{}", content_type="application/json")
+        mocked.post(
+            OAUTH_URL,
+            status=200,
+            body='{"access_token": "fresh-token", "expires_in": 3600}',
+            content_type="application/json",
+        )
+        mocked.get(
+            f"{URL}/test",
+            status=200,
+            body='{"status": "ok"}',
+            content_type="application/json",
+        )
+        async with aiohttp.ClientSession() as session:
+            tailscale = Tailscale(
+                tailnet="frenck",
+                oauth_client_id="client",
+                oauth_client_secret="notsosecret",  # noqa: S106
+                session=session,
+            )
+            with pytest.raises(TailscaleResponseError):
+                await tailscale._request("test")
+            assert tailscale._get_oauth_token_task is None
+
+            await tailscale._request("test")
+            assert tailscale.api_key == "fresh-token"
+            assert len(_oauth_requests(mocked)) == 2
+            await tailscale.close()
+
+
+async def test_oauth_token_request_survives_cancelled_caller() -> None:
+    """Test cancelling one request does not cancel the token for the others."""
+    token_requested = asyncio.Event()
+    release_token = asyncio.Event()
+
+    async def slow_token(*_args: Any, **_kwargs: Any) -> CallbackResult:
+        token_requested.set()
+        await release_token.wait()
+        return CallbackResult(
+            status=200,
+            body='{"access_token": "fresh-token", "expires_in": 3600}',
+            content_type="application/json",
+        )
+
+    with aioresponses() as mocked:
+        mocked.post(OAUTH_URL, callback=slow_token)
+        mocked.get(
+            f"{URL}/test",
+            status=200,
+            body='{"status": "ok"}',
+            content_type="application/json",
+            repeat=True,
+        )
+        async with aiohttp.ClientSession() as session:
+            tailscale = Tailscale(
+                tailnet="frenck",
+                oauth_client_id="client",
+                oauth_client_secret="notsosecret",  # noqa: S106
+                session=session,
+            )
+            cancelled = asyncio.create_task(tailscale._request("test"))
+            waiting = asyncio.create_task(tailscale._request("test"))
+            await token_requested.wait()
+
+            cancelled.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await cancelled
+            release_token.set()
+
+            assert await waiting == '{"status": "ok"}'
+            assert tailscale.api_key == "fresh-token"
+            assert len(_oauth_requests(mocked)) == 1
+            await tailscale.close()
+
+
+async def test_rejected_stored_oauth_token_is_replaced() -> None:
+    """Test a stored token the API refuses is not loaded from storage again."""
+    with aioresponses() as mocked:
+        mocked.get(
+            f"{URL}/test",
+            status=401,
+            body='{"message": "API token invalid"}',
+            content_type="application/json",
+        )
+        mocked.post(
+            OAUTH_URL,
+            status=200,
+            body='{"access_token": "fresh-token", "expires_in": 3600}',
+            content_type="application/json",
+        )
+        mocked.get(
+            f"{URL}/test",
+            status=200,
+            body='{"status": "ok"}',
+            content_type="application/json",
+        )
+        async with aiohttp.ClientSession() as session:
+            token_storage = InMemoryTokenStorage(
+                "revoked-token",
+                datetime.now(UTC) + timedelta(hours=1),
+            )
+            tailscale = Tailscale(
+                tailnet="frenck",
+                oauth_client_id="client",
+                oauth_client_secret="notsosecret",  # noqa: S106
+                session=session,
+                token_storage=token_storage,
+            )
+            with pytest.raises(TailscaleUnauthorizedError):
+                await tailscale._request("test")
+
+            await tailscale._request("test")
+            assert tailscale.api_key == "fresh-token"
+            assert token_storage._access_token == "fresh-token"  # noqa: S105
+            assert len(_oauth_requests(mocked)) == 1
+            await tailscale.close()
+
+
+async def test_oauth_token_is_stored_before_it_is_used() -> None:
+    """Test concurrent requests share one token while slow storage saves it."""
+
+    class SlowTokenStorage(InMemoryTokenStorage):
+        """Token storage that takes a while to save a token."""
+
+        async def set_token(self, access_token: str, expires_at: datetime) -> None:
+            await asyncio.sleep(0.01)
+            await super().set_token(access_token, expires_at)
+
+    with aioresponses() as mocked:
+        mocked.post(
+            OAUTH_URL,
+            status=200,
+            body='{"access_token": "fresh-token", "expires_in": 3600}',
+            content_type="application/json",
+        )
+        mocked.get(
+            f"{URL}/test",
+            status=200,
+            body='{"status": "ok"}',
+            content_type="application/json",
+            repeat=True,
+        )
+        async with aiohttp.ClientSession() as session:
+            tailscale = Tailscale(
+                tailnet="frenck",
+                oauth_client_id="client",
+                oauth_client_secret="notsosecret",  # noqa: S106
+                session=session,
+                token_storage=SlowTokenStorage(),
+            )
+            first = asyncio.create_task(tailscale._request("test"))
+            await asyncio.sleep(0)
+            second = asyncio.create_task(tailscale._request("test"))
+            assert await asyncio.gather(first, second) == ['{"status": "ok"}'] * 2
+            assert len(_oauth_requests(mocked)) == 1
+            await tailscale.close()
+
+
+async def test_oauth_token_on_the_wire() -> None:
+    """Test the OAuth client credentials and the token are sent as they should."""
+    with aioresponses() as mocked:
+        mocked.post(
+            OAUTH_URL,
+            status=200,
+            body='{"access_token": "short-lived-token", "expires_in": 3600}',
+            content_type="application/json",
+        )
+        mocked.get(
+            f"{URL}/test",
+            status=200,
+            body='{"status": "ok"}',
+            content_type="application/json",
+        )
+        async with aiohttp.ClientSession() as session:
+            tailscale = Tailscale(
+                tailnet="frenck",
+                oauth_client_id="client",
+                oauth_client_secret="notsosecret",  # noqa: S106
+                session=session,
+            )
+            await tailscale._request("test")
+            await tailscale.close()
+
+        (token_request,) = _oauth_requests(mocked)
+        assert token_request.kwargs["data"] == {
+            "client_id": "client",
+            "client_secret": "notsosecret",
+        }
+        assert "Authorization" not in token_request.kwargs["headers"]
+
+        assert mocked.requests is not None
+        (api_request,) = mocked.requests[("GET", URL_TYPE(f"{URL}/test"))]
+        assert api_request.kwargs["headers"]["Authorization"] == (
+            "Bearer short-lived-token"
+        )
