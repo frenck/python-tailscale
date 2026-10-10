@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -981,3 +982,13 @@ def test_general_error_handler(
         handler(TailscaleError("something went wrong"))
     assert exc_info.value.code == 1
     assert capsys.readouterr().out == snapshot
+
+
+def test_console_script() -> None:
+    """The console script does not clash with the official Tailscale client."""
+    scripts = {
+        entry_point.name: entry_point.value
+        for entry_point in entry_points(group="console_scripts")
+        if entry_point.value.startswith("tailscale.")
+    }
+    assert scripts == {"tailscale-api": "tailscale._cli:main"}

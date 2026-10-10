@@ -41,86 +41,89 @@ pip install "tailscale[cli]"
 ## CLI
 
 The optional CLI lets you query and manage your tailnet directly from
-the terminal. The `--api-key` option can also be set via the
-`TAILSCALE_API_KEY` environment variable.
+the terminal. The command is `tailscale-api`, so it does not clash with the
+`tailscale` command of the official Tailscale client. The `--api-key` option
+can also be set via the `TAILSCALE_API_KEY` environment variable.
 
 ```bash
 # Set credentials once via environment variable
 export TAILSCALE_API_KEY="tskey-api-..."
 
 # List all devices (includes node IDs for use with other commands)
-tailscale devices
+tailscale-api devices
 
 # Show detailed information for a single device
-tailscale device nSRVBN3CNTRL
+tailscale-api device nSRVBN3CNTRL
 
 # Show subnet routes for a device
-tailscale routes nSRVBN3CNTRL
+tailscale-api routes nSRVBN3CNTRL
 
 # Authorize / deauthorize a device
-tailscale authorize nSRVBN3CNTRL
-tailscale deauthorize nSRVBN3CNTRL
+tailscale-api authorize nSRVBN3CNTRL
+tailscale-api deauthorize nSRVBN3CNTRL
 
 # Delete a device from the tailnet
-tailscale delete nSRVBN3CNTRL
+tailscale-api delete nSRVBN3CNTRL
 
 # Expire a device's key (force re-authentication)
-tailscale expire-key nSRVBN3CNTRL
+tailscale-api expire-key nSRVBN3CNTRL
 
 # Enable or disable key expiry
-tailscale set-key-expiry nSRVBN3CNTRL --disable
-tailscale set-key-expiry nSRVBN3CNTRL --enable
+tailscale-api set-key-expiry nSRVBN3CNTRL --disable
+tailscale-api set-key-expiry nSRVBN3CNTRL --enable
 
 # Rename a device
-tailscale rename nSRVBN3CNTRL new-hostname
+tailscale-api rename nSRVBN3CNTRL new-hostname
 
 # Set ACL tags
-tailscale set-tags nSRVBN3CNTRL tag:server tag:prod
+tailscale-api set-tags nSRVBN3CNTRL tag:server tag:prod
 
 # Set enabled subnet routes
-tailscale set-routes nSRVBN3CNTRL 10.0.0.0/24 192.168.1.0/24
+tailscale-api set-routes nSRVBN3CNTRL 10.0.0.0/24 192.168.1.0/24
 
 # Set Tailscale IPv4 address
-tailscale set-ip nSRVBN3CNTRL 100.64.0.1
+tailscale-api set-ip nSRVBN3CNTRL 100.64.0.1
 
 # DNS management
-tailscale dns nameservers
-tailscale dns set-nameservers 8.8.8.8 1.1.1.1
-tailscale dns preferences
-tailscale dns set-preferences --magic-dns
-tailscale dns search-paths
-tailscale dns set-search-paths corp.example.com
-tailscale dns split
+tailscale-api dns nameservers
+tailscale-api dns set-nameservers 8.8.8.8 1.1.1.1
+tailscale-api dns preferences
+tailscale-api dns set-preferences --magic-dns
+tailscale-api dns search-paths
+tailscale-api dns set-search-paths corp.example.com
+tailscale-api dns split
 
 # List users and show user details
-tailscale users
-tailscale user u12345
+tailscale-api users
+tailscale-api user u12345
 
 # Tailnet settings
-tailscale settings show
-tailscale settings device-approval --enable
-tailscale settings auto-updates --disable
-tailscale settings key-duration 90
-tailscale settings network-flow-logging --enable
-tailscale settings external-tailnets admin
+tailscale-api settings show
+tailscale-api settings device-approval --enable
+tailscale-api settings auto-updates --disable
+tailscale-api settings key-duration 90
+tailscale-api settings network-flow-logging --enable
+tailscale-api settings external-tailnets admin
+tailscale-api settings https --enable
+tailscale-api settings route-selection regional-routing
 
 # List and manage auth keys
-tailscale keys
-tailscale delete-key k1234567890abcdef
+tailscale-api keys
+tailscale-api delete-key k1234567890abcdef
 
 # Dump raw API responses as JSON (useful for debugging/fixtures)
-tailscale dump devices
-tailscale dump device nSRVBN3CNTRL
-tailscale dump routes nSRVBN3CNTRL
-tailscale dump dns-nameservers
-tailscale dump dns-preferences
-tailscale dump dns-search-paths
-tailscale dump dns-split
-tailscale dump users
-tailscale dump user u12345
-tailscale dump settings
-tailscale dump keys
-tailscale dump key k1234567890abcdef
+tailscale-api dump devices
+tailscale-api dump device nSRVBN3CNTRL
+tailscale-api dump routes nSRVBN3CNTRL
+tailscale-api dump dns-nameservers
+tailscale-api dump dns-preferences
+tailscale-api dump dns-search-paths
+tailscale-api dump dns-split
+tailscale-api dump users
+tailscale-api dump user u12345
+tailscale-api dump settings
+tailscale-api dump keys
+tailscale-api dump key k1234567890abcdef
 ```
 
 OAuth authentication is also supported via `--oauth-client-id` and
