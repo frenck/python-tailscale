@@ -830,7 +830,8 @@ class Tailscale:
             policy: The new policy file, as HuJSON or JSON.
             etag: The ETag of the policy file this one is based on. When the
                 policy file has changed since, the API refuses the update
-                and a TailscaleError is raised.
+                and a TailscaleError is raised. Without it, the policy file
+                is set whatever changed.
 
         Returns:
         -------
@@ -2260,7 +2261,10 @@ class Tailscale:
         )
 
     async def close(self) -> None:
-        """Close open client session and cancel background tasks."""
+        """Close the client session it opened, and cancel background tasks.
+
+        A session passed to the client is left open, for its owner to close.
+        """
         if self.session and self._close_session:
             await self.session.close()
         if self._get_oauth_token_task:

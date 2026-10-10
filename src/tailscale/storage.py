@@ -13,7 +13,8 @@ class TokenStorage(ABC):
 
         Returns
         -------
-            The stored token and expiration time, or None if no token is stored.
+            The stored token and its timezone-aware expiration time, or None
+            if no token is stored.
 
         """
 
@@ -24,6 +25,6 @@ class TokenStorage(ABC):
         Args:
         ----
             access_token: The access token to store.
-            expires_at: The expiration time of the access token.
+            expires_at: The timezone-aware expiration time of the access token.
 
         """
