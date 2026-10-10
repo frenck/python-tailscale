@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import socket
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Self
+from urllib.parse import quote
 
 from aiohttp.client import ClientError, ClientSession
 from aiohttp.hdrs import METH_DELETE, METH_GET, METH_PATCH, METH_POST, METH_PUT
@@ -68,19 +70,20 @@ class Tailscale:
     """Main class for handling connections with the Tailscale API."""
 
     tailnet: str = "-"
-    api_key: str | None = None
+    # Secrets are left out of the repr, so logging the client does not leak them.
+    api_key: str | None = field(default=None, repr=False)
     oauth_client_id: str | None = None
-    oauth_client_secret: str | None = None
+    oauth_client_secret: str | None = field(default=None, repr=False)
 
     request_timeout: int = 8
     session: ClientSession | None = None
-    token_storage: TokenStorage | None = None
+    token_storage: TokenStorage | None = field(default=None, repr=False)
 
     _token_expiry_margin: int = 60
 
     _get_oauth_token_task: asyncio.Task[None] | None = None
     _expire_oauth_token_task: asyncio.Task[None] | None = None
-    _rejected_oauth_token: str | None = None
+    _rejected_oauth_token: str | None = field(default=None, repr=False)
     _close_session: bool = False
 
     async def _check_api_key(self) -> None:
@@ -164,12 +167,7 @@ class Tailscale:
             _use_form_encoding=True,
         )
 
-        json_response: dict[str, Any] = json.loads(response)
-        access_token = str(json_response.get("access_token", ""))
-        expires_in = float(json_response.get("expires_in", 0))
-        if not access_token or not expires_in:
-            msg = "Failed to get OAuth token"
-            raise TailscaleAuthenticationError(msg)
+        access_token, expires_in = _parse_oauth_token(response)
         if expires_in <= self._token_expiry_margin:
             msg = "OAuth token expires in less than 1 minute"
             raise TailscaleAuthenticationError(msg)
@@ -346,13 +344,17 @@ class Tailscale:
 
         """
         try:
-            data = await self._request(f"tailnet/{self.tailnet}/devices?fields=all")
+            data = await self._request(
+                f"tailnet/{_path_segment(self.tailnet)}/devices?fields=all"
+            )
         except TailscaleNotFoundError:
             # Since 2026-10-08, the Tailscale API fails the whole list with a 404
             # when the tailnet has devices shared in from another tailnet. The
             # default fields still work; they lack only the client connectivity.
             # https://github.com/tailscale/tailscale/issues/21721
-            data = await self._request(f"tailnet/{self.tailnet}/devices?fields=default")
+            data = await self._request(
+                f"tailnet/{_path_segment(self.tailnet)}/devices?fields=default"
+            )
 
         return Devices.from_json(data).devices
 
@@ -368,7 +370,7 @@ class Tailscale:
             The device information.
 
         """
-        data = await self._request(f"device/{device_id}?fields=all")
+        data = await self._request(f"device/{_path_segment(device_id)}?fields=all")
         return Device.from_json(data)
 
     async def delete_device(self, device_id: str) -> None:
@@ -379,7 +381,7 @@ class Tailscale:
             device_id: The ID of the device to delete.
 
         """
-        await self._request(f"device/{device_id}", method=METH_DELETE)
+        await self._request(f"device/{_path_segment(device_id)}", method=METH_DELETE)
 
     async def authorize_device(self, device_id: str, *, authorized: bool) -> None:
         """Authorize or deauthorize a device.
@@ -391,7 +393,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"device/{device_id}/authorized",
+            f"device/{_path_segment(device_id)}/authorized",
             method=METH_POST,
             data={"authorized": authorized},
         )
@@ -404,7 +406,9 @@ class Tailscale:
             device_id: The ID of the device.
 
         """
-        await self._request(f"device/{device_id}/expire", method=METH_POST)
+        await self._request(
+            f"device/{_path_segment(device_id)}/expire", method=METH_POST
+        )
 
     async def set_device_key_expiry(
         self, device_id: str, *, key_expiry_disabled: bool
@@ -418,7 +422,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"device/{device_id}/key",
+            f"device/{_path_segment(device_id)}/key",
             method=METH_POST,
             data={"keyExpiryDisabled": key_expiry_disabled},
         )
@@ -434,7 +438,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"device/{device_id}/name",
+            f"device/{_path_segment(device_id)}/name",
             method=METH_POST,
             data={"name": name},
         )
@@ -449,7 +453,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"device/{device_id}/tags",
+            f"device/{_path_segment(device_id)}/tags",
             method=METH_POST,
             data={"tags": tags},
         )
@@ -466,7 +470,7 @@ class Tailscale:
             The advertised and enabled routes for the device.
 
         """
-        data = await self._request(f"device/{device_id}/routes")
+        data = await self._request(f"device/{_path_segment(device_id)}/routes")
         return DeviceRoutes.from_json(data)
 
     async def set_device_routes(
@@ -485,7 +489,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"device/{device_id}/routes",
+            f"device/{_path_segment(device_id)}/routes",
             method=METH_POST,
             data={"routes": routes},
         )
@@ -503,7 +507,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"device/{device_id}/ip",
+            f"device/{_path_segment(device_id)}/ip",
             method=METH_POST,
             data={"ipv4": ipv4_address},
         )
@@ -522,7 +526,7 @@ class Tailscale:
             The posture attributes of the device, with their expiries.
 
         """
-        data = await self._request(f"device/{device_id}/attributes")
+        data = await self._request(f"device/{_path_segment(device_id)}/attributes")
         return DevicePostureAttributes.from_json(data)
 
     async def set_device_posture_attribute(  # pylint: disable=too-many-arguments
@@ -556,7 +560,7 @@ class Tailscale:
             payload["comment"] = comment
 
         data = await self._request(
-            f"device/{device_id}/attributes/{key}",
+            f"device/{_path_segment(device_id)}/attributes/{_path_segment(key)}",
             method=METH_POST,
             data=payload,
         )
@@ -571,7 +575,10 @@ class Tailscale:
             key: The name of the attribute, starting with "custom:".
 
         """
-        await self._request(f"device/{device_id}/attributes/{key}", method=METH_DELETE)
+        await self._request(
+            f"device/{_path_segment(device_id)}/attributes/{_path_segment(key)}",
+            method=METH_DELETE,
+        )
 
     async def update_device_posture_attributes(
         self,
@@ -606,7 +613,7 @@ class Tailscale:
             payload["comment"] = comment
 
         await self._request(
-            f"tailnet/{self.tailnet}/device-attributes",
+            f"tailnet/{_path_segment(self.tailnet)}/device-attributes",
             method=METH_PATCH,
             data=payload,
         )
@@ -619,7 +626,9 @@ class Tailscale:
             The nameservers, split DNS, search paths, and preferences.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/dns/configuration")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/dns/configuration"
+        )
         return DNSConfiguration.from_json(data)
 
     async def set_dns_configuration(
@@ -638,7 +647,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/dns/configuration",
+            f"tailnet/{_path_segment(self.tailnet)}/dns/configuration",
             method=METH_POST,
             data=configuration.to_dict(),
         )
@@ -652,7 +661,9 @@ class Tailscale:
             The DNS nameserver configuration.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/dns/nameservers")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/dns/nameservers"
+        )
         return DNSNameservers.from_json(data)
 
     async def set_dns_nameservers(self, *, dns: list[str]) -> DNSNameservers:
@@ -668,7 +679,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/dns/nameservers",
+            f"tailnet/{_path_segment(self.tailnet)}/dns/nameservers",
             method=METH_POST,
             data={"dns": dns},
         )
@@ -682,7 +693,9 @@ class Tailscale:
             The DNS preferences.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/dns/preferences")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/dns/preferences"
+        )
         return DNSPreferences.from_json(data)
 
     async def set_dns_preferences(self, *, magic_dns: bool) -> DNSPreferences:
@@ -698,7 +711,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/dns/preferences",
+            f"tailnet/{_path_segment(self.tailnet)}/dns/preferences",
             method=METH_POST,
             data={"magicDNS": magic_dns},
         )
@@ -712,7 +725,9 @@ class Tailscale:
             The DNS search paths.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/dns/searchpaths")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/dns/searchpaths"
+        )
         return DNSSearchPaths.from_json(data)
 
     async def set_dns_search_paths(self, *, search_paths: list[str]) -> DNSSearchPaths:
@@ -728,7 +743,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/dns/searchpaths",
+            f"tailnet/{_path_segment(self.tailnet)}/dns/searchpaths",
             method=METH_POST,
             data={"searchPaths": search_paths},
         )
@@ -742,7 +757,9 @@ class Tailscale:
             A dictionary mapping domain names to lists of nameserver addresses.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/dns/split-dns")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/dns/split-dns"
+        )
         return json.loads(data)
 
     async def set_split_dns(
@@ -761,7 +778,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/dns/split-dns",
+            f"tailnet/{_path_segment(self.tailnet)}/dns/split-dns",
             method=METH_PUT,
             data=split_dns,
         )
@@ -783,7 +800,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/dns/split-dns",
+            f"tailnet/{_path_segment(self.tailnet)}/dns/split-dns",
             method=METH_PATCH,
             data=split_dns,
         )
@@ -798,7 +815,7 @@ class Tailscale:
 
         """
         policy, headers = await self._request_with_headers(
-            f"tailnet/{self.tailnet}/acl",
+            f"tailnet/{_path_segment(self.tailnet)}/acl",
             headers={"Accept": "application/hujson"},
         )
         return PolicyFile(policy=policy, etag=headers.get("ETag"))
@@ -828,7 +845,7 @@ class Tailscale:
             headers["If-Match"] = etag
 
         new_policy, response_headers = await self._request_with_headers(
-            f"tailnet/{self.tailnet}/acl",
+            f"tailnet/{_path_segment(self.tailnet)}/acl",
             method=METH_POST,
             content=policy,
             headers=headers,
@@ -848,7 +865,7 @@ class Tailscale:
 
         """
         data, _ = await self._request_with_headers(
-            f"tailnet/{self.tailnet}/acl/validate",
+            f"tailnet/{_path_segment(self.tailnet)}/acl/validate",
             method=METH_POST,
             content=policy,
             headers={"Content-Type": "application/hujson"},
@@ -871,7 +888,7 @@ class Tailscale:
 
         """
         data, _ = await self._request_with_headers(
-            f"tailnet/{self.tailnet}/acl/validate",
+            f"tailnet/{_path_segment(self.tailnet)}/acl/validate",
             method=METH_POST,
             content=json.dumps(tests),
             headers={"Content-Type": "application/json"},
@@ -896,7 +913,7 @@ class Tailscale:
 
         """
         data, _ = await self._request_with_headers(
-            f"tailnet/{self.tailnet}/acl/preview",
+            f"tailnet/{_path_segment(self.tailnet)}/acl/preview",
             method=METH_POST,
             params={"type": preview_type, "previewFor": preview_for},
             content=policy,
@@ -929,7 +946,9 @@ class Tailscale:
         if role is not None:
             params["role"] = role
 
-        data = await self._request(f"tailnet/{self.tailnet}/users", params=params)
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/users", params=params
+        )
         raw: list[dict[str, Any]] = json.loads(data).get("users", [])
         return [TailscaleUser.from_dict(user) for user in raw]
 
@@ -945,7 +964,7 @@ class Tailscale:
             The user information.
 
         """
-        data = await self._request(f"users/{user_id}")
+        data = await self._request(f"users/{_path_segment(user_id)}")
         return TailscaleUser.from_json(data)
 
     async def set_user_role(self, user_id: str, *, role: str) -> None:
@@ -958,7 +977,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"users/{user_id}/role",
+            f"users/{_path_segment(user_id)}/role",
             method=METH_POST,
             data={"role": role},
         )
@@ -971,7 +990,7 @@ class Tailscale:
             user_id: The ID of the user to approve.
 
         """
-        await self._request(f"users/{user_id}/approve", method=METH_POST)
+        await self._request(f"users/{_path_segment(user_id)}/approve", method=METH_POST)
 
     async def suspend_user(self, user_id: str) -> None:
         """Suspend a user from the tailnet.
@@ -981,7 +1000,7 @@ class Tailscale:
             user_id: The ID of the user to suspend.
 
         """
-        await self._request(f"users/{user_id}/suspend", method=METH_POST)
+        await self._request(f"users/{_path_segment(user_id)}/suspend", method=METH_POST)
 
     async def restore_user(self, user_id: str) -> None:
         """Restore the access of a suspended user to the tailnet.
@@ -991,7 +1010,7 @@ class Tailscale:
             user_id: The ID of the user to restore.
 
         """
-        await self._request(f"users/{user_id}/restore", method=METH_POST)
+        await self._request(f"users/{_path_segment(user_id)}/restore", method=METH_POST)
 
     async def delete_user(self, user_id: str) -> None:
         """Delete a user from the tailnet.
@@ -1001,7 +1020,7 @@ class Tailscale:
             user_id: The ID of the user to delete.
 
         """
-        await self._request(f"users/{user_id}/delete", method=METH_POST)
+        await self._request(f"users/{_path_segment(user_id)}/delete", method=METH_POST)
 
     async def tailnet_settings(self) -> TailnetSettings:
         """Get the settings for the tailnet.
@@ -1011,7 +1030,7 @@ class Tailscale:
             The tailnet settings.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/settings")
+        data = await self._request(f"tailnet/{_path_segment(self.tailnet)}/settings")
         return TailnetSettings.from_json(data)
 
     async def update_tailnet_settings(  # noqa: PLR0913  # pylint: disable=too-many-arguments
@@ -1085,7 +1104,7 @@ class Tailscale:
         if acls_external_link is not None:
             payload["aclsExternalLink"] = acls_external_link
         await self._request(
-            f"tailnet/{self.tailnet}/settings",
+            f"tailnet/{_path_segment(self.tailnet)}/settings",
             method=METH_PATCH,
             data=payload,
         )
@@ -1098,7 +1117,9 @@ class Tailscale:
             A list of Tailscale keys.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/keys?all=true")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/keys?all=true"
+        )
         raw: list[dict[str, Any]] = json.loads(data).get("keys", [])
         return [TailscaleKey.from_dict(key) for key in raw]
 
@@ -1114,7 +1135,9 @@ class Tailscale:
             The key information.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/keys/{key_id}")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/keys/{_path_segment(key_id)}"
+        )
         return TailscaleKey.from_json(data)
 
     async def create_key(  # noqa: PLR0913  # pylint: disable=too-many-arguments
@@ -1192,7 +1215,7 @@ class Tailscale:
             )
 
         data = await self._request(
-            f"tailnet/{self.tailnet}/keys",
+            f"tailnet/{_path_segment(self.tailnet)}/keys",
             method=METH_POST,
             data=payload,
         )
@@ -1248,7 +1271,7 @@ class Tailscale:
         )
 
         data = await self._request(
-            f"tailnet/{self.tailnet}/keys/{key_id}",
+            f"tailnet/{_path_segment(self.tailnet)}/keys/{_path_segment(key_id)}",
             method=METH_PUT,
             data=payload,
         )
@@ -1263,7 +1286,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/keys/{key_id}",
+            f"tailnet/{_path_segment(self.tailnet)}/keys/{_path_segment(key_id)}",
             method=METH_DELETE,
         )
 
@@ -1275,7 +1298,7 @@ class Tailscale:
             A list of webhooks.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/webhooks")
+        data = await self._request(f"tailnet/{_path_segment(self.tailnet)}/webhooks")
         # The API returns null instead of an empty list when there are none.
         raw: list[dict[str, Any]] = json.loads(data).get("webhooks") or []
         return [TailscaleWebhook.from_dict(webhook) for webhook in raw]
@@ -1292,7 +1315,7 @@ class Tailscale:
             The webhook.
 
         """
-        data = await self._request(f"webhooks/{endpoint_id}")
+        data = await self._request(f"webhooks/{_path_segment(endpoint_id)}")
         return TailscaleWebhook.from_json(data)
 
     async def create_webhook(
@@ -1324,7 +1347,7 @@ class Tailscale:
             payload["providerType"] = provider_type
 
         data = await self._request(
-            f"tailnet/{self.tailnet}/webhooks",
+            f"tailnet/{_path_segment(self.tailnet)}/webhooks",
             method=METH_POST,
             data=payload,
         )
@@ -1346,7 +1369,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"webhooks/{endpoint_id}",
+            f"webhooks/{_path_segment(endpoint_id)}",
             method=METH_PATCH,
             data={"subscriptions": subscriptions},
         )
@@ -1360,7 +1383,9 @@ class Tailscale:
             endpoint_id: The ID of the webhook to delete.
 
         """
-        await self._request(f"webhooks/{endpoint_id}", method=METH_DELETE)
+        await self._request(
+            f"webhooks/{_path_segment(endpoint_id)}", method=METH_DELETE
+        )
 
     async def test_webhook(self, endpoint_id: str) -> None:
         """Send a test event to a webhook.
@@ -1372,7 +1397,9 @@ class Tailscale:
             endpoint_id: The ID of the webhook to test.
 
         """
-        await self._request(f"webhooks/{endpoint_id}/test", method=METH_POST)
+        await self._request(
+            f"webhooks/{_path_segment(endpoint_id)}/test", method=METH_POST
+        )
 
     async def rotate_webhook_secret(self, endpoint_id: str) -> TailscaleWebhook:
         """Rotate the secret a webhook signs its events with.
@@ -1386,7 +1413,9 @@ class Tailscale:
             The webhook, including its new secret.
 
         """
-        data = await self._request(f"webhooks/{endpoint_id}/rotate", method=METH_POST)
+        data = await self._request(
+            f"webhooks/{_path_segment(endpoint_id)}/rotate", method=METH_POST
+        )
         return TailscaleWebhook.from_json(data)
 
     async def services(self) -> list[TailscaleService]:
@@ -1397,7 +1426,7 @@ class Tailscale:
             A list of Services.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/services")
+        data = await self._request(f"tailnet/{_path_segment(self.tailnet)}/services")
         raw: list[dict[str, Any]] = json.loads(data).get("vipServices") or []
         return [TailscaleService.from_dict(service) for service in raw]
 
@@ -1413,7 +1442,9 @@ class Tailscale:
             The Service.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/services/{name}")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/services/{_path_segment(name)}"
+        )
         return TailscaleService.from_json(data)
 
     async def set_service(
@@ -1433,7 +1464,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/services/{name or service.name}",
+            f"tailnet/{_path_segment(self.tailnet)}/services/{name or service.name}",
             method=METH_PUT,
             data=service.to_dict(),
         )
@@ -1448,7 +1479,8 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/services/{name}", method=METH_DELETE
+            f"tailnet/{_path_segment(self.tailnet)}/services/{_path_segment(name)}",
+            method=METH_DELETE,
         )
 
     async def service_hosts(self, name: str) -> list[ServiceHost]:
@@ -1463,7 +1495,9 @@ class Tailscale:
             A list of the devices hosting the Service.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/services/{name}/devices")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/services/{_path_segment(name)}/devices"
+        )
         raw: list[dict[str, Any]] = json.loads(data).get("hosts") or []
         return [ServiceHost.from_dict(host) for host in raw]
 
@@ -1481,7 +1515,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/services/{name}/device/{device_id}/approved"
+            f"tailnet/{_path_segment(self.tailnet)}/services/{_path_segment(name)}/device/{_path_segment(device_id)}/approved"
         )
         return ServiceApproval.from_json(data)
 
@@ -1502,7 +1536,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/services/{name}/device/{device_id}/approved",
+            f"tailnet/{_path_segment(self.tailnet)}/services/{_path_segment(name)}/device/{_path_segment(device_id)}/approved",
             method=METH_POST,
             data={"approved": approved},
         )
@@ -1520,7 +1554,7 @@ class Tailscale:
             A list of invites to share the device.
 
         """
-        data = await self._request(f"device/{device_id}/device-invites")
+        data = await self._request(f"device/{_path_segment(device_id)}/device-invites")
         return [DeviceInvite.from_dict(invite) for invite in json.loads(data) or []]
 
     async def create_device_invite(
@@ -1555,7 +1589,7 @@ class Tailscale:
             invite["email"] = email
 
         data = await self._request(
-            f"device/{device_id}/device-invites",
+            f"device/{_path_segment(device_id)}/device-invites",
             method=METH_POST,
             data=[invite],
         )
@@ -1573,7 +1607,7 @@ class Tailscale:
             The invite.
 
         """
-        data = await self._request(f"device-invites/{invite_id}")
+        data = await self._request(f"device-invites/{_path_segment(invite_id)}")
         return DeviceInvite.from_json(data)
 
     async def delete_device_invite(self, invite_id: str) -> None:
@@ -1584,7 +1618,9 @@ class Tailscale:
             invite_id: The ID of the invite to delete.
 
         """
-        await self._request(f"device-invites/{invite_id}", method=METH_DELETE)
+        await self._request(
+            f"device-invites/{_path_segment(invite_id)}", method=METH_DELETE
+        )
 
     async def resend_device_invite(self, invite_id: str) -> None:
         """Email an invite to share a device again.
@@ -1594,7 +1630,9 @@ class Tailscale:
             invite_id: The ID of an invite that was created with an email.
 
         """
-        await self._request(f"device-invites/{invite_id}/resend", method=METH_POST)
+        await self._request(
+            f"device-invites/{_path_segment(invite_id)}/resend", method=METH_POST
+        )
 
     async def accept_device_invite(self, invite: str) -> AcceptedDeviceInvite:
         """Accept an invite to share a device into the tailnet.
@@ -1623,7 +1661,9 @@ class Tailscale:
             A list of invites that have not been accepted yet.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/user-invites")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/user-invites"
+        )
         # The API returns null instead of an empty list when there are none.
         return [UserInvite.from_dict(invite) for invite in json.loads(data) or []]
 
@@ -1650,7 +1690,7 @@ class Tailscale:
             invite["email"] = email
 
         data = await self._request(
-            f"tailnet/{self.tailnet}/user-invites",
+            f"tailnet/{_path_segment(self.tailnet)}/user-invites",
             method=METH_POST,
             data=[invite],
         )
@@ -1668,7 +1708,7 @@ class Tailscale:
             The invite.
 
         """
-        data = await self._request(f"user-invites/{invite_id}")
+        data = await self._request(f"user-invites/{_path_segment(invite_id)}")
         return UserInvite.from_json(data)
 
     async def delete_user_invite(self, invite_id: str) -> None:
@@ -1679,7 +1719,9 @@ class Tailscale:
             invite_id: The ID of the invite to delete.
 
         """
-        await self._request(f"user-invites/{invite_id}", method=METH_DELETE)
+        await self._request(
+            f"user-invites/{_path_segment(invite_id)}", method=METH_DELETE
+        )
 
     async def resend_user_invite(self, invite_id: str) -> None:
         """Email an invite for a user to join the tailnet again.
@@ -1689,7 +1731,9 @@ class Tailscale:
             invite_id: The ID of an invite that was created with an email.
 
         """
-        await self._request(f"user-invites/{invite_id}/resend", method=METH_POST)
+        await self._request(
+            f"user-invites/{_path_segment(invite_id)}/resend", method=METH_POST
+        )
 
     async def contacts(self) -> TailnetContacts:
         """Get the contacts of the tailnet.
@@ -1699,7 +1743,7 @@ class Tailscale:
             The account, support, and security contacts.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/contacts")
+        data = await self._request(f"tailnet/{_path_segment(self.tailnet)}/contacts")
         return TailnetContacts.from_json(data)
 
     async def set_contact(self, contact_type: str, *, email: str) -> None:
@@ -1714,7 +1758,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/contacts/{contact_type}",
+            f"tailnet/{_path_segment(self.tailnet)}/contacts/{_path_segment(contact_type)}",
             method=METH_PATCH,
             data={"email": email},
         )
@@ -1728,7 +1772,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/contacts/{contact_type}/resend-verification-email",
+            f"tailnet/{_path_segment(self.tailnet)}/contacts/{_path_segment(contact_type)}/resend-verification-email",
             method=METH_POST,
         )
 
@@ -1760,7 +1804,7 @@ class Tailscale:
             params["cursor"] = cursor
 
         data = await self._request(
-            f"organizations/{organization}/tailnets", params=params
+            f"organizations/{_path_segment(organization)}/tailnets", params=params
         )
         return OrganizationTailnets.from_json(data)
 
@@ -1781,7 +1825,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"organizations/{organization}/tailnets",
+            f"organizations/{_path_segment(organization)}/tailnets",
             method=METH_POST,
             data={"displayName": display_name},
         )
@@ -1793,7 +1837,9 @@ class Tailscale:
         This cannot be undone. It is meant for API-only tailnets, using
         credentials for the tailnet that is deleted.
         """
-        await self._request(f"tailnet/{self.tailnet}", method=METH_DELETE)
+        await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}", method=METH_DELETE
+        )
 
     async def oauth_apps(self) -> list[OAuthApp]:
         """Get the OAuth apps of the tailnet.
@@ -1803,7 +1849,7 @@ class Tailscale:
             A list of OAuth apps.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/oauth-apps")
+        data = await self._request(f"tailnet/{_path_segment(self.tailnet)}/oauth-apps")
         raw: list[dict[str, Any]] = json.loads(data).get("oauthApps") or []
         return [OAuthApp.from_dict(app) for app in raw]
 
@@ -1819,7 +1865,9 @@ class Tailscale:
             The OAuth app.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/oauth-apps/{app_id}")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/oauth-apps/{_path_segment(app_id)}"
+        )
         return OAuthApp.from_json(data)
 
     async def create_oauth_app(  # pylint: disable=too-many-arguments
@@ -1850,7 +1898,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/oauth-apps",
+            f"tailnet/{_path_segment(self.tailnet)}/oauth-apps",
             method=METH_POST,
             data=_oauth_app_payload(
                 name=name,
@@ -1893,7 +1941,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/oauth-apps/{app_id}",
+            f"tailnet/{_path_segment(self.tailnet)}/oauth-apps/{_path_segment(app_id)}",
             method=METH_PUT,
             data=_oauth_app_payload(
                 name=name,
@@ -1914,7 +1962,8 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/oauth-apps/{app_id}", method=METH_DELETE
+            f"tailnet/{_path_segment(self.tailnet)}/oauth-apps/{_path_segment(app_id)}",
+            method=METH_DELETE,
         )
 
     async def log_stream_configuration(self, log_type: str) -> LogStreamConfiguration:
@@ -1929,7 +1978,9 @@ class Tailscale:
             The log streaming configuration.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/logging/{log_type}/stream")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/logging/{_path_segment(log_type)}/stream"
+        )
         return LogStreamConfiguration.from_json(data)
 
     async def set_log_stream_configuration(
@@ -1944,7 +1995,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/logging/{log_type}/stream",
+            f"tailnet/{_path_segment(self.tailnet)}/logging/{_path_segment(log_type)}/stream",
             method=METH_PUT,
             data=configuration.to_dict(),
         )
@@ -1958,7 +2009,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/logging/{log_type}/stream",
+            f"tailnet/{_path_segment(self.tailnet)}/logging/{_path_segment(log_type)}/stream",
             method=METH_DELETE,
         )
 
@@ -1975,7 +2026,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/logging/{log_type}/stream/status"
+            f"tailnet/{_path_segment(self.tailnet)}/logging/{_path_segment(log_type)}/stream/status"
         )
         return LogStreamStatus.from_json(data)
 
@@ -1994,7 +2045,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/aws-external-id",
+            f"tailnet/{_path_segment(self.tailnet)}/aws-external-id",
             method=METH_POST,
             data={"reusable": reusable},
         )
@@ -2014,7 +2065,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"tailnet/{self.tailnet}/aws-external-id/{external_id}"
+            f"tailnet/{_path_segment(self.tailnet)}/aws-external-id/{_path_segment(external_id)}"
             "/validate-aws-trust-policy",
             method=METH_POST,
             data={"roleArn": role_arn},
@@ -2059,7 +2110,8 @@ class Tailscale:
             params["event"] = events
 
         data = await self._request(
-            f"tailnet/{self.tailnet}/logging/configuration", params=params
+            f"tailnet/{_path_segment(self.tailnet)}/logging/configuration",
+            params=params,
         )
         raw: list[dict[str, Any]] = json.loads(data).get("logs") or []
         return [AuditLog.from_dict(log) for log in raw]
@@ -2080,7 +2132,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"tailnet/{self.tailnet}/logging/network",
+            f"tailnet/{_path_segment(self.tailnet)}/logging/network",
             params={"start": start.isoformat(), "end": end.isoformat()},
         )
         raw: list[dict[str, Any]] = json.loads(data).get("logs") or []
@@ -2094,7 +2146,9 @@ class Tailscale:
             A list of posture integrations.
 
         """
-        data = await self._request(f"tailnet/{self.tailnet}/posture/integrations")
+        data = await self._request(
+            f"tailnet/{_path_segment(self.tailnet)}/posture/integrations"
+        )
         raw: list[dict[str, Any]] = json.loads(data).get("integrations") or []
         return [PostureIntegration.from_dict(integration) for integration in raw]
 
@@ -2110,7 +2164,9 @@ class Tailscale:
             The posture integration.
 
         """
-        data = await self._request(f"posture/integrations/{integration_id}")
+        data = await self._request(
+            f"posture/integrations/{_path_segment(integration_id)}"
+        )
         return PostureIntegration.from_json(data)
 
     async def create_posture_integration(  # pylint: disable=too-many-arguments
@@ -2146,7 +2202,7 @@ class Tailscale:
         payload["provider"] = provider
 
         data = await self._request(
-            f"tailnet/{self.tailnet}/posture/integrations",
+            f"tailnet/{_path_segment(self.tailnet)}/posture/integrations",
             method=METH_POST,
             data=payload,
         )
@@ -2180,7 +2236,7 @@ class Tailscale:
 
         """
         data = await self._request(
-            f"posture/integrations/{integration_id}",
+            f"posture/integrations/{_path_segment(integration_id)}",
             method=METH_PATCH,
             data=_posture_integration_payload(
                 client_secret=client_secret,
@@ -2200,7 +2256,7 @@ class Tailscale:
 
         """
         await self._request(
-            f"posture/integrations/{integration_id}", method=METH_DELETE
+            f"posture/integrations/{_path_segment(integration_id)}", method=METH_DELETE
         )
 
     async def close(self) -> None:
@@ -2342,3 +2398,64 @@ def _posture_integration_payload(
         "tenantId": tenant_id,
     }
     return {name: value for name, value in fields.items() if value is not None}
+
+
+def _path_segment(value: str) -> str:
+    """Escape a value, like an ID, to put it in the path of a request URI.
+
+    Without it, an ID like "../tailnet/-/keys/k123" would send the request
+    to another endpoint than the method is for.
+
+    Raises
+    ------
+        ValueError: The value is empty, or a "." or "..", which no escaping
+            keeps from changing the path.
+
+    Returns
+    -------
+        The escaped value.
+
+    """
+    if value in {"", ".", ".."}:
+        msg = f"Invalid value for a path segment: {value!r}"
+        raise ValueError(msg)
+    # Colons are kept, as they are in names like "svc:web" and "custom:attr".
+    return quote(value, safe=":")
+
+
+def _parse_oauth_token(response: str) -> tuple[str, float]:
+    """Get the access token, and its seconds until expiry, from a response.
+
+    The response itself is left out of the error, as it holds the token.
+
+    Raises
+    ------
+        TailscaleAuthenticationError: The response holds no usable token.
+
+    Returns
+    -------
+        The access token, and the seconds until it expires.
+
+    """
+    try:
+        data = json.loads(response)
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        msg = "Failed to get OAuth token: the response is not a JSON object"
+        raise TailscaleAuthenticationError(msg)
+
+    access_token = data.get("access_token")
+    expires_in = data.get("expires_in")
+    if not isinstance(access_token, str) or not access_token:
+        msg = "Failed to get OAuth token: the response has no access token"
+        raise TailscaleAuthenticationError(msg)
+    if (
+        isinstance(expires_in, bool)
+        or not isinstance(expires_in, int | float)
+        or not math.isfinite(expires_in)
+        or expires_in <= 0
+    ):
+        msg = "Failed to get OAuth token: the response has no valid expiry"
+        raise TailscaleAuthenticationError(msg)
+    return access_token, float(expires_in)

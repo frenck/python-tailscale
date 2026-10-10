@@ -1302,3 +1302,8 @@ def test_dump_log_commands(
     end = datetime.fromisoformat(params["end"])
     assert end - start == timedelta(hours=2)
     assert end.tzinfo is not None
+
+
+def test_tracebacks_leave_out_locals() -> None:
+    """Tracebacks of the CLI do not show the locals, which hold credentials."""
+    assert cli.pretty_exceptions_show_locals is False

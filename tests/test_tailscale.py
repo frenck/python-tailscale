@@ -33,7 +33,9 @@ from tailscale import (
     SharedDevice,
     TailnetContact,
     Tailscale,
+    TailscaleKey,
     TailscaleService,
+    TailscaleWebhook,
     UserInvite,
 )
 from tailscale.exceptions import (
@@ -3462,3 +3464,106 @@ async def test_oauth_token_on_the_wire() -> None:
         assert api_request.kwargs["headers"]["Authorization"] == (
             "Bearer short-lived-token"
         )
+
+
+# --- Hardening tests ---
+
+
+async def test_ids_cannot_change_the_request_path(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test an ID is escaped, so it cannot send a request to another endpoint."""
+    responses.delete(
+        f"{URL}/device/..%2Ftailnet%2F-%2Fkeys%2Fk1234",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_device("../tailnet/-/keys/k1234")
+
+    assert responses.requests
+    ((method, url),) = responses.requests
+    assert method == "DELETE"
+    assert url.raw_path == "/api/v2/device/..%2Ftailnet%2F-%2Fkeys%2Fk1234"
+
+
+async def test_ids_keep_their_colons(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test the colon in names like "svc:web" is kept as is."""
+    responses.get(
+        f"{URL}/tailnet/frenck/services/svc:web",
+        status=200,
+        body='{"name": "svc:web"}',
+        content_type="application/json",
+    )
+    service = await tailscale_client.service("svc:web")
+    assert service.name == "svc:web"
+
+
+@pytest.mark.parametrize("device_id", ["", ".", ".."])
+async def test_ids_that_cannot_be_escaped(
+    tailscale_client: Tailscale,
+    device_id: str,
+) -> None:
+    """Test IDs that change the path whatever the escaping are refused."""
+    with pytest.raises(ValueError, match="Invalid value for a path segment"):
+        await tailscale_client.delete_device(device_id)
+
+
+def test_repr_leaves_out_secrets() -> None:
+    """Test the repr of the client and of models does not hold their secrets."""
+    key = TailscaleKey(key_id="k1234", key="key-value")
+    values = [
+        Tailscale(
+            api_key="api-key-value",
+            oauth_client_secret="client-secret-value",  # noqa: S106
+        ),
+        key,
+        TailscaleWebhook(
+            endpoint_id="e1234",
+            endpoint_url="https://example.com",
+            secret="webhook-secret-value",  # noqa: S106
+        ),
+    ]
+    secrets = ("api-key-value", "client-secret-value", "key-value", "webhook-secret")
+
+    for value in values:
+        assert not any(secret in repr(value) for secret in secrets)
+    assert key.to_dict()["key"] == "key-value"
+
+
+@pytest.mark.parametrize(
+    ("body", "reason"),
+    [
+        ("not json", "not a JSON object"),
+        ('["token"]', "not a JSON object"),
+        ('{"expires_in": 3600}', "no access token"),
+        ('{"access_token": null, "expires_in": 3600}', "no access token"),
+        ('{"access_token": "", "expires_in": 3600}', "no access token"),
+        ('{"access_token": 42, "expires_in": 3600}', "no access token"),
+        ('{"access_token": "tskey-secret"}', "no valid expiry"),
+        ('{"access_token": "tskey-secret", "expires_in": "3600"}', "no valid expiry"),
+        ('{"access_token": "tskey-secret", "expires_in": true}', "no valid expiry"),
+        ('{"access_token": "tskey-secret", "expires_in": -1}', "no valid expiry"),
+        ('{"access_token": "tskey-secret", "expires_in": NaN}', "no valid expiry"),
+    ],
+)
+async def test_malformed_oauth_token_response(body: str, reason: str) -> None:
+    """Test a malformed token response raises an error without the token."""
+    with aioresponses() as mocked:
+        mocked.post(OAUTH_URL, status=200, body=body, content_type="application/json")
+        async with aiohttp.ClientSession() as session:
+            tailscale = Tailscale(
+                tailnet="frenck",
+                oauth_client_id="client",
+                oauth_client_secret="notsosecret",  # noqa: S106
+                session=session,
+            )
+            with pytest.raises(TailscaleAuthenticationError, match=reason) as excinfo:
+                await tailscale._request("test")
+            assert "tskey-secret" not in str(excinfo.value)
+            assert tailscale.api_key is None
+            await tailscale.close()
