@@ -33,6 +33,7 @@ from .models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    OAuthApp,
     OrganizationTailnets,
     PolicyFile,
     PolicyFileValidation,
@@ -1764,6 +1765,128 @@ class Tailscale:
         """
         await self._request(f"tailnet/{self.tailnet}", method=METH_DELETE)
 
+    async def oauth_apps(self) -> list[OAuthApp]:
+        """Get the OAuth apps of the tailnet.
+
+        Returns
+        -------
+            A list of OAuth apps.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/oauth-apps")
+        raw: list[dict[str, Any]] = json.loads(data).get("oauthApps") or []
+        return [OAuthApp.from_dict(app) for app in raw]
+
+    async def oauth_app(self, app_id: str) -> OAuthApp:
+        """Get a single OAuth app of the tailnet.
+
+        Args:
+        ----
+            app_id: The ID of the OAuth app.
+
+        Returns:
+        -------
+            The OAuth app.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/oauth-apps/{app_id}")
+        return OAuthApp.from_json(data)
+
+    async def create_oauth_app(  # pylint: disable=too-many-arguments
+        self,
+        *,
+        name: str,
+        redirect_uris: list[str],
+        scopes: list[str],
+        description: str | None = None,
+        allowed_node_attributes: list[str] | None = None,
+    ) -> OAuthApp:
+        """Create an OAuth app in the tailnet.
+
+        Args:
+        ----
+            name: The name of the OAuth app.
+            redirect_uris: The redirect URIs allowed in the authorization
+                code flow.
+            scopes: The scopes the OAuth app gets.
+            description: What the OAuth app is for.
+            allowed_node_attributes: The custom device attributes the OAuth
+                app may set.
+
+        Returns:
+        -------
+            The created OAuth app, including its client secret, which the API
+            does not return later.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/oauth-apps",
+            method=METH_POST,
+            data=_oauth_app_payload(
+                name=name,
+                redirect_uris=redirect_uris,
+                scopes=scopes,
+                description=description,
+                allowed_node_attributes=allowed_node_attributes,
+            ),
+        )
+        return OAuthApp.from_json(data)
+
+    async def set_oauth_app(  # noqa: PLR0913  # pylint: disable=too-many-arguments
+        self,
+        app_id: str,
+        *,
+        name: str,
+        redirect_uris: list[str],
+        scopes: list[str],
+        description: str | None = None,
+        allowed_node_attributes: list[str] | None = None,
+    ) -> OAuthApp:
+        """Set the configuration of an OAuth app of the tailnet.
+
+        This keeps the client secret of the OAuth app.
+
+        Args:
+        ----
+            app_id: The ID of the OAuth app.
+            name: The name of the OAuth app.
+            redirect_uris: The redirect URIs allowed in the authorization
+                code flow.
+            scopes: The scopes the OAuth app gets.
+            description: What the OAuth app is for.
+            allowed_node_attributes: The custom device attributes the OAuth
+                app may set.
+
+        Returns:
+        -------
+            The configured OAuth app.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/oauth-apps/{app_id}",
+            method=METH_PUT,
+            data=_oauth_app_payload(
+                name=name,
+                redirect_uris=redirect_uris,
+                scopes=scopes,
+                description=description,
+                allowed_node_attributes=allowed_node_attributes,
+            ),
+        )
+        return OAuthApp.from_json(data)
+
+    async def delete_oauth_app(self, app_id: str) -> None:
+        """Delete an OAuth app of the tailnet.
+
+        Args:
+        ----
+            app_id: The ID of the OAuth app to delete.
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/oauth-apps/{app_id}", method=METH_DELETE
+        )
+
     async def close(self) -> None:
         """Close open client session and cancel background tasks."""
         if self.session and self._close_session:
@@ -1851,3 +1974,30 @@ def _response_error(
     if status == 404:
         return TailscaleNotFoundError(status, reason)
     return TailscaleResponseError(status, reason)
+
+
+def _oauth_app_payload(
+    *,
+    name: str,
+    redirect_uris: list[str],
+    scopes: list[str],
+    description: str | None,
+    allowed_node_attributes: list[str] | None,
+) -> dict[str, Any]:
+    """Build the payload of an OAuth app.
+
+    Returns
+    -------
+        The payload.
+
+    """
+    payload: dict[str, Any] = {
+        "name": name,
+        "redirectURIs": redirect_uris,
+        "scopes": scopes,
+    }
+    if description is not None:
+        payload["description"] = description
+    if allowed_node_attributes is not None:
+        payload["allowedNodeAttributes"] = allowed_node_attributes
+    return payload

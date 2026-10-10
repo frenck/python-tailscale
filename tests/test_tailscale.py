@@ -19,6 +19,7 @@ from tailscale import (
     DNSConfigurationPreferences,
     DNSResolver,
     InviteUser,
+    OAuthApp,
     OrganizationTailnet,
     ServiceApproval,
     ServiceHost,
@@ -2388,6 +2389,137 @@ async def test_delete_tailnet(
         content_type="application/json",
     )
     await tailscale_client.delete_tailnet()
+
+
+# --- OAuth app tests ---
+
+
+async def test_oauth_apps(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the OAuth apps."""
+    responses.get(
+        f"{URL}/tailnet/frenck/oauth-apps",
+        status=200,
+        body='{"oauthApps": [{"id": "a1234CNTRL", "name": "Home Assistant",'
+        '"description": "", "redirectURIs": ["https://example.com/callback"],'
+        '"scopes": ["devices:core:read"], "allowedNodeAttributes": null,'
+        '"created": "2026-10-01T09:00:00Z", "updated": "2026-10-02T09:00:00Z"}]}',
+        content_type="application/json",
+    )
+    (app,) = await tailscale_client.oauth_apps()
+
+    assert app.app_id == "a1234CNTRL"
+    assert app.name == "Home Assistant"
+    assert app.description is None
+    assert app.redirect_uris == ["https://example.com/callback"]
+    assert app.scopes == ["devices:core:read"]
+    assert app.allowed_node_attributes == []
+    assert app.client_secret is None
+    assert app.updated == datetime(2026, 10, 2, 9, tzinfo=UTC)
+
+
+async def test_oauth_apps_none(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test listing the OAuth apps when there are none."""
+    responses.get(
+        f"{URL}/tailnet/frenck/oauth-apps",
+        status=200,
+        body='{"oauthApps": []}',
+        content_type="application/json",
+    )
+    assert await tailscale_client.oauth_apps() == []
+
+
+async def test_oauth_app(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test getting a single OAuth app."""
+    responses.get(
+        f"{URL}/tailnet/frenck/oauth-apps/a1234CNTRL",
+        status=200,
+        body='{"id": "a1234CNTRL", "name": "Home Assistant"}',
+        content_type="application/json",
+    )
+    app = await tailscale_client.oauth_app("a1234CNTRL")
+    assert app == OAuthApp(app_id="a1234CNTRL", name="Home Assistant")
+
+
+async def test_create_oauth_app(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test creating an OAuth app."""
+    responses.post(
+        f"{URL}/tailnet/frenck/oauth-apps",
+        status=200,
+        body='{"id": "a1234CNTRL", "name": "Home Assistant",'
+        '"clientSecret": "tskey-client-secret"}',
+        content_type="application/json",
+    )
+    app = await tailscale_client.create_oauth_app(
+        name="Home Assistant",
+        redirect_uris=["https://example.com/callback"],
+        scopes=["devices:core:read"],
+        allowed_node_attributes=["custom:ha"],
+    )
+    assert app.client_secret == "tskey-client-secret"  # noqa: S105
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "name": "Home Assistant",
+        "redirectURIs": ["https://example.com/callback"],
+        "scopes": ["devices:core:read"],
+        "allowedNodeAttributes": ["custom:ha"],
+    }
+
+
+async def test_set_oauth_app(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting the configuration of an OAuth app."""
+    responses.put(
+        f"{URL}/tailnet/frenck/oauth-apps/a1234CNTRL",
+        status=200,
+        body='{"id": "a1234CNTRL", "name": "Home Assistant"}',
+        content_type="application/json",
+    )
+    await tailscale_client.set_oauth_app(
+        "a1234CNTRL",
+        name="Home Assistant",
+        redirect_uris=["https://example.com/callback"],
+        scopes=["devices:core:read", "users:read"],
+        description="Monitors the tailnet",
+    )
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {
+        "name": "Home Assistant",
+        "redirectURIs": ["https://example.com/callback"],
+        "scopes": ["devices:core:read", "users:read"],
+        "description": "Monitors the tailnet",
+    }
+
+
+async def test_delete_oauth_app(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test deleting an OAuth app."""
+    responses.delete(
+        f"{URL}/tailnet/frenck/oauth-apps/a1234CNTRL",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.delete_oauth_app("a1234CNTRL")
 
 
 # --- OAuth tests ---
