@@ -143,40 +143,200 @@ from tailscale import Tailscale
 
 async def main() -> None:
     """Show example of using the Tailscale API client."""
-    async with Tailscale(
-        tailnet="frenck",
-        api_key="tskey-somethingsomething",
-    ) as tailscale:
+    async with Tailscale(api_key="tskey-api-...") as tailscale:
         devices = await tailscale.devices()
 
-        for device_id, device in devices.items():
+        for device in devices.values():
             print(f"{device.hostname} ({device.os})")
             print(f"  Addresses: {', '.join(device.addresses)}")
             print(f"  Last seen: {device.last_seen}")
-            print(f"  Update available: {device.update_available}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Each device returned is a `Device` dataclass with properties like `hostname`,
-`os`, `addresses`, `authorized`, `client_version`, `last_seen`, `tags`,
-`advertised_routes`, `enabled_routes`, `distro`, and more. Devices are
-returned as a dictionary keyed by device ID.
+The client covers the whole [Tailscale API][tailscale-api]. The sections below
+show the main parts; every method has a docstring with the details.
+
+### Authentication
+
+Use an API access token, or the credentials of an OAuth client. API access
+tokens expire after at most 90 days; OAuth clients do not. With an OAuth
+client, the client gets short-lived access tokens itself, and gets a new one
+before the current one expires.
+
+```python
+# With an API access token
+Tailscale(api_key="tskey-api-...")
+
+# With an OAuth client
+Tailscale(
+    oauth_client_id="...",
+    oauth_client_secret="tskey-client-...",
+)
+```
+
+To keep the access token of an OAuth client across restarts, pass a
+`token_storage`: an implementation of `TokenStorage`, with a `get_token()`
+and a `set_token()` method.
+
+The `tailnet` defaults to `"-"`, the tailnet of the credentials. Pass the
+tailnet ID to use another tailnet the credentials have access to.
+
+### Devices
+
+Each device is a `Device` dataclass with properties like `hostname`, `os`,
+`addresses`, `authorized`, `client_version`, `last_seen`, `tags`,
+`advertised_routes`, `enabled_routes`, `distro`, and more. `devices()`
+returns them as a dictionary keyed by device ID.
 
 Only the identifiers (`device_id`, `node_id`, `hostname`, and `name`) are
 always set. The API leaves out many fields for devices shared in from another
 tailnet, so the other fields are `None` when the API does not return them.
 
+```python
+async with Tailscale(api_key="tskey-api-...") as tailscale:
+    device = await tailscale.device("nSRVBN3CNTRL")
+
+    await tailscale.authorize_device(device.node_id, authorized=True)
+    await tailscale.rename_device(device.node_id, name="server")
+    await tailscale.set_device_tags(device.node_id, tags=["tag:server"])
+
+    routes = await tailscale.device_routes(device.node_id)
+    await tailscale.set_device_routes(
+        device.node_id, routes=routes.advertised_routes
+    )
+
+    # Share the device with someone outside of the tailnet
+    invite = await tailscale.create_device_invite(
+        device.node_id, email="alice@example.com"
+    )
+```
+
+Custom posture attributes of devices are set with
+`set_device_posture_attribute()`, or for several devices at once with
+`update_device_posture_attributes()`.
+
+### Users and keys
+
+```python
+async with Tailscale(api_key="tskey-api-...") as tailscale:
+    admins = await tailscale.users(role="admin")
+    invite = await tailscale.create_user_invite(role="member")
+
+    # An auth key, to add devices to the tailnet
+    key = await tailscale.create_key(
+        description="CI runners",
+        reusable=True,
+        ephemeral=True,
+        tags=["tag:ci"],
+    )
+    print(key.key)
+
+    # An OAuth client, which does not expire
+    client = await tailscale.create_key(
+        key_type="client",
+        description="Monitoring",
+        scopes=["devices:core:read"],
+    )
+    print(client.key_id, client.key)
+```
+
+The secret of a new key is only returned when it is created.
+
+### Tailnet settings and DNS
+
+```python
+async with Tailscale(api_key="tskey-api-...") as tailscale:
+    settings = await tailscale.tailnet_settings()
+    await tailscale.update_tailnet_settings(devices_approval_on=True)
+
+    configuration = await tailscale.dns_configuration()
+    configuration.search_paths.append("corp.example.com")
+    await tailscale.set_dns_configuration(configuration)
+```
+
+Next to the full DNS configuration, the nameservers, preferences, search
+paths, and split DNS have their own methods too.
+
+### Policy file
+
+The policy file is kept as HuJSON, so its comments and formatting survive a
+round trip. Pass along its ETag when setting it, so it is not set when someone
+else changed it in the meantime.
+
+```python
+async with Tailscale(api_key="tskey-api-...") as tailscale:
+    policy_file = await tailscale.policy_file()
+    policy = policy_file.policy.replace("tag:old", "tag:new")
+
+    validation = await tailscale.validate_policy_file(policy)
+    if validation.valid:
+        await tailscale.set_policy_file(policy, etag=policy_file.etag)
+    else:
+        print(validation.message)
+```
+
+`test_policy_file()` runs tests against the current policy file, and
+`preview_policy_rules()` shows which rules apply to a user or an address.
+
+### Webhooks, Services, and logs
+
+```python
+from datetime import UTC, datetime, timedelta
+
+async with Tailscale(api_key="tskey-api-...") as tailscale:
+    webhook = await tailscale.create_webhook(
+        endpoint_url="https://example.com/tailscale",
+        subscriptions=["nodeCreated", "nodeNeedsApproval"],
+    )
+    print(webhook.secret)
+
+    services = await tailscale.services()
+
+    end = datetime.now(UTC)
+    logs = await tailscale.configuration_audit_logs(
+        start=end - timedelta(days=1), end=end, events=["NODE.CREATE"]
+    )
+```
+
+There is more: network flow logs, log streaming, posture integrations, OAuth
+apps, the contacts of the tailnet, and the tailnets of an organization.
+
+### Error handling
+
+All errors are a `TailscaleError`:
+
+- `TailscaleConnectionError`: the API could not be reached, or did not answer
+  in time.
+- `TailscaleAuthenticationError`: the credentials are missing or refused.
+  `TailscaleUnauthorizedError` (HTTP 401) means the credentials are invalid,
+  and `TailscalePermissionError` (HTTP 403) that they lack the permission, or
+  that the billing plan of the tailnet lacks the feature.
+- `TailscaleNotFoundError`: the device, user, or other resource does not
+  exist.
+- `TailscaleResponseError`: the API responded with another error.
+
+The response errors have the HTTP `status`, and the `reason` the API gave:
+
+```python
+from tailscale import TailscalePermissionError
+
+try:
+    await tailscale.network_flow_logs(start=start, end=end)
+except TailscalePermissionError as err:
+    print(err.status, err.reason)
+```
+
 ### Connection options
 
-All constructor arguments except `tailnet` and `api_key` are optional:
+All constructor arguments are optional, apart from the credentials:
 
 ```python
 Tailscale(
-    tailnet="your-tailnet",
-    api_key="tskey-...",
+    api_key="tskey-api-...",
+    tailnet="-",  # the tailnet of the credentials (default)
     request_timeout=10,  # per-request timeout in seconds (default: 8)
 )
 ```
