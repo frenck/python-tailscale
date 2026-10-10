@@ -35,13 +35,13 @@ dynamic = ["dependencies"]
 packages = [{ include = "tailscale", from = "src" }]
 dependencies = [
   'aiohttp (>=3.8.3)',
-  'mashumaro (>=3.10)',
+  'mashumaro (>=3.17)',
   'orjson (>=3.9.8)',
   'yarl (>=1.8.2)',
 ]
 
 [project.optional-dependencies]
-cli = ["rich>=14.0.0", "typer>=0.15.1"]
+cli = ["rich>=14.0.0", "typer>=0.15.4"]
 
 [project.scripts]
 tailscale-api = "tailscale._cli:main"
