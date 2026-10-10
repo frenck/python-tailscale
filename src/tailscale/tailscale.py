@@ -23,6 +23,7 @@ from .exceptions import (
 )
 from .models import (
     AcceptedDeviceInvite,
+    AwsExternalId,
     CreatedTailnet,
     Device,
     DeviceInvite,
@@ -33,6 +34,8 @@ from .models import (
     DNSNameservers,
     DNSPreferences,
     DNSSearchPaths,
+    LogStreamConfiguration,
+    LogStreamStatus,
     OAuthApp,
     OrganizationTailnets,
     PolicyFile,
@@ -1885,6 +1888,109 @@ class Tailscale:
         """
         await self._request(
             f"tailnet/{self.tailnet}/oauth-apps/{app_id}", method=METH_DELETE
+        )
+
+    async def log_stream_configuration(self, log_type: str) -> LogStreamConfiguration:
+        """Get where a type of logs of the tailnet is streamed to.
+
+        Args:
+        ----
+            log_type: The type of logs, "configuration" or "network".
+
+        Returns:
+        -------
+            The log streaming configuration.
+
+        """
+        data = await self._request(f"tailnet/{self.tailnet}/logging/{log_type}/stream")
+        return LogStreamConfiguration.from_json(data)
+
+    async def set_log_stream_configuration(
+        self, log_type: str, configuration: LogStreamConfiguration
+    ) -> None:
+        """Set where a type of logs of the tailnet is streamed to.
+
+        Args:
+        ----
+            log_type: The type of logs, "configuration" or "network".
+            configuration: The log streaming configuration.
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/logging/{log_type}/stream",
+            method=METH_PUT,
+            data=configuration.to_dict(),
+        )
+
+    async def disable_log_streaming(self, log_type: str) -> None:
+        """Stop streaming a type of logs of the tailnet.
+
+        Args:
+        ----
+            log_type: The type of logs, "configuration" or "network".
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/logging/{log_type}/stream",
+            method=METH_DELETE,
+        )
+
+    async def log_stream_status(self, log_type: str) -> LogStreamStatus:
+        """Get how the streaming of a type of logs of the tailnet goes.
+
+        Args:
+        ----
+            log_type: The type of logs, "configuration" or "network".
+
+        Returns:
+        -------
+            The log streaming status.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/logging/{log_type}/stream/status"
+        )
+        return LogStreamStatus.from_json(data)
+
+    async def aws_external_id(self, *, reusable: bool = False) -> AwsExternalId:
+        """Get an AWS external ID, to stream logs to Amazon S3 with a role.
+
+        Args:
+        ----
+            reusable: Whether later calls that are reusable too get the same
+                external ID back, as long as it is not linked to an AWS
+                account yet.
+
+        Returns:
+        -------
+            The AWS external ID, with the AWS account ID of Tailscale.
+
+        """
+        data = await self._request(
+            f"tailnet/{self.tailnet}/aws-external-id",
+            method=METH_POST,
+            data={"reusable": reusable},
+        )
+        return AwsExternalId.from_json(data)
+
+    async def validate_aws_trust_policy(
+        self, external_id: str, *, role_arn: str
+    ) -> None:
+        """Validate that Tailscale can assume an AWS IAM role.
+
+        Raises a TailscaleResponseError, with the reason, when it cannot.
+
+        Args:
+        ----
+            external_id: The AWS external ID.
+            role_arn: The ARN of the AWS IAM role.
+
+        """
+        await self._request(
+            f"tailnet/{self.tailnet}/aws-external-id/{external_id}"
+            "/validate-aws-trust-policy",
+            method=METH_POST,
+            data={"roleArn": role_arn},
         )
 
     async def close(self) -> None:

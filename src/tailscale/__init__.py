@@ -11,6 +11,7 @@ from .exceptions import (
 )
 from .models import (
     AcceptedDeviceInvite,
+    AwsExternalId,
     ClientConnectivity,
     ClientSupports,
     CreatedTailnet,
@@ -35,6 +36,8 @@ from .models import (
     KeyCapabilitiesCreate,
     KeyCapabilitiesDevices,
     Latency,
+    LogStreamConfiguration,
+    LogStreamStatus,
     OAuthApp,
     OrganizationTailnet,
     OrganizationTailnets,
@@ -61,6 +64,7 @@ from .tailscale import Tailscale
 
 __all__ = [
     "AcceptedDeviceInvite",
+    "AwsExternalId",
     "ClientConnectivity",
     "ClientSupports",
     "CreatedTailnet",
@@ -85,6 +89,8 @@ __all__ = [
     "KeyCapabilitiesCreate",
     "KeyCapabilitiesDevices",
     "Latency",
+    "LogStreamConfiguration",
+    "LogStreamStatus",
     "OAuthApp",
     "OrganizationTailnet",
     "OrganizationTailnets",

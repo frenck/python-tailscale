@@ -850,3 +850,115 @@ class OAuthApp(_LenientModel):
     )
     scopes: list[str] = field(default_factory=list)
     updated: datetime | None = None
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class LogStreamConfiguration(_LenientModel):
+    """Object holding where the logs of a tailnet are streamed to.
+
+    Which fields apply depends on the destination type; the "s3_" fields
+    are for Amazon S3, the "gcs_" fields for Google Cloud Storage.
+    """
+
+    destination_type: str = field(metadata=field_options(alias="destinationType"))
+    compression_format: str | None = field(
+        default=None, metadata=field_options(alias="compressionFormat")
+    )
+    gcs_bucket: str | None = field(
+        default=None, metadata=field_options(alias="gcsBucket")
+    )
+    gcs_credentials: str | None = field(
+        default=None, metadata=field_options(alias="gcsCredentials")
+    )
+    gcs_key_prefix: str | None = field(
+        default=None, metadata=field_options(alias="gcsKeyPrefix")
+    )
+    gcs_scopes: list[str] | None = field(
+        default=None, metadata=field_options(alias="gcsScopes")
+    )
+    log_type: str | None = field(default=None, metadata=field_options(alias="logType"))
+    s3_access_key_id: str | None = field(
+        default=None, metadata=field_options(alias="s3AccessKeyId")
+    )
+    s3_authentication_type: str | None = field(
+        default=None, metadata=field_options(alias="s3AuthenticationType")
+    )
+    s3_bucket: str | None = field(
+        default=None, metadata=field_options(alias="s3Bucket")
+    )
+    s3_external_id: str | None = field(
+        default=None, metadata=field_options(alias="s3ExternalId")
+    )
+    s3_key_prefix: str | None = field(
+        default=None, metadata=field_options(alias="s3KeyPrefix")
+    )
+    s3_region: str | None = field(
+        default=None, metadata=field_options(alias="s3Region")
+    )
+    s3_role_arn: str | None = field(
+        default=None, metadata=field_options(alias="s3RoleArn")
+    )
+    s3_secret_access_key: str | None = field(
+        default=None, metadata=field_options(alias="s3SecretAccessKey")
+    )
+    token: str | None = None
+    upload_period_minutes: int | None = field(
+        default=None, metadata=field_options(alias="uploadPeriodMinutes")
+    )
+    url: str | None = None
+    user: str | None = None
+
+    Config = _RequestBodyConfig
+
+
+@dataclass
+# pylint: disable-next=too-many-instance-attributes
+class LogStreamStatus(_LenientModel):
+    """Object holding how the streaming of the logs of a tailnet goes.
+
+    The rates are moving averages, per second.
+    """
+
+    last_activity: datetime | None = field(
+        default=None, metadata=field_options(alias="lastActivity")
+    )
+    last_error: str | None = field(
+        default=None, metadata=field_options(alias="lastError")
+    )
+    max_body_size: int = field(default=0, metadata=field_options(alias="maxBodySize"))
+    num_bytes_sent: int = field(default=0, metadata=field_options(alias="numBytesSent"))
+    num_entries_sent: int = field(
+        default=0, metadata=field_options(alias="numEntriesSent")
+    )
+    num_failed_requests: int = field(
+        default=0, metadata=field_options(alias="numFailedRequests")
+    )
+    num_spoofed_entries: int = field(
+        default=0, metadata=field_options(alias="numSpoofedEntries")
+    )
+    num_total_requests: int = field(
+        default=0, metadata=field_options(alias="numTotalRequests")
+    )
+    rate_bytes_sent: float = field(
+        default=0.0, metadata=field_options(alias="rateBytesSent")
+    )
+    rate_entries_sent: float = field(
+        default=0.0, metadata=field_options(alias="rateEntriesSent")
+    )
+    rate_failed_requests: float = field(
+        default=0.0, metadata=field_options(alias="rateFailedRequests")
+    )
+    rate_total_requests: float = field(
+        default=0.0, metadata=field_options(alias="rateTotalRequests")
+    )
+
+
+@dataclass
+class AwsExternalId(DataClassORJSONMixin):
+    """Object holding an AWS external ID, to stream logs to Amazon S3."""
+
+    external_id: str = field(metadata=field_options(alias="externalId"))
+    tailscale_aws_account_id: str = field(
+        metadata=field_options(alias="tailscaleAwsAccountId")
+    )
