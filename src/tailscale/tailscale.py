@@ -1011,7 +1011,8 @@ class Tailscale:
         """Update the settings for the tailnet.
 
         Only provided parameters are updated; omitted parameters
-        are left unchanged.
+        are left unchanged. The API refuses the whole update when one of
+        them is not allowed, like a feature the billing plan lacks.
 
         Args:
         ----
@@ -1022,7 +1023,8 @@ class Tailscale:
             users_role_allowed_to_join_external_tailnets: Role allowed
                 to join external tailnets ("none", "admin", "member").
             network_flow_logging_on: Whether network flow logging is on.
-            regional_routing_on: Whether regional routing is on.
+            regional_routing_on: Whether regional routing is on. Superseded
+                by route_selection; the API refuses both in one update.
             posture_identity_collection_on: Whether posture identity
                 collection is on.
             https_enabled: Whether HTTPS certificates are enabled.
