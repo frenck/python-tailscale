@@ -756,6 +756,23 @@ def test_audit_logs_command(
     assert call.kwargs["end"] - call.kwargs["start"] == timedelta(hours=2)
 
 
+def test_dns_split_command_without_nameservers(
+    runner: CliRunner,
+    snapshot: SnapshotAssertion,
+) -> None:
+    """DNS split command shows a domain without nameservers."""
+    mock_client = _mock_tailscale()
+    mock_client.split_dns.return_value = {
+        "corp.example.com": ["10.0.0.53"],
+        "old.example.com": None,
+    }
+    exit_code, output = _invoke(
+        runner, ["dns", "split", "--api-key", "tskey-api-test"], mock_client
+    )
+    assert exit_code == 0
+    assert output == snapshot
+
+
 # --- action commands ---
 
 

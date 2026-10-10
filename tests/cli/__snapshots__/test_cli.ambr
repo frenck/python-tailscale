@@ -661,6 +661,18 @@
   
   '''
 # ---
+# name: test_dns_split_command_without_nameservers
+  '''
+              Split DNS             
+  ┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+  ┃ Domain           ┃ Nameservers ┃
+  ┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+  │ corp.example.com │ 10.0.0.53   │
+  │ old.example.com  │ -           │
+  └──────────────────┴─────────────┘
+  
+  '''
+# ---
 # name: test_expire_key_command
   '''
   Key expired for device 12345.

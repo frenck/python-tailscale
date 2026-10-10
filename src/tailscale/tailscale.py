@@ -749,12 +749,13 @@ class Tailscale:
         )
         return DNSSearchPaths.from_json(data)
 
-    async def split_dns(self) -> dict[str, list[str]]:
+    async def split_dns(self) -> dict[str, list[str] | None]:
         """Get the split DNS configuration for the tailnet.
 
         Returns
         -------
-            A dictionary mapping domain names to lists of nameserver addresses.
+            A dictionary mapping domain names to lists of nameserver addresses,
+            or None for a domain without nameservers.
 
         """
         data = await self._request(
@@ -763,8 +764,8 @@ class Tailscale:
         return json.loads(data)
 
     async def set_split_dns(
-        self, *, split_dns: dict[str, list[str]]
-    ) -> dict[str, list[str]]:
+        self, *, split_dns: dict[str, list[str] | None]
+    ) -> dict[str, list[str] | None]:
         """Replace the split DNS configuration for the tailnet.
 
         Args:
@@ -785,14 +786,15 @@ class Tailscale:
         return json.loads(data)
 
     async def update_split_dns(
-        self, *, split_dns: dict[str, list[str]]
-    ) -> dict[str, list[str]]:
+        self, *, split_dns: dict[str, list[str] | None]
+    ) -> dict[str, list[str] | None]:
         """Update part of the split DNS configuration for the tailnet.
 
         Args:
         ----
             split_dns: A dictionary mapping domain names to lists of
-                nameserver addresses. Only provided domains are updated.
+                nameserver addresses. Only provided domains are updated; a
+                domain set to None is removed.
 
         Returns:
         -------
@@ -870,6 +872,9 @@ class Tailscale:
             content=policy,
             headers={"Content-Type": "application/hujson"},
         )
+        # The API answers with an empty body when everything passes.
+        if not data.strip():
+            return PolicyFileValidation()
         return PolicyFileValidation.from_json(data)
 
     async def test_policy_file(
@@ -893,6 +898,9 @@ class Tailscale:
             content=json.dumps(tests),
             headers={"Content-Type": "application/json"},
         )
+        # The API answers with an empty body when everything passes.
+        if not data.strip():
+            return PolicyFileValidation()
         return PolicyFileValidation.from_json(data)
 
     async def preview_policy_rules(
