@@ -27,6 +27,8 @@ cli = AsyncTyper(
     help="Tailscale CLI — query and manage your tailnet from the terminal.",
     no_args_is_help=True,
     add_completion=False,
+    # The locals hold the credentials; older Typer versions show them.
+    pretty_exceptions_show_locals=False,
 )
 console = Console()
 

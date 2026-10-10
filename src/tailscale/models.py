@@ -373,7 +373,7 @@ class TailscaleKey(DataClassORJSONMixin):
 
     key_id: str = field(metadata=field_options(alias="id"))
     description: str = ""
-    key: str = ""
+    key: str = field(default="", repr=False)
     created: datetime | None = None
     updated: datetime | None = None
     expires: datetime | None = None
@@ -584,7 +584,7 @@ class TailscaleWebhook(_LenientModel):
     provider_type: str | None = field(
         default=None, metadata=field_options(alias="providerType")
     )
-    secret: str | None = None
+    secret: str | None = field(default=None, repr=False)
     subscriptions: list[str] = field(default_factory=list)
 
 
@@ -798,7 +798,7 @@ class CreatedTailnetOAuthClient(_LenientModel):
     """Object holding the OAuth client of a newly created tailnet."""
 
     client_id: str = field(metadata=field_options(alias="id"))
-    secret: str | None = None
+    secret: str | None = field(default=None, repr=False)
 
 
 @dataclass
@@ -841,7 +841,7 @@ class OAuthApp(_LenientModel):
         default_factory=list, metadata=field_options(alias="allowedNodeAttributes")
     )
     client_secret: str | None = field(
-        default=None, metadata=field_options(alias="clientSecret")
+        default=None, repr=False, metadata=field_options(alias="clientSecret")
     )
     created: datetime | None = None
     description: str | None = None
@@ -869,7 +869,7 @@ class LogStreamConfiguration(_LenientModel):
         default=None, metadata=field_options(alias="gcsBucket")
     )
     gcs_credentials: str | None = field(
-        default=None, metadata=field_options(alias="gcsCredentials")
+        default=None, repr=False, metadata=field_options(alias="gcsCredentials")
     )
     gcs_key_prefix: str | None = field(
         default=None, metadata=field_options(alias="gcsKeyPrefix")
@@ -900,9 +900,9 @@ class LogStreamConfiguration(_LenientModel):
         default=None, metadata=field_options(alias="s3RoleArn")
     )
     s3_secret_access_key: str | None = field(
-        default=None, metadata=field_options(alias="s3SecretAccessKey")
+        default=None, repr=False, metadata=field_options(alias="s3SecretAccessKey")
     )
-    token: str | None = None
+    token: str | None = field(default=None, repr=False)
     upload_period_minutes: int | None = field(
         default=None, metadata=field_options(alias="uploadPeriodMinutes")
     )
