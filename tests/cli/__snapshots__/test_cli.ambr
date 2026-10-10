@@ -1,4 +1,16 @@
 # serializer version: 1
+# name: test_audit_logs_command
+  '''
+                                         Audit logs                                        
+  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+  ┃ Time                      ┃ Actor             ┃ Action ┃ Target        ┃ Property     ┃
+  ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+  │ 2026-10-09T18:39:35+00:00 │ alice@example.com │ UPDATE │ NODE server   │ MACHINE_NAME │
+  │ 2026-10-09T19:00:00+00:00 │ nDEVICE123        │        │ ADMIN_CONSOLE │              │
+  └───────────────────────────┴───────────────────┴────────┴───────────────┴──────────────┘
+  
+  '''
+# ---
 # name: test_authentication_error_handler
   '''
   ╭───────────────── Authentication error ──────────────────╮
@@ -18,6 +30,13 @@
 # ---
 # name: test_cli_structure
   dict({
+    'audit-logs': list([
+      'api_key',
+      'hours',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
     'authorize': list([
       'api_key',
       'device_id',
@@ -307,6 +326,30 @@
       'oauth_client_secret',
       'tailnet',
     ]),
+    'policy': dict({
+      'set': list([
+        'api_key',
+        'etag',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'path',
+        'tailnet',
+      ]),
+      'show': list([
+        'api_key',
+        'etag',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'tailnet',
+      ]),
+      'validate': list([
+        'api_key',
+        'oauth_client_id',
+        'oauth_client_secret',
+        'path',
+        'tailnet',
+      ]),
+    }),
     'rename': list([
       'api_key',
       'device_id',
@@ -318,6 +361,12 @@
     'routes': list([
       'api_key',
       'device_id',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'services': list([
+      'api_key',
       'oauth_client_id',
       'oauth_client_secret',
       'tailnet',
@@ -440,6 +489,12 @@
       'user_id',
     ]),
     'users': list([
+      'api_key',
+      'oauth_client_id',
+      'oauth_client_secret',
+      'tailnet',
+    ]),
+    'webhooks': list([
       'api_key',
       'oauth_client_id',
       'oauth_client_secret',
@@ -656,6 +711,25 @@
   
   '''
 # ---
+# name: test_policy_set_command
+  '''
+  Policy file set (ETag "e5678").
+  
+  '''
+# ---
+# name: test_policy_validate_command
+  '''
+  The policy file is valid.
+  
+  '''
+# ---
+# name: test_policy_validate_command_invalid
+  '''
+  The policy file is not valid: test(s) failed
+    alice@example.com: address "100.64.0.1:22": want: Drop, got: Accept
+  
+  '''
+# ---
 # name: test_rename_command
   '''
   Device 12345 renamed to new-hostname.
@@ -672,6 +746,18 @@
   │ 192.168.50.0/24 │ Enabled    │
   │ 172.16.0.0/12   │ Advertised │
   └─────────────────┴────────────┘
+  
+  '''
+# ---
+# name: test_services_command
+  '''
+                              Services                            
+  ┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━┓
+  ┃ Name     ┃ Addresses       ┃ Ports   ┃ Tags    ┃ Comment     ┃
+  ┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━┩
+  │ svc:web  │ 100.100.100.100 │ tcp:443 │ tag:web │ The website │
+  │ svc:bare │ -               │ -       │ -       │             │
+  └──────────┴─────────────────┴─────────┴─────────┴─────────────┘
   
   '''
 # ---
@@ -805,6 +891,18 @@
   │ u12345  │ Alice Engineer │ alice@example.com │ admin  │ active │       3 │ Yes       │
   │ u67890  │ Bob Ops        │ bob@example.com   │ member │ active │       1 │ No        │
   └─────────┴────────────────┴───────────────────┴────────┴────────┴─────────┴───────────┘
+  
+  '''
+# ---
+# name: test_webhooks_command
+  '''
+                                            Webhooks                                           
+  ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃ Endpoint ID ┃ URL                                   ┃ Provider ┃ Events                   ┃
+  ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+  │ e1234CNTRL  │ https://example.com/tailscale         │ -        │ nodeCreated, nodeDeleted │
+  │ e5678CNTRL  │ https://hooks.slack.com/services/T000 │ slack    │ userNeedsApproval        │
+  └─────────────┴───────────────────────────────────────┴──────────┴──────────────────────────┘
   
   '''
 # ---
