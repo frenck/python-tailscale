@@ -1345,6 +1345,54 @@ async def test_delete_key(
 # --- Tailnet settings tests ---
 
 
+async def test_set_user_role(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+) -> None:
+    """Test setting the role of a user."""
+    responses.post(
+        f"{URL}/users/u12345/role",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await tailscale_client.set_user_role("u12345", role="admin")
+
+    assert responses.requests
+    (request,) = next(iter(responses.requests.values()))
+    assert request.kwargs["json"] == {"role": "admin"}
+
+
+@pytest.mark.parametrize(
+    ("method", "action"),
+    [
+        ("approve_user", "approve"),
+        ("suspend_user", "suspend"),
+        ("restore_user", "restore"),
+        ("delete_user", "delete"),
+    ],
+)
+async def test_user_actions(
+    responses: aioresponses,
+    tailscale_client: Tailscale,
+    method: str,
+    action: str,
+) -> None:
+    """Test the actions on a user."""
+    responses.post(
+        f"{URL}/users/u12345/{action}",
+        status=200,
+        body="",
+        content_type="application/json",
+    )
+    await getattr(tailscale_client, method)("u12345")
+
+    assert responses.requests
+    ((request_method, request_url),) = responses.requests
+    assert request_method == "POST"
+    assert str(request_url) == f"{URL}/users/u12345/{action}"
+
+
 async def test_tailnet_settings(
     responses: aioresponses,
     tailscale_client: Tailscale,
