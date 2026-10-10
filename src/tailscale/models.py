@@ -741,3 +741,86 @@ class UserInvite(_LenientModel):
     tailnet_id: int | None = field(
         default=None, metadata=field_options(alias="tailnetId")
     )
+
+
+@dataclass
+class TailnetContact(_LenientModel):
+    """Object holding a contact of the tailnet."""
+
+    email: str | None = None
+    fallback_email: str | None = field(
+        default=None, metadata=field_options(alias="fallbackEmail")
+    )
+    needs_verification: bool = field(
+        default=False, metadata=field_options(alias="needsVerification")
+    )
+
+
+@dataclass
+class TailnetContacts(_LenientModel):
+    """Object holding the contacts of the tailnet."""
+
+    account: TailnetContact | None = None
+    security: TailnetContact | None = None
+    support: TailnetContact | None = None
+
+
+@dataclass
+class OrganizationTailnet(_LenientModel):
+    """Object holding a tailnet of an organization."""
+
+    tailnet_id: str = field(metadata=field_options(alias="id"))
+    created_at: datetime | None = field(
+        default=None, metadata=field_options(alias="createdAt")
+    )
+    display_name: str | None = field(
+        default=None, metadata=field_options(alias="displayName")
+    )
+    org_id: str | None = field(default=None, metadata=field_options(alias="orgId"))
+
+
+@dataclass
+class OrganizationTailnets(_LenientModel):
+    """Object holding a page of the tailnets of an organization.
+
+    The cursor is there when there is a next page; pass it along to get it.
+    """
+
+    tailnets: list[OrganizationTailnet] = field(default_factory=list)
+    cursor: str | None = None
+    total_count: int | None = field(
+        default=None, metadata=field_options(alias="totalCount")
+    )
+
+
+@dataclass
+class CreatedTailnetOAuthClient(_LenientModel):
+    """Object holding the OAuth client of a newly created tailnet."""
+
+    client_id: str = field(metadata=field_options(alias="id"))
+    secret: str | None = None
+
+
+@dataclass
+class CreatedTailnet(_LenientModel):
+    """Object holding a newly created API-only tailnet.
+
+    The OAuth client has the "all" scope for the new tailnet; the API only
+    returns its secret here.
+    """
+
+    tailnet_id: str = field(metadata=field_options(alias="id"))
+    already_exists: bool = field(
+        default=False, metadata=field_options(alias="alreadyExists")
+    )
+    created_at: datetime | None = field(
+        default=None, metadata=field_options(alias="createdAt")
+    )
+    display_name: str | None = field(
+        default=None, metadata=field_options(alias="displayName")
+    )
+    dns_name: str | None = field(default=None, metadata=field_options(alias="dnsName"))
+    oauth_client: CreatedTailnetOAuthClient | None = field(
+        default=None, metadata=field_options(alias="oauthClient")
+    )
+    org_id: str | None = field(default=None, metadata=field_options(alias="orgId"))
