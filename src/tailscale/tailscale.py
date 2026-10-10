@@ -80,6 +80,7 @@ class Tailscale:
 
     _get_oauth_token_task: asyncio.Task[None] | None = None
     _expire_oauth_token_task: asyncio.Task[None] | None = None
+    _rejected_oauth_token: str | None = None
     _close_session: bool = False
 
     async def _check_api_key(self) -> None:
@@ -115,11 +116,21 @@ class Tailscale:
                     self._get_oauth_token_task.cancel()
                     self._get_oauth_token_task = None
             # Get a new OAuth token if not already in progress
-            if not self._get_oauth_token_task:
-                self._get_oauth_token_task = asyncio.create_task(
+            task = self._get_oauth_token_task
+            if task is None:
+                task = self._get_oauth_token_task = asyncio.create_task(
                     self._get_oauth_token()
                 )
-            await self._get_oauth_token_task
+            try:
+                # Shielded, so a caller that gets cancelled, like by a timeout,
+                # does not cancel getting the token for the others waiting on it.
+                await asyncio.shield(task)
+            except BaseException:
+                # Forget a failed attempt, so the next request tries again,
+                # unless another request already started a new one.
+                if task.done() and self._get_oauth_token_task is task:
+                    self._get_oauth_token_task = None
+                raise
 
     async def _get_oauth_token(self) -> None:
         """Get an OAuth token from the Tailscale API or token storage.
@@ -132,14 +143,13 @@ class Tailscale:
         """
         if self.token_storage:
             token_data = await self.token_storage.get_token()
-            if token_data:
+            # The API refused the stored token before, so it is not used again
+            # even though it has not expired yet.
+            if token_data and token_data[0] != self._rejected_oauth_token:
                 access_token, expires_at = token_data
                 expires_in = (expires_at - datetime.now(UTC)).total_seconds()
                 if expires_in > self._token_expiry_margin:
-                    self._expire_oauth_token_task = asyncio.create_task(
-                        self._expire_oauth_token(expires_in)
-                    )
-                    self.api_key = access_token
+                    self._use_oauth_token(access_token, expires_in)
                     return
 
         data = {
@@ -164,12 +174,20 @@ class Tailscale:
             msg = "OAuth token expires in less than 1 minute"
             raise TailscaleAuthenticationError(msg)
 
-        self._expire_oauth_token_task = asyncio.create_task(
-            self._expire_oauth_token(expires_in)
-        )
         if self.token_storage:
             expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
             await self.token_storage.set_token(access_token, expires_at)
+        self._use_oauth_token(access_token, expires_in)
+
+    def _use_oauth_token(self, access_token: str, expires_in: float) -> None:
+        """Start using an OAuth token, and expire it before it runs out.
+
+        The token and its expiry are set together, without awaiting in
+        between, so other requests never see one without the other.
+        """
+        self._expire_oauth_token_task = asyncio.create_task(
+            self._expire_oauth_token(expires_in)
+        )
         self.api_key = access_token
 
     async def _expire_oauth_token(self, expires_in: float) -> None:
@@ -298,7 +316,10 @@ class Tailscale:
             raise TailscaleConnectionError(msg) from exception
 
         if response.status >= 400:
-            if response.status in (401, 403):
+            # Only a 401 means the token is no good. A 403 means the token
+            # lacks the permission, or the billing plan lacks the feature,
+            # which a new token does not change.
+            if response.status == 401:
                 self._forget_oauth_token(use_authentication=_use_authentication)
             raise _response_error(response.status, response.reason, body)
 
@@ -309,6 +330,7 @@ class Tailscale:
         if not (use_authentication and self.api_key and self.oauth_client_id):
             return
 
+        self._rejected_oauth_token = self.api_key
         self.api_key = None
         self._get_oauth_token_task = None
         if self._expire_oauth_token_task:
